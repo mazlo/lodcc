@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
     argsps = parser.parse_args()
 
-    for arg in ['dry_run', 'db-host', 'db-user', 'db-password', 'db-dbname']:
+    for arg in ['log_level', 'dry_run', 'db-host', 'db-user', 'db-password', 'db-dbname']:
         if not arg in args:
             args[arg] = getattr( argsps, arg )
 
