@@ -27,16 +27,16 @@ def ensure_db_schema_complete( r, curr ):
 
     return attr
 
-def save_value( curr, datahub_url, dp, attribute, value=dp[attribute], check=True ):
+def save_value( curr, datahub_url, attribute, value, check=True ):
     ```save_value```
 
-    if check and not dp[attribute]:
+    if check and not value:
         # TODO create warning message
-        print 'no '+ attribute +'-attribute. could not save'
-    else
+        print 'no value for attribute '+ attribute +'. could not save'
+    else:
         curr.execute( 'UPDATE stats SET '+ attribute +'="'+ value +'" WHERE url = "'+ datahub_url +'";' )
 
-def parse_resource_urls( datahub_url ):
+def parse_resource_urls( datahub_url, dry_run=False ):
     ```parse_resource_urls```
 
     os.popen( 'curl -L "'+ datahub_url +'/datapackage.json" -o datapackage.json ' )
@@ -49,7 +49,7 @@ def parse_resource_urls( datahub_url ):
 
             if not dp['resources']:
                 # TODO create error message and exit
-                continue
+                return None
 
             for r in dp['resources']:
                 attr = ensure_db_schema_complete( r, curr )
@@ -59,10 +59,10 @@ def parse_resource_urls( datahub_url ):
 
                 save_value( curr, datahub_url, dp, attr, r['url'], False )
 
-            save_value( curr, datahub_url, dp, 'name' )
-            save_value( curr, datahub_url, dp, 'keywords' )
+            save_value( curr, datahub_url, 'name', dp['name'] if 'name' in dp else None )
+            save_value( curr, datahub_url, 'keywords', dp['keywords'] if 'keywords' in dp else None )
             # save whole datapackage.json in column
-            save_value( curr, datahub_url, dp, 'datapackage_content', str( json.dumps( dp ) ), False )
+            save_value( curr, datahub_url, 'datapackage_content', str( json.dumps( dp ) ), False )
 
         except:
             # TODO create error message and exit
@@ -88,10 +88,28 @@ def build_graph( file, stats={}, dry_run=False ):
 def save_stats( stats, sid ):
     ```save_stats```
 
-dry_run = True
+#dry_run = True
+#
+#curr.execute( 'SELECT id,url,format FROM stats' + ';' if not dry_run else ' WHERE domain="Cross_domain" AND title LIKE "%Museum%";' )
+#datasets = curr.fetchall()
+#
+#for ds in datasets:
+#    
+    #file = None
+#    
+    #try:
+        #file = download_dataset( ds[1],ds[2], dry_run )
+    #except:
+        ## save error in error-column
+        #continue
+#    
+    #stats = {}
+#    
+    #build_graph_prepare( file, dry_run )
+    #build_graph( file, stats, dry_run )
+    #save_stats( stats, ds[0] )
 
-curr.execute( 'SELECT id,url,format FROM stats' + ';' if !dry_run else ' WHERE domain="Cross_domain" AND title LIKE "%Museum%";' )
-datasets = curr.fetchall()
+# -----------------
 
 if __name__ == '__main__':
 
