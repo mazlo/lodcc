@@ -20,12 +20,15 @@ def ensure_db_schema_complete( r, cur ):
 
     cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = 'stats';" )
 
-    if not r['format']:
+    if not 'format' in r:
+        log.error( '"resources" element is missing "format" attribute. cannot save this value' )
         # TODO create error message and exit
         return False;
 
     attr = re.sub( r'[+/]', '_', r['format'] )
+    log.debug( 'Found %s format', attr )
     if attr not in cur.fetchall():
+        log.info( 'Create missing column %s', attr )
         cur.execute( "ALTER TABLE stats ADD COLUMN '"+ attr +"' varchar;" )
 
     return attr
@@ -37,28 +40,36 @@ def save_value( cur, datahub_url, attribute, value, check=True ):
         # TODO create warning message
         log.warn( 'no value for attribute '+ attribute +'. could not save' )
     else:
+        log.info( 'Saving value "%s" for attribute "%s" for url "%s"', value, attribute, datahub_url )
         cur.execute( 'UPDATE stats SET '+ attribute +'="'+ value +'" WHERE url = "'+ datahub_url +'";' )
 
 def parse_resource_urls( datahub_url, dry_run=False ):
     ```parse_resource_urls```
 
+    log.debug( 'cURLing datapackage.json from %s', datahub_url +'/datapackage.json' )
     os.popen( 'curl -L "'+ datahub_url +'/datapackage.json" -o datapackage.json ' )
     # TODO ensure the process succeeds
 
-    file = './datapackage.json'
-    with open( file, 'r' ):
+    datapackage = './datapackage.json'
+    with open( datapackage, 'r' ) as file:
+
         try:
+            log.debug( 'Parsing datapackage.json' )
             dp = json.load( file )
 
             if not dp['resources']:
+                log.error( '"resources" does not exist for %s', datahub_url )
                 # TODO create error message and exit
                 return None
 
+            log.debug( 'Found "resources" attribute. reading' )
             for r in dp['resources']:
                 attr = ensure_db_schema_complete( r, cur )
 
                 if not attr:
                     continue
+
+                log.debug( 'Found %s-attribute', attr )
 
                 save_value( cur, datahub_url, dp, attr, r['url'], False )
 
@@ -69,6 +80,7 @@ def parse_resource_urls( datahub_url, dry_run=False ):
 
         except:
             # TODO create error message and exit
+            raise
             return None
 
     return 
