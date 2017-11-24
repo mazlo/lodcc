@@ -11,6 +11,7 @@
 import re
 import os
 import argparse
+import logging as log
 import psycopg2
 
 def ensure_db_schema_complete( r, cur ):
@@ -33,7 +34,7 @@ def save_value( cur, datahub_url, attribute, value, check=True ):
 
     if check and not value:
         # TODO create warning message
-        print 'no value for attribute '+ attribute +'. could not save'
+        log.warn( 'no value for attribute '+ attribute +'. could not save' )
     else:
         cur.execute( 'UPDATE stats SET '+ attribute +'="'+ value +'" WHERE url = "'+ datahub_url +'";' )
 
@@ -117,6 +118,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description = 'lodcc' )
     parser.add_argument( '--parse-resource-urls', '-u', action = "store", type = bool, help = '', default = False )
     parser.add_argument( '--dry-run', '-d', action = "store", type = bool, help = '', default = False )
+    parser.add_argument( '--log-level', '-l', action = "store", type = str, help = '', default = 'info' )
 
     # read all properties in file into args-dict
     if os.path.isfile( 'db.properties' ):
@@ -134,6 +136,8 @@ if __name__ == '__main__':
         if not arg in args:
             args[arg] = getattr( argsps, arg )
 
+    log.basicConfig( level = log.INFO if args['log_level'] == 'info' else log.DEBUG, format = '%(levelname)s %(asctime)s %(message)s', )
+
     # connect to an existing database
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
     cur = conn.cursor()
@@ -141,19 +145,21 @@ if __name__ == '__main__':
     try:
         cur.execute( "SELECT 1;" )
         result = cur.fetchall()
+
+        log.debug( 'Database ready to query execution' )
     except:
-        print "Database not ready for query execution. "+ sys.exc_info()[0]
+        log.error( 'Database not ready for query execution. %s', sys.exc_info()[0] )
         raise 
 
     # option 1
     if "parse_resource_urls" in argsps:
         if "dry_run" in args:
-            print "Running in dry-run mode"
-            print "Using example dataset 'Museums in Italy'"
+            log.info( 'Running in dry-run mode' )
+            log.info( 'Using example dataset "Museums in Italy"' )
     
             parse_resource_urls( 'https://old.datahub.io/dataset/museums-in-italy', True )
         else:
-            print "not yet implemented. terminating"
+            log.warn( 'not yet implemented. terminating' )
 
     # close communication with the database
     cur.close()
