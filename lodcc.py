@@ -29,7 +29,7 @@ def ensure_db_schema_complete( r, cur ):
     log.debug( 'Found %s format', attr )
     if attr not in cur.fetchall():
         log.info( 'Create missing column %s', attr )
-        cur.execute( "ALTER TABLE stats ADD COLUMN '"+ attr +"' varchar;" )
+        cur.execute( "ALTER TABLE stats ADD COLUMN "+ attr +" varchar(16);" )
 
     return attr
 
