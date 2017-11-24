@@ -10,6 +10,7 @@
 
 import re
 import os
+import argparse
 
 def ensure_db_schema_complete( r, curr ):
     ```ensure_db_schema_complete```
@@ -92,21 +93,35 @@ dry_run = True
 curr.execute( 'SELECT id,url,format FROM stats' + ';' if !dry_run else ' WHERE domain="Cross_domain" AND title LIKE "%Museum%";' )
 datasets = curr.fetchall()
 
-for ds in datasets:
-    
-    file = None
-    
-    try:
-        file = download_dataset( ds[1],ds[2], dry_run )
-    except:
-        # save error in error-column
-        continue
-    
-    stats = {}
-    
-    build_graph_prepare( file, dry_run )
-    build_graph( file, stats, dry_run )
-    save_stats( stats, ds[0] )
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser( description = 'lodcc' )
+    parser.add_argument( '--parse-resource-urls', '-u', action = "store", type = bool, help = '', default = False )
+    parser.add_argument( '--dry-run', '-d', action = "store", type = bool, help = '', default = False )
+
+    # read all properties in file into args-dict
+    if os.path.isfile( 'db.properties' ):
+        with open( 'db.properties', 'rt' ) as f:
+            args = dict( ( key.replace( '.', '-' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) )
+    else:
+        parser.add_argument( '--db-hostname', '-H', action = "store", type = str, help = '', default = "localhost" )
+        parser.add_argument( '--db-username', '-U', action = "store", type = str, help = '', default = "zlochms" )
+        parser.add_argument( '--db-password', '-P', action = "store", type = str, help = '', default = "zlochms" )
+        parser.add_argument( '--db-schema', '-S', action = "store", type = str, help = '', default = "zlochms" )
+
+    argsps = parser.parse_args()
+
+    for arg in ['dry_run', 'db-hostname', 'db-username', 'db-password', 'db-schema']:
+        if not arg in args:
+            args[arg] = getattr( argsps, arg )
+
+    if "dry_run" in args:
+        print "Running in dry-run mode"
+    else:
+        if "parse-resource-urls" in argsps:
+            parse_resource_urls( 'https://old.datahub.io/dataset/museums-in-italy', argsps['dry-run'] )
+        else:
+            print "Terminated"
 
 # -----------------
 #
