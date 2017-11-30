@@ -54,6 +54,10 @@ def parse_resource_urls( datahub_url, dry_run=False ):
             log.debug( 'Parsing datapackage.json' )
             dp = json.load( file )
 
+            if 'name' in dp:
+                name = dp['name']
+                os.popen( 'mv datapackage.json datapackage_'+ name +'.json' )
+
             if not dp['resources']:
                 log.error( '"resources" does not exist for %s', datahub_url )
                 # TODO create error message and exit
@@ -68,7 +72,7 @@ def parse_resource_urls( datahub_url, dry_run=False ):
                     continue
 
                 attr = re.sub( r'[+/ ]', '_', r['format'] )
-                log.debug( 'Found format "%s".. saving', attr )
+                log.info( 'Found format "%s".. saving', attr )
 
                 save_value( cur, datahub_url, attr, r['url'], False )
 
