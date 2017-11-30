@@ -43,8 +43,8 @@ def save_value( cur, datahub_url, attribute, value, check=True ):
 def parse_resource_urls( datahub_url, dry_run=False ):
     ```parse_resource_urls```
 
-    log.debug( 'cURLing datapackage.json from %s', datahub_url +'/datapackage.json' )
-    os.popen( 'curl -L "'+ datahub_url +'/datapackage.json" -o datapackage.json ' )
+    log.info( 'cURLing datapackage.json from %s', datahub_url +'/datapackage.json' )
+    os.popen( 'curl -s -L "'+ datahub_url +'/datapackage.json" -o datapackage.json ' )
     # TODO ensure the process succeeds
 
     datapackage = './datapackage.json'
