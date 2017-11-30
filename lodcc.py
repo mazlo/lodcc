@@ -14,6 +14,7 @@ import argparse
 import json
 import logging as log
 import psycopg2
+import sys
 
 def ensure_db_schema_complete( cur, attr ):
     ```ensure_db_schema_complete```
@@ -126,28 +127,28 @@ def save_stats( stats, sid ):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
-    parser.add_argument( '--parse-resource-urls', '-u', action = "store", type = bool, help = '', default = False )
-    parser.add_argument( '--dry-run', '-d', action = "store", type = bool, help = '', default = False )
-    parser.add_argument( '--log-level', '-l', action = "store", type = str, help = '', default = 'info' )
+    parser.add_argument( '--parse-resource-urls', '-u', action = "store_true", help = '' )
+    parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
+    parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
+    parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
 
     # read all properties in file into args-dict
     if os.path.isfile( 'db.properties' ):
         with open( 'db.properties', 'rt' ) as f:
             args = dict( ( key.replace( '.', '-' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) )
     else:
-        parser.add_argument( '--db-host', '-H', action = "store", type = str, help = '', default = "localhost" )
-        parser.add_argument( '--db-user', '-U', action = "store", type = str, help = '', default = "zlochms" )
-        parser.add_argument( '--db-password', '-P', action = "store", type = str, help = '', default = "zlochms" )
-        parser.add_argument( '--db-dbname', '-S', action = "store", type = str, help = '', default = "zlochms" )
+        log.error( 'Please verify your settings in db.properties (file exists?)' )
+        sys.exit()
 
-    argsps = parser.parse_args()
-
-    for arg in ['log_level', 'dry_run', 'db-host', 'db-user', 'db-password', 'db-dbname']:
-        if not arg in args:
-            args[arg] = getattr( argsps, arg )
-
-    log.basicConfig( level = log.INFO if args['log_level'] == 'info' else log.DEBUG, format = '%(levelname)s %(asctime)s %(message)s', )
-
+    z = vars( parser.parse_args() ).copy()
+    z.update( args )
+    args = z
+    
+    if args['log_level_debug']:
+        log.basicConfig( level = log.DEBUG, format = '%(levelname)s %(asctime)s %(message)s', )
+    elif args['log_level_info']:
+        log.basicConfig( level = log.INFO, format = '%(levelname)s %(asctime)s %(message)s', )
+    
     # connect to an existing database
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
     cur = conn.cursor()
