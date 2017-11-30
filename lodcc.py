@@ -167,16 +167,21 @@ if __name__ == '__main__':
         raise 
 
     # option 1
-    if "parse_resource_urls" in argsps:
+    if "parse_resource_urls" in args:
         if "dry_run" in args:
             log.info( 'Running in dry-run mode' )
             log.info( 'Using example dataset "Museums in Italy"' )
     
             parse_resource_urls( 'https://old.datahub.io/dataset/museums-in-italy', True )
+            conn.commit()
         else:
-            log.warn( 'not yet implemented. terminating' )
-
-    conn.commit()
+            cur.execute( 'SELECT id, url FROM stats' )
+            datasets_to_fetch = cur.fetchall()
+            
+            for ds in datasets_to_fetch:
+                log.info( 'Prepare %s ', ds[1] )
+                parse_resource_urls( ds[1] )
+                conn.commit()
 
     # close communication with the database
     cur.close()
