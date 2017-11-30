@@ -171,6 +171,8 @@ if __name__ == '__main__':
         else:
             log.warn( 'not yet implemented. terminating' )
 
+    conn.commit()
+
     # close communication with the database
     cur.close()
     conn.close()
