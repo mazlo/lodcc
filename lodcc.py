@@ -15,22 +15,16 @@ import json
 import logging as log
 import psycopg2
 
-def ensure_db_schema_complete( r, cur ):
+def ensure_db_schema_complete( cur, attr ):
     ```ensure_db_schema_complete```
 
     cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = 'stats';" )
 
-    if not 'format' in r:
-        log.error( '"resources" element is missing "format" attribute. cannot save this value' )
-        # TODO create error message and exit
-        return False;
+    if attr not in [ elem[0] for elem in cur.fetchall() ]:
+        log.info( 'Creating missing attribute %s', attr )
+        cur.execute( "ALTER TABLE stats ADD COLUMN "+ attr +" varchar;" )
 
-    attr = re.sub( r'[+/]', '_', r['format'] )
-    log.debug( 'Found %s format', attr )
-    if attr not in cur.fetchall():
-        log.info( 'Create missing column %s', attr )
-        cur.execute( "ALTER TABLE stats ADD COLUMN "+ attr +" varchar(16);" )
-
+    log.debug( 'Found %s-attribute', attr )
     return attr
 
 def save_value( cur, datahub_url, attribute, value, check=True ):
@@ -39,9 +33,11 @@ def save_value( cur, datahub_url, attribute, value, check=True ):
     if check and not value:
         # TODO create warning message
         log.warn( 'no value for attribute '+ attribute +'. could not save' )
-    else:
-        log.info( 'Saving value "%s" for attribute "%s" for url "%s"', value, attribute, datahub_url )
-        cur.execute( 'UPDATE stats SET '+ attribute +'="'+ value +'" WHERE url = "'+ datahub_url +'";' )
+        return
+    
+    ensure_db_schema_complete( cur, attribute )
+    log.debug( 'Saving value "%s" for attribute "%s" for url "%s"', value, attribute, datahub_url )
+    cur.execute( 'UPDATE stats SET '+ attribute +' = %s WHERE url = %s;', ( value, datahub_url ) )
 
 def parse_resource_urls( datahub_url, dry_run=False ):
     ```parse_resource_urls```
@@ -62,18 +58,19 @@ def parse_resource_urls( datahub_url, dry_run=False ):
                 # TODO create error message and exit
                 return None
 
-            log.debug( 'Found "resources" attribute. reading' )
+            log.debug( 'Found resources-object. reading' )
             for r in dp['resources']:
-                attr = ensure_db_schema_complete( r, cur )
 
-                if not attr:
+                if not 'format' in r:
+                    log.error( 'resources-object is missing format-property. cannot save this value' )
+                    # TODO create error message and exit
                     continue
 
-                log.debug( 'Found %s-attribute', attr )
+                attr = re.sub( r'[+/ ]', '_', r['format'] )
+                log.debug( 'Found format "%s".. saving', attr )
 
-                save_value( cur, datahub_url, dp, attr, r['url'], False )
+                save_value( cur, datahub_url, attr, r['url'], False )
 
-            save_value( cur, datahub_url, 'name', dp['name'] if 'name' in dp else None )
             save_value( cur, datahub_url, 'keywords', dp['keywords'] if 'keywords' in dp else None )
             # save whole datapackage.json in column
             save_value( cur, datahub_url, 'datapackage_content', str( json.dumps( dp ) ), False )
