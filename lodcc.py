@@ -46,22 +46,28 @@ def save_value( cur, dataset_id, datahub_url, attribute, value, check=True ):
 def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
     ```parse_resource_urls```
 
-    log.info( 'cURLing datapackage.json from %s', datahub_url +'/datapackage.json' )
-    os.popen( 'curl -s -L "'+ datahub_url +'/datapackage.json" -o datapackage.json ' )
-    # TODO ensure the process succeeds
+    dp = None
 
-    datapackage = './datapackage.json'
-    with open( datapackage, 'r' ) as file:
+    datapackage_filename = 'datapackage_'+ name +'.json'
+    if not os.path.isfile( datapackage_filename ):
+        log.info( 'cURLing datapackage.json for %s', name )
+        os.popen( 'curl -s -L "'+ datahub_url +'/datapackage.json" -o '+ datapackage_filename )
+        # TODO ensure the process succeeds
+    else:
+        log.info( 'Using local datapackage.json for %s', name )
 
+    with open( 'datapackage_'+ name +'.json', 'r' ) as file:
         try:
             log.debug( 'Parsing datapackage.json' )
             dp = json.load( file )
 
             if 'name' in dp:
                 name = dp['name']
-                os.popen( 'mv datapackage.json datapackage_'+ name +'.json' )
+                save_value( cur, dataset_id, datahub_url, 'name', name )
+            else:
+                log.warn( 'No name-property given. File will be saved in datapackage.json' )
 
-            if not dp['resources']:
+            if not 'resources' in dp:
                 log.error( '"resources" does not exist for %s', datahub_url )
                 # TODO create error message and exit
                 return None
@@ -74,7 +80,7 @@ def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
                     # TODO create error message and exit
                     continue
 
-                attr = re.sub( r'[+/ ]', '_', r['format'] )
+                attr = re.sub( r'[+-:/*|<> ]', '_', r['format'] )
                 log.info( 'Found format "%s".. saving', attr )
 
                 save_value( cur, dataset_id, datahub_url, attr, r['url'] )
@@ -170,12 +176,22 @@ if __name__ == '__main__':
         raise 
 
     # option 1
-    if "parse_resource_urls" in args:
-        if "dry_run" in args:
+    if args['parse_resource_urls']:
+        if args['dry_run']:
             log.info( 'Running in dry-run mode' )
             log.info( 'Using example dataset "Museums in Italy"' )
     
-            parse_resource_urls( 'https://old.datahub.io/dataset/museums-in-italy', True )
+            cur.execute( 'SELECT id, url, name FROM stats WHERE url = %s LIMIT 1', ('https://old.datahub.io/dataset/museums-in-italy') )
+            
+            if cur.rowcount == 0:
+                log.error( 'Example dataset not found. Is the database filled?' )
+                sys.exit()
+
+            ds = cur.fetchall()[0]
+
+            log.info( 'Preparing %s ', ds[2] )
+            parse_resource_urls( ds[0], ds[1], ds[2], True )
+
             conn.commit()
         else:
             cur.execute( 'SELECT id, url, name FROM stats' )
