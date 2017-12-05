@@ -19,9 +19,11 @@ import sys
 def ensure_db_schema_complete( cur, attr ):
     ```ensure_db_schema_complete```
 
-    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = 'stats';" )
+    attr = attr.strip().lower()
+    log.debug( 'Checking if column %s exists', attr )
+    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", ('stats', attr) )
 
-    if attr not in [ elem[0] for elem in cur.fetchall() ]:
+    if cur.rowcount == 0:
         log.info( 'Creating missing attribute %s', attr )
         cur.execute( "ALTER TABLE stats ADD COLUMN "+ attr +" varchar;" )
 
