@@ -30,7 +30,7 @@ def ensure_db_schema_complete( cur, attr ):
     log.debug( 'Found %s-attribute', attr )
     return attr
 
-def save_value( cur, datahub_url, attribute, value, check=True ):
+def save_value( cur, dataset_id, datahub_url, attribute, value, check=True ):
     ```save_value```
 
     if check and not value:
@@ -39,10 +39,11 @@ def save_value( cur, datahub_url, attribute, value, check=True ):
         return
     
     ensure_db_schema_complete( cur, attribute )
+    
     log.debug( 'Saving value "%s" for attribute "%s" for url "%s"', value, attribute, datahub_url )
-    cur.execute( 'UPDATE stats SET '+ attribute +' = %s WHERE url = %s;', ( value, datahub_url ) )
+    cur.execute( 'UPDATE stats SET '+ attribute +' = %s WHERE id = %s;', ( value, dataset_id ) )
 
-def parse_resource_urls( datahub_url, dry_run=False ):
+def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
     ```parse_resource_urls```
 
     log.info( 'cURLing datapackage.json from %s', datahub_url +'/datapackage.json' )
@@ -76,11 +77,11 @@ def parse_resource_urls( datahub_url, dry_run=False ):
                 attr = re.sub( r'[+/ ]', '_', r['format'] )
                 log.info( 'Found format "%s".. saving', attr )
 
-                save_value( cur, datahub_url, attr, r['url'], False )
+                save_value( cur, dataset_id, datahub_url, attr, r['url'] )
 
-            save_value( cur, datahub_url, 'keywords', dp['keywords'] if 'keywords' in dp else None )
+            save_value( cur, dataset_id, datahub_url, 'keywords', dp['keywords'] if 'keywords' in dp else None )
             # save whole datapackage.json in column
-            save_value( cur, datahub_url, 'datapackage_content', str( json.dumps( dp ) ), False )
+            save_value( cur, dataset_id, datahub_url, 'datapackage_content', str( json.dumps( dp ) ) )
 
         except:
             # TODO create error message and exit
@@ -177,12 +178,12 @@ if __name__ == '__main__':
             parse_resource_urls( 'https://old.datahub.io/dataset/museums-in-italy', True )
             conn.commit()
         else:
-            cur.execute( 'SELECT id, url FROM stats' )
+            cur.execute( 'SELECT id, url, name FROM stats' )
             datasets_to_fetch = cur.fetchall()
             
             for ds in datasets_to_fetch:
-                log.info( 'Prepare %s ', ds[1] )
-                parse_resource_urls( ds[1] )
+                log.info( 'Preparing %s ', ds[2] )
+                parse_resource_urls( ds[0], ds[1], ds[2] )
                 conn.commit()
 
     # close communication with the database
