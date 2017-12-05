@@ -30,15 +30,25 @@ def ensure_db_schema_complete( cur, attr ):
     log.debug( 'Found %s-attribute', attr )
     return attr
 
+def ensure_db_record_is_unique( cur, name, attribute, value ):
+    ```ensure_db_record_is_unique```
+
+    cur.execute( 'SELECT id FROM stats WHERE name = %s AND (%s IS NOT NULL OR %s <> "")', (name,attribute,attribute))
+
+    if cur.rowcount != 0:
+        cur.execute( 'INSERT INTO stats (id,name,title,%s) VALUES (default, %s, %s, %s) RETURNING id', (attribute, name, title, value) )
+
 def save_value( cur, dataset_id, datahub_url, attribute, value, check=True ):
     ```save_value```
+
+    ensure_db_schema_complete( cur, attribute )
 
     if check and not value:
         # TODO create warning message
         log.warn( 'no value for attribute '+ attribute +'. could not save' )
         return
-    
-    ensure_db_schema_complete( cur, attribute )
+    else if check:
+        ensure_db_record_is_unique( curr, attribute, value )
     
     log.debug( 'Saving value "%s" for attribute "%s" for url "%s"', value, attribute, datahub_url )
     cur.execute( 'UPDATE stats SET '+ attribute +' = %s WHERE id = %s;', ( value, dataset_id ) )
