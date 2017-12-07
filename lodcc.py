@@ -45,6 +45,27 @@ def ensure_db_record_is_unique( cur, name, attribute, value ):
 
         return cur.fetchone()[0]
 
+def ensure_attribute_is_valid( r ):
+    ```ensure_attribute_is_valid```
+
+    if not 'format' in r:
+        log.error( 'resources-object is missing format-property. Cannot save this value' )
+        # TODO create error message and exit
+        return None
+
+    attribute = re.sub( r'[+-:/\*|<> ]', '_', r['format'] )  # replace special character in format-attribute with _
+    attribute = re.sub( r'^_+', '', attribute )  # replace leading _
+    attribute = re.sub( r'_+$', '', attribute )  # replace trailing _
+    attribute = re.sub( r'__*', '_', attribute )  # replace double __
+
+    if not attribute:
+        log.error( 'Format is not valid after cleanup, original: %s. Will continue with next resource', r['format'] )
+        return None
+
+    log.info( 'Found format "%s".. saving', attribute )
+
+    return attribute
+
 def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
     ```save_value```
 
@@ -52,7 +73,7 @@ def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
 
     if check and not value:
         # TODO create warning message
-        log.warn( 'no value for attribute '+ attribute +'. could not save' )
+        log.warn( 'No value for attribute '+ attribute +'. Cannot save' )
         return
     elif check:
         # returns the id of the row to be updated
@@ -93,13 +114,10 @@ def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
             log.debug( 'Found resources-object. reading' )
             for r in dp['resources']:
 
-                if not 'format' in r:
-                    log.error( 'resources-object is missing format-property. cannot save this value' )
-                    # TODO create error message and exit
-                    continue
+                attr = ensure_attribute_is_valid( r )
 
-                attr = re.sub( r'[+-:/\*|<> ]', '_', r['format'] )
-                log.info( 'Found format "%s".. saving', attr )
+                if not attr:
+                    continue
 
                 save_value( cur, dataset_id, name, attr, r['url'], True )
 
