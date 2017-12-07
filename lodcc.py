@@ -40,7 +40,7 @@ def ensure_db_record_is_unique( cur, name, attribute, value ):
         return cur.fetchone()[0]
     else:
         # insert new row and return the id of the row to be updated
-        log.info( 'Attribute %s not unique for "%s". Will creating a new row.', attribute, name )
+        log.info( 'Attribute %s not unique for "%s". Will create a new row.', attribute, name )
         cur.execute( 'INSERT INTO stats (id, name, '+ attribute +') VALUES (default, %s, %s) RETURNING id', (name, value) )
 
         return cur.fetchone()[0]
