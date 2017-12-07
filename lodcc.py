@@ -33,12 +33,19 @@ def ensure_db_schema_complete( cur, attr ):
 def ensure_db_record_is_unique( cur, name, attribute, value ):
     ```ensure_db_record_is_unique```
 
-    cur.execute( 'SELECT id FROM stats WHERE name = %s AND (%s IS NOT NULL OR %s <> "")', (name,attribute,attribute))
+    cur.execute( 'SELECT id FROM stats WHERE name = %s AND ('+ attribute +' IS NULL OR '+ attribute +' = %s)', (name, "") )
 
     if cur.rowcount != 0:
-        cur.execute( 'INSERT INTO stats (id,name,title,%s) VALUES (default, %s, %s, %s) RETURNING id', (attribute, name, title, value) )
+        # returns the id of the row to be updated
+        return cur.fetchone()[0]
+    else:
+        # insert new row and return the id of the row to be updated
+        log.info( 'Attribute %s not unique for "%s". Will creating a new row.', attribute, name )
+        cur.execute( 'INSERT INTO stats (id, name, '+ attribute +') VALUES (default, %s, %s) RETURNING id', (name, value) )
 
-def save_value( cur, dataset_id, datahub_url, attribute, value, check=True ):
+        return cur.fetchone()[0]
+
+def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
     ```save_value```
 
     ensure_db_schema_complete( cur, attribute )
@@ -47,10 +54,11 @@ def save_value( cur, dataset_id, datahub_url, attribute, value, check=True ):
         # TODO create warning message
         log.warn( 'no value for attribute '+ attribute +'. could not save' )
         return
-    else if check:
-        ensure_db_record_is_unique( curr, attribute, value )
+    elif check:
+        # returns the id of the row to be updated
+        dataset_id = ensure_db_record_is_unique( cur, dataset_name, attribute, value )
     
-    log.debug( 'Saving value "%s" for attribute "%s" for url "%s"', value, attribute, datahub_url )
+    log.debug( 'Saving value "%s" for attribute "%s" for "%s"', value, attribute, dataset_name )
     cur.execute( 'UPDATE stats SET '+ attribute +' = %s WHERE id = %s;', ( value, dataset_id ) )
 
 def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
@@ -73,12 +81,12 @@ def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
 
             if 'name' in dp:
                 name = dp['name']
-                save_value( cur, dataset_id, datahub_url, 'name', name )
+                save_value( cur, dataset_id, name, 'name', name, False )
             else:
                 log.warn( 'No name-property given. File will be saved in datapackage.json' )
 
             if not 'resources' in dp:
-                log.error( '"resources" does not exist for %s', datahub_url )
+                log.error( '"resources" does not exist for %s', name )
                 # TODO create error message and exit
                 return None
 
@@ -93,11 +101,11 @@ def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
                 attr = re.sub( r'[+-:/*|<> ]', '_', r['format'] )
                 log.info( 'Found format "%s".. saving', attr )
 
-                save_value( cur, dataset_id, datahub_url, attr, r['url'] )
+                save_value( cur, dataset_id, name, attr, r['url'], True )
 
-            save_value( cur, dataset_id, datahub_url, 'keywords', dp['keywords'] if 'keywords' in dp else None )
+            save_value( cur, dataset_id, name, 'keywords', dp['keywords'] if 'keywords' in dp else None, False )
             # save whole datapackage.json in column
-            save_value( cur, dataset_id, datahub_url, 'datapackage_content', str( json.dumps( dp ) ) )
+            save_value( cur, dataset_id, name, 'datapackage_content', str( json.dumps( dp ) ), False )
 
         except:
             # TODO create error message and exit
