@@ -16,6 +16,8 @@ import logging as log
 import psycopg2
 import sys
 
+format_mappings = dict()
+
 def ensure_db_schema_complete( cur, attr ):
     ```ensure_db_schema_complete```
 
@@ -45,6 +47,11 @@ def ensure_db_record_is_unique( cur, name, attribute, value ):
 
         return cur.fetchone()[0]
 
+def ensure_attribute_in_dictionary():
+    ```ensure_attribute_in_dictionary```
+
+
+
 def ensure_attribute_is_valid( r ):
     ```ensure_attribute_is_valid```
 
@@ -61,6 +68,8 @@ def ensure_attribute_is_valid( r ):
     if not attribute:
         log.error( 'Format is not valid after cleanup, original: %s. Will continue with next resource', r['format'] )
         return None
+
+    attribute = ensure_attribute_in_dictionary( attribute )
 
     log.info( 'Found format "%s".. saving', attribute )
 
@@ -198,6 +207,11 @@ if __name__ == '__main__':
     elif args['log_level_info']:
         log.basicConfig( level = log.INFO, format = '%(levelname)s %(asctime)s %(message)s', )
     
+    # read all format mappings
+    if os.path.isfile( 'formats.properties' ):
+        with open( 'formats.properties', 'rt' ) as f:
+            format_mappings = dict ( ( key, value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) )
+
     # connect to an existing database
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
     cur = conn.cursor()
