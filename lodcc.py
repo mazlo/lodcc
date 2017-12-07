@@ -98,7 +98,7 @@ def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
                     # TODO create error message and exit
                     continue
 
-                attr = re.sub( r'[+-:/*|<> ]', '_', r['format'] )
+                attr = re.sub( r'[+-:/\*|<> ]', '_', r['format'] )
                 log.info( 'Found format "%s".. saving', attr )
 
                 save_value( cur, dataset_id, name, attr, r['url'], True )
