@@ -53,7 +53,7 @@ def ensure_attribute_is_valid( r ):
         # TODO create error message and exit
         return None
 
-    attribute = re.sub( r'[+-:/\*|<> ]', '_', r['format'] )  # replace special character in format-attribute with _
+    attribute = re.sub( r'[+\-:\/\*\|\<\> ]', '_', r['format'] )  # replace special character in format-attribute with _
     attribute = re.sub( r'^_+', '', attribute )  # replace leading _
     attribute = re.sub( r'_+$', '', attribute )  # replace trailing _
     attribute = re.sub( r'__*', '_', attribute )  # replace double __
