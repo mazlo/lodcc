@@ -63,20 +63,21 @@ def ensure_format_is_valid( r ):
         # TODO create error message and exit
         return None
 
-    attribute = re.sub( r'[+\-:\/\*\|\<\> ]', '_', r['format'] )  # replace special character in format-attribute with _
-    attribute = re.sub( r'^_+', '', attribute )  # replace leading _
-    attribute = re.sub( r'_+$', '', attribute )  # replace trailing _
-    attribute = re.sub( r'__*', '_', attribute )  # replace double __
+    format_ = r['format'].strip().lower()
+    format_ = re.sub( r'[^a-zA-Z0-9]', '_', format_ )  # replace special character in format-attribute with _
+    format_ = re.sub( r'^_+', '', format_ )  # replace leading _
+    format_ = re.sub( r'_+$', '', format_ )  # replace trailing _
+    format_ = re.sub( r'__*', '_', format_ )  # replace double __
 
-    if not attribute:
+    if not format_:
         log.error( 'Format is not valid after cleanup, original: %s. Will continue with next resource', r['format'] )
         return None
 
-    attribute = ensure_attribute_in_dictionary( attribute )
+    format_ = ensure_format_in_dictionary( format_ )
 
-    log.info( 'Found format "%s".. saving', attribute )
+    log.info( 'Found valid format "%s"', format_ )
 
-    return attribute
+    return format_
 
 def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
     ```save_value```
