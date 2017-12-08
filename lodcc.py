@@ -18,19 +18,18 @@ import sys
 
 format_mappings = {}
 
-def ensure_db_schema_complete( cur, attr ):
+def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
 
-    attr = attr.strip().lower()
-    log.debug( 'Checking if column %s exists', attr )
-    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", ('stats', attr) )
+    log.debug( 'Checking if column %s exists', attribute )
+    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", ('stats', attribute) )
 
     if cur.rowcount == 0:
-        log.info( 'Creating missing attribute %s', attr )
-        cur.execute( "ALTER TABLE stats ADD COLUMN "+ attr +" varchar;" )
+        log.info( 'Creating missing attribute %s', attribute )
+        cur.execute( "ALTER TABLE stats ADD COLUMN "+ attribute +" varchar;" )
 
-    log.debug( 'Found %s-attribute', attr )
-    return attr
+    log.debug( 'Found %s-attribute', attribute )
+    return attribute
 
 def ensure_db_record_is_unique( cur, name, attribute, value ):
     ```ensure_db_record_is_unique```
@@ -52,8 +51,8 @@ def ensure_attribute_in_dictionary():
 
 
 
-def ensure_attribute_is_valid( r ):
-    ```ensure_attribute_is_valid```
+def ensure_format_is_valid( r ):
+    ```ensure_format_is_valid```
 
     if not 'format' in r:
         log.error( 'resources-object is missing format-property. Cannot save this value' )
@@ -123,12 +122,12 @@ def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
             log.debug( 'Found resources-object. reading' )
             for r in dp['resources']:
 
-                attr = ensure_attribute_is_valid( r )
+                format_ = ensure_format_is_valid( r )
 
-                if not attr:
+                if not format_:
                     continue
 
-                save_value( cur, dataset_id, name, attr, r['url'], True )
+                save_value( cur, dataset_id, name, format_, r['url'], True )
 
             save_value( cur, dataset_id, name, 'keywords', dp['keywords'] if 'keywords' in dp else None, False )
             # save whole datapackage.json in column
