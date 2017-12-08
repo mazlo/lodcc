@@ -16,7 +16,7 @@ import logging as log
 import psycopg2
 import sys
 
-format_mappings = dict()
+format_mappings = {}
 
 def ensure_db_schema_complete( cur, attr ):
     ```ensure_db_schema_complete```
@@ -210,7 +210,10 @@ if __name__ == '__main__':
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
         with open( 'formats.properties', 'rt' ) as f:
-            format_mappings = dict ( ( key, value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) )
+            # reads all lines and splits it so that we got a list of lists
+            parts = list( re.split( "[=, ]+", option ) for option in ( line.strip() for line in f ) if option and not option.startswith( '#' ))
+            # creates a hashmap from each multimappings
+            format_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
 
     # connect to an existing database
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
