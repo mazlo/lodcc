@@ -16,19 +16,20 @@ import logging as log
 import psycopg2
 import sys
 
-def ensure_db_schema_complete( cur, attr ):
+format_mappings = {}
+
+def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
 
-    attr = attr.strip().lower()
-    log.debug( 'Checking if column %s exists', attr )
-    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", ('stats', attr) )
+    log.debug( 'Checking if column %s exists', attribute )
+    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", ('stats', attribute) )
 
     if cur.rowcount == 0:
-        log.info( 'Creating missing attribute %s', attr )
-        cur.execute( "ALTER TABLE stats ADD COLUMN "+ attr +" varchar;" )
+        log.info( 'Creating missing attribute %s', attribute )
+        cur.execute( "ALTER TABLE stats ADD COLUMN "+ attribute +" varchar;" )
 
-    log.debug( 'Found %s-attribute', attr )
-    return attr
+    log.debug( 'Found %s-attribute', attribute )
+    return attribute
 
 def ensure_db_record_is_unique( cur, name, attribute, value ):
     ```ensure_db_record_is_unique```
@@ -45,6 +46,39 @@ def ensure_db_record_is_unique( cur, name, attribute, value ):
 
         return cur.fetchone()[0]
 
+def ensure_format_in_dictionary( format_ ):
+    ```ensure_format_in_dictionary```
+
+    if format_ in format_mappings:
+        log.info( 'Format %s will be mapped to %s', format_, format_mappings[format_] )
+        return format_mappings[format_]
+
+    return format_
+
+def ensure_format_is_valid( r ):
+    ```ensure_format_is_valid```
+
+    if not 'format' in r:
+        log.error( 'resources-object is missing format-property. Cannot save this value' )
+        # TODO create error message and exit
+        return None
+
+    format_ = r['format'].strip().lower()
+    format_ = re.sub( r'[^a-zA-Z0-9]', '_', format_ )  # replace special character in format-attribute with _
+    format_ = re.sub( r'^_+', '', format_ )  # replace leading _
+    format_ = re.sub( r'_+$', '', format_ )  # replace trailing _
+    format_ = re.sub( r'__*', '_', format_ )  # replace double __
+
+    if not format_:
+        log.error( 'Format is not valid after cleanup, original: %s. Will continue with next resource', r['format'] )
+        return None
+
+    format_ = ensure_format_in_dictionary( format_ )
+
+    log.info( 'Found valid format "%s"', format_ )
+
+    return format_
+
 def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
     ```save_value```
 
@@ -52,7 +86,7 @@ def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
 
     if check and not value:
         # TODO create warning message
-        log.warn( 'no value for attribute '+ attribute +'. could not save' )
+        log.warn( 'No value for attribute '+ attribute +'. Cannot save' )
         return
     elif check:
         # returns the id of the row to be updated
@@ -93,15 +127,12 @@ def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
             log.debug( 'Found resources-object. reading' )
             for r in dp['resources']:
 
-                if not 'format' in r:
-                    log.error( 'resources-object is missing format-property. cannot save this value' )
-                    # TODO create error message and exit
+                format_ = ensure_format_is_valid( r )
+
+                if not format_:
                     continue
 
-                attr = re.sub( r'[+-:/*|<> ]', '_', r['format'] )
-                log.info( 'Found format "%s".. saving', attr )
-
-                save_value( cur, dataset_id, name, attr, r['url'], True )
+                save_value( cur, dataset_id, name, format_, r['url'], True )
 
             save_value( cur, dataset_id, name, 'keywords', dp['keywords'] if 'keywords' in dp else None, False )
             # save whole datapackage.json in column
@@ -180,6 +211,14 @@ if __name__ == '__main__':
     elif args['log_level_info']:
         log.basicConfig( level = log.INFO, format = '%(levelname)s %(asctime)s %(message)s', )
     
+    # read all format mappings
+    if os.path.isfile( 'formats.properties' ):
+        with open( 'formats.properties', 'rt' ) as f:
+            # reads all lines and splits it so that we got a list of lists
+            parts = list( re.split( "[=, ]+", option ) for option in ( line.strip() for line in f ) if option and not option.startswith( '#' ))
+            # creates a hashmap from each multimappings
+            format_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
+
     # connect to an existing database
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
     cur = conn.cursor()
