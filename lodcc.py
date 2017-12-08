@@ -46,10 +46,14 @@ def ensure_db_record_is_unique( cur, name, attribute, value ):
 
         return cur.fetchone()[0]
 
-def ensure_attribute_in_dictionary():
-    ```ensure_attribute_in_dictionary```
+def ensure_format_in_dictionary( format_ ):
+    ```ensure_format_in_dictionary```
 
+    if format_ in format_mappings:
+        log.info( 'Format %s will be mapped to %s', format_, format_mappings[format_] )
+        return format_mappings[format_]
 
+    return format_
 
 def ensure_format_is_valid( r ):
     ```ensure_format_is_valid```
