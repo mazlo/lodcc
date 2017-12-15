@@ -95,8 +95,8 @@ def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
     log.debug( 'Saving value "%s" for attribute "%s" for "%s"', value, attribute, dataset_name )
     cur.execute( 'UPDATE stats SET '+ attribute +' = %s WHERE id = %s;', ( value, dataset_id ) )
 
-def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
-    ```parse_resource_urls```
+def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
+    ```parse_datapackages```
 
     dp = None
 
@@ -189,7 +189,8 @@ def save_stats( stats, sid ):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
-    parser.add_argument( '--parse-resource-urls', '-u', action = "store_true", help = '' )
+    parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
+    parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
@@ -233,7 +234,7 @@ if __name__ == '__main__':
         raise 
 
     # option 1
-    if args['parse_resource_urls']:
+    if args['parse_datapackages']:
         if args['dry_run']:
             log.info( 'Running in dry-run mode' )
             log.info( 'Using example dataset "Museums in Italy"' )
@@ -247,7 +248,7 @@ if __name__ == '__main__':
             ds = cur.fetchall()[0]
 
             log.info( 'Preparing %s ', ds[2] )
-            parse_resource_urls( ds[0], ds[1], ds[2], True )
+            parse_datapackages( ds[0], ds[1], ds[2], True )
 
             conn.commit()
         else:
@@ -256,7 +257,7 @@ if __name__ == '__main__':
             
             for ds in datasets_to_fetch:
                 log.info( 'Preparing %s ', ds[2] )
-                parse_resource_urls( ds[0], ds[1], ds[2] )
+                parse_datapackages( ds[0], ds[1], ds[2] )
                 conn.commit()
 
     # close communication with the database
