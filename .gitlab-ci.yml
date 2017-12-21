@@ -3,7 +3,7 @@ image: python:2-alpine
 test:
   stage: test
   script:
-    - apk add postgresql-dev # for postgres-config
+    - apk add postgresql-dev --no-cache # for postgres-config
     - pip install -r requirements.txt
     - python -m unittest test_lodcc
   only:
