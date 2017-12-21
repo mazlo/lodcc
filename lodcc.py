@@ -18,11 +18,11 @@ import threading
 import sys
 import urlparse
 
-format_mappings = {}
-format_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.nt' }
-
 APPLICATION_N_TRIPLES = 'application_n_triples'
 APPLICATION_RDF_XML = 'application_rdf_xml'
+
+format_mappings = {}
+format_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.nt' } }
 
 def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
@@ -160,21 +160,24 @@ def download_prepare( dataset ):
 
     # n-triples
     if dataset[2]:
+        log.info( 'Using format APPLICATION_N_TRIPLES with url %s', dataset[2] )
         return ( dataset[2], APPLICATION_N_TRIPLES )
 
     # rdf+xml
-    else if dataset[3]:
-        return ( dataset[2], APPLICATION_RDF_XML )
+    elif dataset[3]:
+        log.info( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
+        return ( dataset[3], APPLICATION_RDF_XML )
 
     # more to follow
 
 def ensure_valid_filename_from_url( dataset, url, format_ ):
     ```ensure_valid_filename_from_url```
 
+    log.debug( 'Parsing filename from %s', url )
     # transforms e.g. "https://drive.google.com/file/d/0B8VUbXki5Q0ibEIzbkUxSnQ5Ulk/dump.tar.gz?usp=sharing" 
     # into "dump.tar.gz"
     url = urlparse.urlparse( url )
-    basename = os.path.basename( url )
+    basename = os.path.basename( url.path )
 
     if basename == '' or basename == 'view' or basename == 'index':
         filename = 'dump_'+ dataset['name'] + format_to_command[format_].extension
@@ -212,7 +215,7 @@ def start_job( dataset, sem ):
         # - build_graph_analyse
 
 
-def parse_resource_urls( cur, no_of_threads ):
+def parse_resource_urls( cur, no_of_threads=1 ):
     ```parse_resource_urls```
 
     datasets = cur.fetchall()
@@ -227,8 +230,9 @@ def parse_resource_urls( cur, no_of_threads ):
 
     for dataset in datasets:
         
+        log.debug( 'Starting job for %s', dataset )
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = start_job, name = 'Thread: '+ dataset['name'], args = ( dataset, sem ) )
+        t = threading.Thread( target = start_job, name = 'Thread: '+ dataset[1], args = ( dataset, sem ) )
         t.start()
 
         threads.append( t )
@@ -255,7 +259,7 @@ if __name__ == '__main__':
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
-    parser.add_argument( '--threads', '-pt', required = false, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
+    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
     # read all properties in file into args-dict
     if os.path.isfile( 'db.properties' ):
