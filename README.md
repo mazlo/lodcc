@@ -1,0 +1,1 @@
+[![pipeline status](https://git.gesis.org/matthaeus/lodcc/badges/master/pipeline.svg)](https://git.gesis.org/matthaeus/lodcc/commits/master)
