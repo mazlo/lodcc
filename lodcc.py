@@ -20,6 +20,7 @@ import urlparse
 
 APPLICATION_N_TRIPLES = 'application_n_triples'
 APPLICATION_RDF_XML = 'application_rdf_xml'
+APPLICATION_UNKNOWN = 'unknown'
 
 format_mappings = {}
 format_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.rdf' } }
@@ -156,6 +157,10 @@ def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
 def download_prepare( dataset ):
     ```download_prepare```
 
+    if not dataset:
+        log.error( 'dataset is None' )
+        return ( None, APPLICATION_UNKNOWN )
+
     # id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads
 
     # n-triples
@@ -170,6 +175,9 @@ def download_prepare( dataset ):
 
     # more to follow
 
+    else:
+        return ( None, APPLICATION_UNKNOWN )
+    
 def ensure_valid_filename_from_url( dataset, url, format_ ):
     ```ensure_valid_filename_from_url```
 
@@ -210,6 +218,10 @@ def start_job( dataset, sem ):
     with sem:
         # - download_prepare
         url, format_ = download_prepare( dataset )
+
+        if format_ == APPLICATION_UNKNOWN:
+            log.error( 'Could not continue due to unknown format. %s', dataset['name'] )
+            return
 
         # - download_data
         filename = download_data( dataset, url, format_ )
