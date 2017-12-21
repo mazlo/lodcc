@@ -22,7 +22,7 @@ APPLICATION_N_TRIPLES = 'application_n_triples'
 APPLICATION_RDF_XML = 'application_rdf_xml'
 
 format_mappings = {}
-format_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.nt' } }
+format_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.rdf' } }
 
 def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
@@ -173,15 +173,19 @@ def download_prepare( dataset ):
 def ensure_valid_filename_from_url( dataset, url, format_ ):
     ```ensure_valid_filename_from_url```
 
+    if not url:
+        log.warn( 'No url given for %s. Cannot determine filename.', dataset['name'] )
+        return None
+
     log.debug( 'Parsing filename from %s', url )
     # transforms e.g. "https://drive.google.com/file/d/0B8VUbXki5Q0ibEIzbkUxSnQ5Ulk/dump.tar.gz?usp=sharing" 
     # into "dump.tar.gz"
     url = urlparse.urlparse( url )
     basename = os.path.basename( url.path )
 
-    if basename == '' or basename == 'view' or basename == 'index':
-        filename = 'dump_'+ dataset['name'] + format_to_command[format_].extension
-        log.warn( 'Could not obtain filename from url.',  )
+    if not '.' in basename:
+        filename = 'dump_'+ dataset['name'] + format_to_command[format_]['extension']
+        log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
         log.info( 'Using composed valid filename %s', filename )
         
         return filename
