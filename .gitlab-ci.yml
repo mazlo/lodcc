@@ -9,3 +9,4 @@ unittests:
     - apk add --no-cache build-base postgresql-dev # for postgres-config
     - pip install -r requirements.txt
     - python -m unittest test_lodcc
+    - python -m unittest test_lodcchelpers

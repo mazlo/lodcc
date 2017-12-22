@@ -22,8 +22,9 @@ APPLICATION_N_TRIPLES = 'application_n_triples'
 APPLICATION_RDF_XML = 'application_rdf_xml'
 APPLICATION_UNKNOWN = 'unknown'
 
-format_mappings = {}
-format_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.rdf' } }
+mediatype_mappings = {}
+mediatype_to_command = { APPLICATION_RDF_XML: { 'cmd_to_ntriples': './to_ntriples.sh %s rdfxml', 'cmd_to_csv': './to_csv.sh %s', 'extension': '.rdf' } }
+mediatypes_compressed = [ 'bz2', 'gz', 'tar', 'tar.gz', 'tgz', 'zip', 'tar.xz' ]
 
 def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
@@ -56,9 +57,9 @@ def ensure_db_record_is_unique( cur, name, attribute, value ):
 def ensure_format_in_dictionary( format_ ):
     ```ensure_format_in_dictionary```
 
-    if format_ in format_mappings:
-        log.info( 'Format %s will be mapped to %s', format_, format_mappings[format_] )
-        return format_mappings[format_]
+    if format_ in mediatype_mappings:
+        log.info( 'Format %s will be mapped to %s', format_, mediatype_mappings[format_] )
+        return mediatype_mappings[format_]
 
     return format_
 
@@ -182,7 +183,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     ```ensure_valid_filename_from_url```
 
     if not url:
-        log.warn( 'No url given for %s. Cannot determine filename.', dataset['name'] )
+        log.warn( 'No url given for %s. Cannot determine filename.', dataset[1] )
         return None
 
     log.debug( 'Parsing filename from %s', url )
@@ -192,7 +193,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = 'dump_'+ dataset['name'] + format_to_command[format_]['extension']
+        filename = 'dump_'+ dataset[1] + mediatype_to_command[format_]['extension']
         log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
         log.info( 'Using composed valid filename %s', filename )
         
@@ -210,9 +211,49 @@ def download_data( dataset, url, format_ ):
 
     return filename
 
+def get_file_mediatype( filename ):
+    ```get_file_mediatype```
+
+    idx = filename.find( '.' )
+    if idx <= 0:
+        log.error( 'No file extension found for: %s', filename )
+        return None
+
+    return filename[idx+1:]
+
+def is_compressed_file_mediatype( filename ):
+    ```is_compressed_file_mediatype```
+
+    mediatype = get_file_mediatype( filename )
+    if not mediatype:
+        log.warn( 'Cannot determine if media type is compressed type: %s (mediatype: %s)', filename, mediatype )
+        return False
+
+    if not mediatype in mediatypes_compressed:
+        return False
+
+    return True
+
+def build_graph_prepare( dataset, filename, format_ ):
+    ```build_graph_prepare```
+
+    # decompress if necessary
+    if is_compressed_file_mediatype( filename ):
+        log.info( 'Decompressing %s', filename )
+    
+    # check correct mediatype if not compressed
+
+    # transform into ntriples
+    # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
+    os.popen( mediatype_to_command[format_]['cmd_to_ntriples'] % filename )
+
+    # transform into graph csv
+    # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
+    os.popen( mediatype_to_command[format_]['cmd_to_csv'] % filename )
+
 # real job
-def start_job( dataset, sem ):
-    ```start_job```
+def job_start( dataset, sem ):
+    ```job_start```
 
     # let's go
     with sem:
@@ -220,15 +261,18 @@ def start_job( dataset, sem ):
         url, format_ = download_prepare( dataset )
 
         if format_ == APPLICATION_UNKNOWN:
-            log.error( 'Could not continue due to unknown format. %s', dataset['name'] )
+            log.error( 'Could not continue due to unknown format. %s', dataset[1] )
             return
 
         # - download_data
         filename = download_data( dataset, url, format_ )
 
         # - build_graph_prepare
+        build_graph_prepare( dataset, filename, format_ )
 
         # - build_graph_analyse
+
+        # - job_cleanup
 
 
 def parse_resource_urls( cur, no_of_threads=1 ):
@@ -248,7 +292,7 @@ def parse_resource_urls( cur, no_of_threads=1 ):
         
         log.debug( 'Starting job for %s', dataset )
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = start_job, name = 'Thread: '+ dataset[1], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start, name = 'Thread: '+ dataset[1], args = ( dataset, sem ) )
         t.start()
 
         threads.append( t )
@@ -259,20 +303,13 @@ def parse_resource_urls( cur, no_of_threads=1 ):
 
 # ----------------
 
-def build_graph_prepare( file, dry_run=False ):
-    ```build_graph_prepare```
-    
-def build_graph( file, stats={}, dry_run=False ):
-    ```build_graph```
-
-# -----------------
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
     parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
     parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
+    parser.add_argument( '--limit-datasets', '-dl', required = False, type = int, default = 10, help = 'If --dry-run is set this value will be used to limit the datasets loaded from database, otherwise 10.' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
@@ -300,7 +337,7 @@ if __name__ == '__main__':
             # reads all lines and splits it so that we got a list of lists
             parts = list( re.split( "[=, ]+", option ) for option in ( line.strip() for line in f ) if option and not option.startswith( '#' ))
             # creates a hashmap from each multimappings
-            format_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
+            mediatype_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
 
     # connect to an existing database
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
