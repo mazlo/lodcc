@@ -22,8 +22,9 @@ APPLICATION_N_TRIPLES = 'application_n_triples'
 APPLICATION_RDF_XML = 'application_rdf_xml'
 APPLICATION_UNKNOWN = 'unknown'
 
-format_mappings = {}
-format_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.rdf' } }
+mediatype_mappings = {}
+mediatype_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.rdf' } }
+mediatypes_compressed = [ 'bz2', 'gz', 'tar', 'tar.gz', 'tgz', 'zip', 'tar.xz' ]
 
 def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
@@ -56,9 +57,9 @@ def ensure_db_record_is_unique( cur, name, attribute, value ):
 def ensure_format_in_dictionary( format_ ):
     ```ensure_format_in_dictionary```
 
-    if format_ in format_mappings:
-        log.info( 'Format %s will be mapped to %s', format_, format_mappings[format_] )
-        return format_mappings[format_]
+    if format_ in mediatype_mappings:
+        log.info( 'Format %s will be mapped to %s', format_, mediatype_mappings[format_] )
+        return mediatype_mappings[format_]
 
     return format_
 
@@ -192,7 +193,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = 'dump_'+ dataset['name'] + format_to_command[format_]['extension']
+        filename = 'dump_'+ dataset['name'] + mediatype_to_command[format_]['extension']
         log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
         log.info( 'Using composed valid filename %s', filename )
         
@@ -300,7 +301,7 @@ if __name__ == '__main__':
             # reads all lines and splits it so that we got a list of lists
             parts = list( re.split( "[=, ]+", option ) for option in ( line.strip() for line in f ) if option and not option.startswith( '#' ))
             # creates a hashmap from each multimappings
-            format_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
+            mediatype_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
 
     # connect to an existing database
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
