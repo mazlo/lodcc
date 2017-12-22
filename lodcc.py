@@ -211,6 +211,42 @@ def download_data( dataset, url, format_ ):
 
     return filename
 
+def get_file_mediatype( filename ):
+    ```get_file_mediatype```
+
+    idx = filename.find( '.' )
+    if idx <= 0:
+        log.error( 'No file extension found for: %s', filename )
+        return None
+
+    return filename[idx+1:]
+
+def is_compressed_file_mediatype( filename ):
+    ```is_compressed_file_mediatype```
+
+    mediatype = get_file_mediatype( filename )
+    if not mediatype:
+        log.warn( 'Cannot determine if media type is compressed type: %s (mediatype: %s)', filename, mediatype )
+        return False
+
+    if not mediatype in mediatypes_compressed:
+        return False
+
+    return True
+
+def build_graph_prepare( dataset, filename ):
+    ```build_graph_prepare```
+
+    # decompress if necessary
+    if is_compressed_file_mediatype( filename ):
+        log.info( 'Decompressing %s', filename )
+    
+    # check correct mediatype if not compressed
+
+    # transform into ntriples
+
+    # transform into graph csv
+
 # real job
 def job_start( dataset, sem ):
     ```job_start```
@@ -228,8 +264,11 @@ def job_start( dataset, sem ):
         filename = download_data( dataset, url, format_ )
 
         # - build_graph_prepare
+        build_graph_prepare( dataset, filename )
 
         # - build_graph_analyse
+
+        # - job_cleanup
 
 
 def parse_resource_urls( cur, no_of_threads=1 ):
