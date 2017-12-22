@@ -23,7 +23,7 @@ APPLICATION_RDF_XML = 'application_rdf_xml'
 APPLICATION_UNKNOWN = 'unknown'
 
 mediatype_mappings = {}
-mediatype_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.rdf' } }
+mediatype_to_command = { APPLICATION_RDF_XML: { 'cmd_to_ntriples': './to_ntriples.sh %s rdfxml', 'cmd_to_csv': './to_csv.sh %s', 'extension': '.rdf' } }
 mediatypes_compressed = [ 'bz2', 'gz', 'tar', 'tar.gz', 'tgz', 'zip', 'tar.xz' ]
 
 def ensure_db_schema_complete( cur, attribute ):
@@ -234,7 +234,7 @@ def is_compressed_file_mediatype( filename ):
 
     return True
 
-def build_graph_prepare( dataset, filename ):
+def build_graph_prepare( dataset, filename, format_ ):
     ```build_graph_prepare```
 
     # decompress if necessary
@@ -244,8 +244,12 @@ def build_graph_prepare( dataset, filename ):
     # check correct mediatype if not compressed
 
     # transform into ntriples
+    # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
+    os.popen( mediatype_to_command[format_]['cmd_to_ntriples'] % filename )
 
     # transform into graph csv
+    # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
+    os.popen( mediatype_to_command[format_]['cmd_to_csv'] % filename )
 
 # real job
 def job_start( dataset, sem ):
@@ -264,7 +268,7 @@ def job_start( dataset, sem ):
         filename = download_data( dataset, url, format_ )
 
         # - build_graph_prepare
-        build_graph_prepare( dataset, filename )
+        build_graph_prepare( dataset, filename, format_ )
 
         # - build_graph_analyse
 
