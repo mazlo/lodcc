@@ -14,9 +14,16 @@ import argparse
 import json
 import logging as log
 import psycopg2
+import threading
 import sys
+import urlparse
+
+APPLICATION_N_TRIPLES = 'application_n_triples'
+APPLICATION_RDF_XML = 'application_rdf_xml'
+APPLICATION_UNKNOWN = 'unknown'
 
 format_mappings = {}
+format_to_command = { APPLICATION_RDF_XML: { 'command': 'to_ntriples %s rdfxml', 'extension': '.rdf' } }
 
 def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
@@ -95,8 +102,8 @@ def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
     log.debug( 'Saving value "%s" for attribute "%s" for "%s"', value, attribute, dataset_name )
     cur.execute( 'UPDATE stats SET '+ attribute +' = %s WHERE id = %s;', ( value, dataset_id ) )
 
-def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
-    ```parse_resource_urls```
+def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
+    ```parse_datapackages```
 
     dp = None
 
@@ -147,12 +154,110 @@ def parse_resource_urls( dataset_id, datahub_url, name, dry_run=False ):
 
 # -----------------
 
+def download_prepare( dataset ):
+    ```download_prepare```
+
+    if not dataset:
+        log.error( 'dataset is None' )
+        return ( None, APPLICATION_UNKNOWN )
+
+    # id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads
+
+    # n-triples
+    if dataset[2]:
+        log.info( 'Using format APPLICATION_N_TRIPLES with url %s', dataset[2] )
+        return ( dataset[2], APPLICATION_N_TRIPLES )
+
+    # rdf+xml
+    elif dataset[3]:
+        log.info( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
+        return ( dataset[3], APPLICATION_RDF_XML )
+
+    # more to follow
+
+    else:
+        return ( None, APPLICATION_UNKNOWN )
+    
+def ensure_valid_filename_from_url( dataset, url, format_ ):
+    ```ensure_valid_filename_from_url```
+
+    if not url:
+        log.warn( 'No url given for %s. Cannot determine filename.', dataset['name'] )
+        return None
+
+    log.debug( 'Parsing filename from %s', url )
+    # transforms e.g. "https://drive.google.com/file/d/0B8VUbXki5Q0ibEIzbkUxSnQ5Ulk/dump.tar.gz?usp=sharing" 
+    # into "dump.tar.gz"
+    url = urlparse.urlparse( url )
+    basename = os.path.basename( url.path )
+
+    if not '.' in basename:
+        filename = 'dump_'+ dataset['name'] + format_to_command[format_]['extension']
+        log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
+        log.info( 'Using composed valid filename %s', filename )
+        
+        return filename
+
+    log.info( 'Found valid filename %s', basename )
+    return basename
+
+def download_data( dataset, url, format_ ):
+    ```download_data```
+
+    filename = ensure_valid_filename_from_url( dataset, url, format_ )
+    # thread waits until this is finished
+    os.popen( 'curl -s -L "'+ url +'" -o '+ filename )
+
+    return filename
+
 # real job
-def download_dataset( ds_url, ds_format, dry_run=False ): 
-    ```download_dataset```
+def start_job( dataset, sem ):
+    ```start_job```
+
+    # let's go
+    with sem:
+        # - download_prepare
+        url, format_ = download_prepare( dataset )
+
+        if format_ == APPLICATION_UNKNOWN:
+            log.error( 'Could not continue due to unknown format. %s', dataset['name'] )
+            return
+
+        # - download_data
+        filename = download_data( dataset, url, format_ )
+
+        # - build_graph_prepare
+
+        # - build_graph_analyse
 
 
-    return filepath_str
+def parse_resource_urls( cur, no_of_threads=1 ):
+    ```parse_resource_urls```
+
+    datasets = cur.fetchall()
+
+    if cur.rowcount == 0:
+        log.error( 'No datasets to parse. exiting' )
+        return None
+
+    sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
+
+    threads = []
+
+    for dataset in datasets:
+        
+        log.debug( 'Starting job for %s', dataset )
+        # create a thread for each dataset. work load is limited by the semaphore
+        t = threading.Thread( target = start_job, name = 'Thread: '+ dataset[1], args = ( dataset, sem ) )
+        t.start()
+
+        threads.append( t )
+
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
+
+# ----------------
 
 def build_graph_prepare( file, dry_run=False ):
     ```build_graph_prepare```
@@ -160,39 +265,17 @@ def build_graph_prepare( file, dry_run=False ):
 def build_graph( file, stats={}, dry_run=False ):
     ```build_graph```
 
-def save_stats( stats, sid ):
-    ```save_stats```
-
-#dry_run = True
-#
-#cur.execute( 'SELECT id,url,format FROM stats' + ';' if not dry_run else ' WHERE domain="Cross_domain" AND title LIKE "%Museum%";' )
-#datasets = cur.fetchall()
-#
-#for ds in datasets:
-#    
-    #file = None
-#    
-    #try:
-        #file = download_dataset( ds[1],ds[2], dry_run )
-    #except:
-        ## save error in error-column
-        #continue
-#    
-    #stats = {}
-#    
-    #build_graph_prepare( file, dry_run )
-    #build_graph( file, stats, dry_run )
-    #save_stats( stats, ds[0] )
-
 # -----------------
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
-    parser.add_argument( '--parse-resource-urls', '-u', action = "store_true", help = '' )
+    parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
+    parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
+    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
     # read all properties in file into args-dict
     if os.path.isfile( 'db.properties' ):
@@ -233,7 +316,7 @@ if __name__ == '__main__':
         raise 
 
     # option 1
-    if args['parse_resource_urls']:
+    if args['parse_datapackages']:
         if args['dry_run']:
             log.info( 'Running in dry-run mode' )
             log.info( 'Using example dataset "Museums in Italy"' )
@@ -247,7 +330,7 @@ if __name__ == '__main__':
             ds = cur.fetchall()[0]
 
             log.info( 'Preparing %s ', ds[2] )
-            parse_resource_urls( ds[0], ds[1], ds[2], True )
+            parse_datapackages( ds[0], ds[1], ds[2], True )
 
             conn.commit()
         else:
@@ -256,8 +339,18 @@ if __name__ == '__main__':
             
             for ds in datasets_to_fetch:
                 log.info( 'Preparing %s ', ds[2] )
-                parse_resource_urls( ds[0], ds[1], ds[2] )
+                parse_datapackages( ds[0], ds[1], ds[2] )
                 conn.commit()
+
+    # option 2
+    if args['parse_resource_urls']:
+        if args['dry_run']:
+            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE name = %s AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)', ('museums-in-italy',) )
+        else:
+            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL' )
+
+        parse_resource_urls( cur )
+
 
     # close communication with the database
     cur.close()
