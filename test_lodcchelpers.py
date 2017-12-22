@@ -35,9 +35,9 @@ class LodccHelperTestCase( unittest.TestCase ):
         ]
 
         for test in basenames:
-            basename_is = lodcc.ensure_valid_filename_from_url( { 'name': 'testfile' }, test['url'], 'application_rdf_xml' )
+            basename_is = lodcc.ensure_valid_filename_from_url( [None,'testfile'], test['url'], 'application_rdf_xml' )
             self.assertEqual( basename_is, test['basename'] )
     
     def test_ensure_valid_filename_from_url_None( self ):
 
-        self.assertIsNone( lodcc.ensure_valid_filename_from_url( { 'name': 'testfile' }, None, None ) )
+        self.assertIsNone( lodcc.ensure_valid_filename_from_url( [None,'testfile'], None, None ) )
