@@ -183,7 +183,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     ```ensure_valid_filename_from_url```
 
     if not url:
-        log.warn( 'No url given for %s. Cannot determine filename.', dataset['name'] )
+        log.warn( 'No url given for %s. Cannot determine filename.', dataset[1] )
         return None
 
     log.debug( 'Parsing filename from %s', url )
@@ -193,7 +193,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = 'dump_'+ dataset['name'] + mediatype_to_command[format_]['extension']
+        filename = 'dump_'+ dataset[1] + mediatype_to_command[format_]['extension']
         log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
         log.info( 'Using composed valid filename %s', filename )
         
@@ -261,7 +261,7 @@ def job_start( dataset, sem ):
         url, format_ = download_prepare( dataset )
 
         if format_ == APPLICATION_UNKNOWN:
-            log.error( 'Could not continue due to unknown format. %s', dataset['name'] )
+            log.error( 'Could not continue due to unknown format. %s', dataset[1] )
             return
 
         # - download_data
