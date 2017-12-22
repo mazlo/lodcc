@@ -303,20 +303,13 @@ def parse_resource_urls( cur, no_of_threads=1 ):
 
 # ----------------
 
-def build_graph_prepare( file, dry_run=False ):
-    ```build_graph_prepare```
-    
-def build_graph( file, stats={}, dry_run=False ):
-    ```build_graph```
-
-# -----------------
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
     parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
     parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
+    parser.add_argument( '--limit-datasets', '-dl', required = False, type = int, default = 10, help = 'If --dry-run is set this value will be used to limit the datasets loaded from database, otherwise 10.' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
