@@ -212,8 +212,8 @@ def download_data( dataset, url, format_ ):
     return filename
 
 # real job
-def start_job( dataset, sem ):
-    ```start_job```
+def job_start( dataset, sem ):
+    ```job_start```
 
     # let's go
     with sem:
@@ -249,7 +249,7 @@ def parse_resource_urls( cur, no_of_threads=1 ):
         
         log.debug( 'Starting job for %s', dataset )
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = start_job, name = 'Thread: '+ dataset[1], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start, name = 'Thread: '+ dataset[1], args = ( dataset, sem ) )
         t.start()
 
         threads.append( t )
