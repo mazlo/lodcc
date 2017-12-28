@@ -14,7 +14,7 @@ class LodccTestCase( unittest.TestCase ):
 
     def tearDown( self ):
 
-        os.popen( 'rm -rf dumps' )
+        os.popen( 'rm -rf dumps/foo-lod' )
 
     def test_download_prepare( self ):
 
