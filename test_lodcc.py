@@ -1,7 +1,20 @@
 import unittest
 import lodcc
+import logging
+import os
+
+logger = logging.getLogger()
+logger.level = logging.INFO
 
 class LodccTestCase( unittest.TestCase ):
+
+    def setUp( self ):
+
+        os.popen( 'mkdir -p dumps/foo-lod' )
+
+    def tearDown( self ):
+
+        os.popen( 'rm -rf dumps' )
 
     def test_download_prepare( self ):
 
@@ -24,7 +37,7 @@ class LodccTestCase( unittest.TestCase ):
     def test_download_data( self ):
 
         # no filename in url, suppose filename is taken from dataset name
-        self.assertEqual( 'dump_foo-lod.rdf', lodcc.download_data( [None,'foo-lod'], 'http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml' ) )
+        self.assertEqual( 'foo-lod.rdf', lodcc.download_data( [None,'foo-lod'], 'http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml' ) )
         
     def test_download_data__fails( self ):
 

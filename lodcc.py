@@ -194,7 +194,11 @@ def download_prepare( dataset ):
         return ( None, APPLICATION_UNKNOWN )
     
 def ensure_valid_filename_from_url( dataset, url, format_ ):
-    ```ensure_valid_filename_from_url```
+    """ensure_valid_filename_from_url
+
+    returns 'foo-bar.tar.gz' for url 'http://some-domain.com/foo-bar.tar.gz (filename is obtained from url)'
+    returns 'dataset-dump.rdf' for url 'http://some-domain.com/strange-url (filename is NOT obtained from url)'
+    """
 
     if not url:
         log.warn( 'No url given for %s. Cannot determine filename.', dataset[1] )
@@ -220,11 +224,12 @@ def download_data( dataset, url, format_ ):
     ```download_data```
 
     filename = ensure_valid_filename_from_url( dataset, url, format_ )
+    path = '/'.join( ['dumps', dataset[1], filename] )
     # thread waits until this is finished
     log.info( 'Downloading dump for %s ...', dataset[1] )
-    os.popen( 'curl -s -L "'+ url +'" -o dumps/'+ dataset[1] +'/'+ filename )
+    os.popen( 'curl -s -L "'+ url +'" -o '+ path )
 
-    if os.path.getsize( filename ) < 1000:
+    if os.path.getsize( path ) < 1000:
         log.error( 'Downloaded file is < 1000B.. this shouldn''t be correct' )
         return None
 
