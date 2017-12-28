@@ -207,7 +207,12 @@ def download_data( dataset, url, format_ ):
 
     filename = ensure_valid_filename_from_url( dataset, url, format_ )
     # thread waits until this is finished
+    log.info( 'Downloading dump for %s ...', dataset[1] )
     os.popen( 'curl -s -L "'+ url +'" -o '+ filename )
+
+    if os.path.getsize( filename ) < 1000:
+        log.error( 'Downloaded file is < 1000B.. this shouldn''t be correct' )
+        return None
 
     return filename
 
@@ -237,9 +242,13 @@ def is_compressed_file_mediatype( filename ):
 def build_graph_prepare( dataset, filename, format_ ):
     ```build_graph_prepare```
 
+    if not filename:
+        log.error( 'Cannot prepare graph for %s, aborting', dataset[1] )
+        return
+
     # decompress if necessary
     if is_compressed_file_mediatype( filename ):
-        log.info( 'Decompressing %s', filename )
+        log.info( 'Need to decompress %s', filename )
     
     # check correct mediatype if not compressed
 
