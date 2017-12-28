@@ -37,11 +37,6 @@ class LodccTestCase( unittest.TestCase ):
     def test_download_data( self ):
 
         # no filename in url, suppose filename is taken from dataset name
-        self.assertEqual( 'foo-lod.rdf', lodcc.download_data( [None,'foo-lod'], 'http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml' ) )
-        
-    def test_download_data__fails( self ):
-
-        # url wrong
-        self.assertIsNone( lodcc.download_data( [None,'foo-lod'], 'http://www.gesis.org/missy/metadata/MZ/2020', 'application_rdf_xml' ) )
-        # url correct but file not there
-        self.assertIsNone( lodcc.download_data( [None,'foo-lod'], 'http://lak.linkededucation.org/lak/LAK-DATASET-DUMP.nt.zip', 'application_n_triples' ) )
+        folder, filename = lodcc.download_data( [None,'foo-lod'], 'http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml' )
+        self.assertEqual( 'dumps/foo-lod', folder )
+        self.assertEqual( 'foo-lod.rdf', filename )

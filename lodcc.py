@@ -196,8 +196,8 @@ def download_prepare( dataset ):
 def ensure_valid_filename_from_url( dataset, url, format_ ):
     """ensure_valid_filename_from_url
 
-    returns 'foo-bar.tar.gz' for url 'http://some-domain.com/foo-bar.tar.gz (filename is obtained from url)'
-    returns 'dataset-dump.rdf' for url 'http://some-domain.com/strange-url (filename is NOT obtained from url)'
+    returns 'foo-bar.tar.gz' for url 'http://some-domain.com/foo-bar.tar.gz (filename is obtained from url), if invoked with ( [_], _, _ )'
+    returns 'foo-dump.rdf' for url 'http://some-domain.com/strange-url (filename is NOT obtained from url), if invoked with ( [_, 'foo-dump.rdf', _], _, APPLICATION_RDF_XML )'
     """
 
     if not url:
@@ -224,16 +224,17 @@ def download_data( dataset, url, format_ ):
     ```download_data```
 
     filename = ensure_valid_filename_from_url( dataset, url, format_ )
-    path = '/'.join( ['dumps', dataset[1], filename] )
+    folder = '/'.join( ['dumps', dataset[1]] )
+    path = '/'.join( [ folder, filename ] )
     # thread waits until this is finished
     log.info( 'Downloading dump for %s ...', dataset[1] )
-    os.popen( 'curl -s -L "'+ url +'" -o '+ path )
+    os.popen( 'curl -s -L "'+ url +'" -o '+ path  )
 
     if os.path.getsize( path ) < 1000:
         log.error( 'Downloaded file is < 1000B.. this shouldn''t be correct' )
-        return None
+        return folder, filename
 
-    return filename
+    return folder, filename
 
 def get_file_mediatype( filename ):
     """get_file_mediatype
@@ -256,7 +257,7 @@ def get_file_mediatype( filename ):
 
     return ( types[0], True )
 
-def build_graph_prepare( dataset, filename, format_ ):
+def build_graph_prepare( dataset, folder, filename, format_ ):
     ```build_graph_prepare```
 
     if not filename:
@@ -268,17 +269,19 @@ def build_graph_prepare( dataset, filename, format_ ):
     if filespec[1]:
         log.info( 'Need to decompress %s', filename )
 
-        os.popen( mediatype_to_command[format_]['cmd_to_one-liner'] % ( 'dumps/'+ dataset[1], filename, '.'+ filespec[0] ) )
+        os.popen( mediatype_to_command[format_]['cmd_to_one-liner'] % ( folder, filename, '.'+ filespec[0] ) )
+
+        filename = re.sub( '.'+ filespec[0], '', filename )
     
     # TODO check correct mediatype if not compressed
 
     # transform into ntriples
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
-    os.popen( mediatype_to_command[format_]['cmd_to_ntriples'] % filename )
+    os.popen( mediatype_to_command[format_]['cmd_to_ntriples'] % folder + filename )
 
     # transform into graph csv
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
-    os.popen( mediatype_to_command[format_]['cmd_to_csv'] % filename )
+    os.popen( mediatype_to_command[format_]['cmd_to_csv'] % folder + filename )
 
 # real job
 def job_start( dataset, sem ):
@@ -294,10 +297,10 @@ def job_start( dataset, sem ):
             return
 
         # - download_data
-        filename = download_data( dataset, url, format_ )
+        folder, filename = download_data( dataset, url, format_ )
 
         # - build_graph_prepare
-        build_graph_prepare( dataset, filename, format_ )
+        build_graph_prepare( dataset, folder, filename, format_ )
 
         # - build_graph_analyse
 
