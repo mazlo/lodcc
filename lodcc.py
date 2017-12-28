@@ -27,7 +27,7 @@ mediatype_to_command = {
     APPLICATION_RDF_XML: { 
         'cmd_to_ntriples': './to_ntriples.sh %s rdfxml', 
         'cmd_to_csv': './to_csv.sh %s', 
-        'cmd_to_one-liner': '/to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
+        'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
         'extension': '.rdf' 
     } 
 }
@@ -275,13 +275,15 @@ def build_graph_prepare( dataset, folder, filename, format_ ):
     
     # TODO check correct mediatype if not compressed
 
+    path = '/'.join( [ folder, filename ] )
+
     # transform into ntriples
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
-    os.popen( mediatype_to_command[format_]['cmd_to_ntriples'] % folder + filename )
+    os.popen( mediatype_to_command[format_]['cmd_to_ntriples'] % path )
 
     # transform into graph csv
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
-    os.popen( mediatype_to_command[format_]['cmd_to_csv'] % folder + filename )
+    os.popen( mediatype_to_command[format_]['cmd_to_csv'] % path )
 
 # real job
 def job_start( dataset, sem ):
