@@ -169,6 +169,13 @@ def download_prepare( dataset ):
         log.error( 'dataset is None' )
         return ( None, APPLICATION_UNKNOWN )
 
+    if not dataset[1]:
+        log.error( 'dataset name is None' )
+        return ( None, APPLICATION_UNKNOWN )
+
+    log.info( 'Download folder will be %s', 'dumps/'+ dataset[1] )
+    os.popen( 'mkdir -p dumps/'+ dataset[1] )
+
     # id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads
 
     # n-triples
@@ -200,7 +207,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = 'dump_'+ dataset[1] + mediatype_to_command[format_]['extension']
+        filename = dataset[1] + mediatype_to_command[format_]['extension']
         log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
         log.info( 'Using composed valid filename %s', filename )
         
@@ -214,7 +221,7 @@ def download_data( dataset, url, format_ ):
 
     filename = ensure_valid_filename_from_url( dataset, url, format_ )
     # thread waits until this is finished
-    os.popen( 'curl -s -L "'+ url +'" -o '+ filename )
+    os.popen( 'curl -s -L "'+ url +'" -o dumps/'+ dataset[1] +'/'+ filename )
 
     return filename
 
@@ -246,8 +253,10 @@ def build_graph_prepare( dataset, filename, format_ ):
     filespec = get_file_mediatype( filename )
     if filespec[1]:
         log.info( 'Decompressing %s', filename )
+
+        os.popen( mediatype_to_command[format_]['cmd_to_one-liner'] % ( 'dumps/'+ dataset[1], filename, '.'+ filespec[0] ) )
     
-    # check correct mediatype if not compressed
+    # TODO check correct mediatype if not compressed
 
     # transform into ntriples
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
