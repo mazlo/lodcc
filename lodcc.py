@@ -23,8 +23,15 @@ APPLICATION_RDF_XML = 'application_rdf_xml'
 APPLICATION_UNKNOWN = 'unknown'
 
 mediatype_mappings = {}
-mediatype_to_command = { APPLICATION_RDF_XML: { 'cmd_to_ntriples': './to_ntriples.sh %s rdfxml', 'cmd_to_csv': './to_csv.sh %s', 'extension': '.rdf' } }
-mediatypes_compressed = [ 'bz2', 'gz', 'tar', 'tar.gz', 'tgz', 'zip', 'tar.xz' ]
+mediatype_to_command = { 
+    APPLICATION_RDF_XML: { 
+        'cmd_to_ntriples': './to_ntriples.sh %s rdfxml', 
+        'cmd_to_csv': './to_csv.sh %s', 
+        'cmd_to_one-liner': '/to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
+        'extension': '.rdf' 
+    } 
+}
+mediatypes_compressed = [ 'tar.gz', 'tar.xz', 'tgz', 'gz', 'zip', 'bz2', 'tar' ]    # do not add 'xy.z' types at the end, they have privilege
 
 def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
@@ -162,6 +169,13 @@ def download_prepare( dataset ):
         log.error( 'dataset is None' )
         return ( None, APPLICATION_UNKNOWN )
 
+    if not dataset[1]:
+        log.error( 'dataset name is None' )
+        return ( None, APPLICATION_UNKNOWN )
+
+    log.info( 'Download folder will be %s', 'dumps/'+ dataset[1] )
+    os.popen( 'mkdir -p dumps/'+ dataset[1] )
+
     # id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads
 
     # n-triples
@@ -193,7 +207,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = 'dump_'+ dataset[1] + mediatype_to_command[format_]['extension']
+        filename = dataset[1] + mediatype_to_command[format_]['extension']
         log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
         log.info( 'Using composed valid filename %s', filename )
         
@@ -208,7 +222,7 @@ def download_data( dataset, url, format_ ):
     filename = ensure_valid_filename_from_url( dataset, url, format_ )
     # thread waits until this is finished
     log.info( 'Downloading dump for %s ...', dataset[1] )
-    os.popen( 'curl -s -L "'+ url +'" -o '+ filename )
+    os.popen( 'curl -s -L "'+ url +'" -o dumps/'+ dataset[1] +'/'+ filename )
 
     if os.path.getsize( filename ) < 1000:
         log.error( 'Downloaded file is < 1000B.. this shouldn''t be correct' )
@@ -217,27 +231,25 @@ def download_data( dataset, url, format_ ):
     return filename
 
 def get_file_mediatype( filename ):
-    ```get_file_mediatype```
+    """get_file_mediatype
+
+    returns ('tgz', True) for 'foo.bar.tgz' (filename ends with a compressed mediatype). 
+    returns ('bar.nt', False) for 'foo.bar.nt' (filename does not end with compressed mediatype).
+    returns ('foo', False) for 'foo' (filename has no mediatype).
+    """
 
     idx = filename.find( '.' )
     if idx <= 0:
         log.error( 'No file extension found for: %s', filename )
-        return None
+        return ( filename, False )
 
-    return filename[idx+1:]
+    mediatype = filename[idx:]
 
-def is_compressed_file_mediatype( filename ):
-    ```is_compressed_file_mediatype```
+    types = [ type_ for type_ in mediatypes_compressed if mediatype.endswith( '.'+ type_ ) ]
+    if len( types ) == 0:
+        return ( filename[idx+1:], False )
 
-    mediatype = get_file_mediatype( filename )
-    if not mediatype:
-        log.warn( 'Cannot determine if media type is compressed type: %s (mediatype: %s)', filename, mediatype )
-        return False
-
-    if not mediatype in mediatypes_compressed:
-        return False
-
-    return True
+    return ( types[0], True )
 
 def build_graph_prepare( dataset, filename, format_ ):
     ```build_graph_prepare```
@@ -247,10 +259,13 @@ def build_graph_prepare( dataset, filename, format_ ):
         return
 
     # decompress if necessary
-    if is_compressed_file_mediatype( filename ):
+    filespec = get_file_mediatype( filename )
+    if filespec[1]:
         log.info( 'Need to decompress %s', filename )
+
+        os.popen( mediatype_to_command[format_]['cmd_to_one-liner'] % ( 'dumps/'+ dataset[1], filename, '.'+ filespec[0] ) )
     
-    # check correct mediatype if not compressed
+    # TODO check correct mediatype if not compressed
 
     # transform into ntriples
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
