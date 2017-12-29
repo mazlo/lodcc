@@ -177,9 +177,20 @@ def download_prepare( dataset ):
         log.info( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
         return ( dataset[3], APPLICATION_RDF_XML )
 
-    # more to follow
+    # turtle
+    elif dataset[4]:
+        log.info( 'Using format TEXT_TURTLE with url: %s', dataset[4] )
+        return ( dataset[4], TEXT_TURTLE )
+
+    # notation3
+    elif dataset[5]:
+        log.info( 'Using format TEXT_N3 with url: %s', dataset[5] )
+        return ( dataset[5], TEXT_N3 )
+
+    # more to follow?
 
     else:
+        log.warn( 'Could not determine format. returning APPLICATION_UNKNOWN instead' )
         return ( None, APPLICATION_UNKNOWN )
     
 def ensure_valid_filename_from_url( dataset, url, format_ ):
@@ -405,7 +416,7 @@ if __name__ == '__main__':
     # option 2
     if args['parse_resource_urls']:
         if args['dry_run']:
-	    log.info( 'Running in dry-run mode' )
+            log.info( 'Running in dry-run mode' )
 
             if args['use_datasets']:
                 names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
@@ -416,7 +427,7 @@ if __name__ == '__main__':
 
             log.debug( 'Configured datasets: '+ ', '.join( names ) )
             
-	    sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)'
+            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)'
 
             cur.execute( sql, names )
         else:
