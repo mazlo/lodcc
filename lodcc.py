@@ -433,7 +433,7 @@ if __name__ == '__main__':
         else:
             cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL' )
 
-        parse_resource_urls( cur )
+        parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
 
 
     # close communication with the database
