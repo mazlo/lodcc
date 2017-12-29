@@ -226,13 +226,15 @@ def download_data( dataset, url, format_ ):
     filename = ensure_valid_filename_from_url( dataset, url, format_ )
     folder = '/'.join( ['dumps', dataset[1]] )
     path = '/'.join( [ folder, filename ] )
+
     # thread waits until this is finished
     log.info( 'Downloading dump for %s ...', dataset[1] )
     os.popen( 'curl -s -L "'+ url +'" -o '+ path  )
 
     if os.path.getsize( path ) < 1000:
-        log.error( 'Downloaded file is < 1000B.. this shouldn''t be correct' )
-        return folder, filename
+        # TODO save error in db
+        log.error( 'Wrong url, dump couldn''t be found (downloaded file is < 1000 byte.. this shouldn''t be correct)' )
+        return folder, None
 
     return folder, filename
 
@@ -302,6 +304,10 @@ def job_start( dataset, sem ):
 
         # - download_data
         folder, filename = download_data( dataset, url, format_ )
+
+        if not filename:
+            log.error( 'Cannot continue due to error in downloading data. returning.' )
+            return
 
         # - build_graph_prepare
         build_graph_prepare( dataset, folder, filename, format_ )
