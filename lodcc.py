@@ -18,40 +18,9 @@ import threading
 import sys
 import urlparse
 
-APPLICATION_N_TRIPLES = 'application_n_triples'
-APPLICATION_RDF_XML = 'application_rdf_xml'
-APPLICATION_UNKNOWN = 'unknown'
-TEXT_TURTLE = 'text_turtle'
-TEXT_N3 = 'text_n3'
+from constants import *
 
 mediatype_mappings = {}
-mediatype_to_command = { 
-    APPLICATION_RDF_XML: { 
-        'cmd_to_ntriples': './to_ntriples.sh %s rdfxml', 
-        'cmd_to_csv': './to_csv.sh %s', 
-        'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
-        'extension': '.rdf' 
-    },
-    APPLICATION_N_TRIPLES: {
-        'cmd_to_ntriples': None,    # does not need to be transformed 
-        'cmd_to_csv': './to_csv.sh %s', 
-        'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
-        'extension': '.nt'
-    },
-    TEXT_TURTLE: {
-        'cmd_to_ntriples': './to_ntriples.sh %s turtle', 
-        'cmd_to_csv': './to_csv.sh %s', 
-        'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
-        'extension': '.ttl'
-    },
-    TEXT_N3: {
-        'cmd_to_ntriples': './to_ntriples.sh %s turtle', 
-        'cmd_to_csv': './to_csv.sh %s', 
-        'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
-        'extension': '.n3'
-    }
-}
-mediatypes_compressed = [ 'tar.gz', 'tar.xz', 'tgz', 'gz', 'zip', 'bz2', 'tar' ]    # do not add 'xy.z' types at the end, they have privilege
 
 def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
@@ -231,7 +200,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = dataset[1] + mediatype_to_command[format_]['extension']
+        filename = dataset[1] + MEDIATYPES[format_]['extension']
         log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
         log.info( 'Using composed valid filename %s', filename )
         
@@ -271,7 +240,7 @@ def get_file_mediatype( filename ):
 
     mediatype = filename[idx:]
 
-    types = [ type_ for type_ in mediatypes_compressed if mediatype.endswith( '.'+ type_ ) ]
+    types = [ type_ for type_ in MEDIATYPES_COMPRESSED if mediatype.endswith( '.'+ type_ ) ]
     if len( types ) == 0:
         return ( filename[idx+1:], False )
 
@@ -289,7 +258,7 @@ def build_graph_prepare( dataset, folder, filename, format_ ):
     if filespec[1]:
         log.info( 'Need to decompress %s', filename )
 
-        os.popen( mediatype_to_command[format_]['cmd_to_one-liner'] % ( folder, filename, '.'+ filespec[0] ) )
+        os.popen( MEDIATYPES[format_]['cmd_to_one-liner'] % ( folder, filename, '.'+ filespec[0] ) )
 
         filename = re.sub( '.'+ filespec[0], '', filename )
     
@@ -299,11 +268,11 @@ def build_graph_prepare( dataset, folder, filename, format_ ):
 
     # transform into ntriples
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
-    os.popen( mediatype_to_command[format_]['cmd_to_ntriples'] % path )
+    os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % path )
 
     # transform into graph csv
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
-    os.popen( mediatype_to_command[format_]['cmd_to_csv'] % path )
+    os.popen( MEDIATYPES[format_]['cmd_to_csv'] % path )
 
 # real job
 def job_start( dataset, sem ):
