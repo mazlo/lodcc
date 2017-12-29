@@ -343,7 +343,7 @@ if __name__ == '__main__':
     parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
     parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
-    parser.add_argument( '--limit-datasets', '-dl', required = False, type = int, default = 10, help = 'If --dry-run is set this value will be used to limit the datasets loaded from database, otherwise 10.' )
+    parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
@@ -416,7 +416,16 @@ if __name__ == '__main__':
     # option 2
     if args['parse_resource_urls']:
         if args['dry_run']:
-            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE name = %s AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)', ('museums-in-italy',) )
+            if 'use_datasets' in args:
+                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+                names = tuple( args['use_datasets'] )
+            else:
+                names_query = 'name = %s'
+                names = ('museums-in-italy',)
+
+            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)'
+
+            cur.execute( sql, names )
         else:
             cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL' )
 
