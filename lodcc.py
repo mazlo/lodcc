@@ -324,9 +324,9 @@ def parse_resource_urls( cur, no_of_threads=1 ):
 
     for dataset in datasets:
         
-        log.debug( 'Starting job for %s', dataset )
+        log.info( 'Starting job for %s', dataset )
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start, name = 'Thread: '+ dataset[1], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
         t.start()
 
         threads.append( t )
@@ -361,9 +361,9 @@ if __name__ == '__main__':
     args = z
     
     if args['log_level_debug']:
-        log.basicConfig( level = log.DEBUG, format = '%(levelname)s %(asctime)s %(message)s', )
-    elif args['log_level_info']:
-        log.basicConfig( level = log.INFO, format = '%(levelname)s %(asctime)s %(message)s', )
+        log.basicConfig( level = log.DEBUG, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+    else:
+        log.basicConfig( level = log.INFO, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
@@ -423,7 +423,9 @@ if __name__ == '__main__':
                 names_query = 'name = %s'
                 names = ('museums-in-italy',)
 
-            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)'
+            log.debug( 'Configured datasets: '+ ', '.join( names ) )
+            
+	    sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)'
 
             cur.execute( sql, names )
         else:
