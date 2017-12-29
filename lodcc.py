@@ -279,10 +279,12 @@ def build_graph_prepare( dataset, folder, filename, format_ ):
 
     # transform into ntriples
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
+    log.info( 'Transforming to ntriples.. this may take a while' )
     os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % path )
 
     # transform into graph csv
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
+    log.info( 'Preparing required graph structure.. this may take a while' )
     os.popen( MEDIATYPES[format_]['cmd_to_csv'] % path )
 
 # real job
