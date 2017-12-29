@@ -299,10 +299,11 @@ def build_graph_prepare( dataset, folder, filename, format_ ):
 
     path = '/'.join( [ folder, filename ] )
 
-    # transform into ntriples
-    # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
-    log.info( 'Transforming to ntriples.. this may take a while' )
-    os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % path )
+    # transform into ntriples if necessary
+    if not format_ == APPLICATION_N_TRIPLES:
+        # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
+        log.info( 'Need to transform to ntriples.. this may take a while' )
+        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % path )
 
     # transform into graph csv
     # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
