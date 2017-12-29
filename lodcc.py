@@ -416,12 +416,14 @@ if __name__ == '__main__':
     # option 2
     if args['parse_resource_urls']:
         if args['dry_run']:
-            if 'use_datasets' in args:
+	    log.info( 'Running in dry-run mode' )
+
+            if args['use_datasets']:
                 names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
                 names = tuple( args['use_datasets'] )
             else:
                 names_query = 'name = %s'
-                names = ('museums-in-italy',)
+                names = tuple( ['museums-in-italy'] )
 
             log.debug( 'Configured datasets: '+ ', '.join( names ) )
             
