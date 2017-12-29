@@ -177,9 +177,20 @@ def download_prepare( dataset ):
         log.info( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
         return ( dataset[3], APPLICATION_RDF_XML )
 
-    # more to follow
+    # turtle
+    elif dataset[4]:
+        log.info( 'Using format TEXT_TURTLE with url: %s', dataset[4] )
+        return ( dataset[4], TEXT_TURTLE )
+
+    # notation3
+    elif dataset[5]:
+        log.info( 'Using format TEXT_N3 with url: %s', dataset[5] )
+        return ( dataset[5], TEXT_N3 )
+
+    # more to follow?
 
     else:
+        log.warn( 'Could not determine format. returning APPLICATION_UNKNOWN instead' )
         return ( None, APPLICATION_UNKNOWN )
     
 def ensure_valid_filename_from_url( dataset, url, format_ ):
