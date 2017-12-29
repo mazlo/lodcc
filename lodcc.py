@@ -316,6 +316,7 @@ def job_start( dataset, sem ):
 
         # - job_cleanup
 
+        log.info( 'Done' ) 
 
 def parse_resource_urls( cur, no_of_threads=1 ):
     ```parse_resource_urls```
