@@ -220,6 +220,21 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     log.info( 'Found valid filename %s', basename )
     return basename
 
+def ensure_valid_download_data( path ):
+    """ensure_valid_download_data"""
+
+    if not os.path.isfile( path ):
+        # TODO save error in db
+        log.error( 'Download not valid: file does not exist (%s)', path )
+        return False
+
+    if os.path.getsize( path ) < 1000:
+        # TODO save error in db
+        log.error( 'Download not valid: file is < 1000 byte (%s)', path )
+        return False
+
+    return True
+
 def download_data( dataset, url, format_ ):
     ```download_data```
 
@@ -231,9 +246,8 @@ def download_data( dataset, url, format_ ):
     log.info( 'Downloading dump for %s ...', dataset[1] )
     os.popen( 'curl -s -L "'+ url +'" -o '+ path  )
 
-    if os.path.getsize( path ) < 1000:
-        # TODO save error in db
-        log.error( 'Wrong url, dump couldn''t be found (downloaded file is < 1000 byte.. this shouldn''t be correct)' )
+    valid = ensure_valid_download_data( path )
+    if not valid:
         return folder, None
 
     return folder, filename
