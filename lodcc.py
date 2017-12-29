@@ -242,6 +242,12 @@ def download_data( dataset, url, format_ ):
     folder = '/'.join( ['dumps', dataset[1]] )
     path = '/'.join( [ folder, filename ] )
 
+    # reuse dump if exists
+    valid = ensure_valid_download_data( path )
+    if not args['no_cache'] and valid:
+        log.info( 'Reusing dump for %s', dataset[1] )
+        return folder, filename
+
     # thread waits until this is finished
     log.info( 'Downloading dump for %s ...', dataset[1] )
     os.popen( 'curl -s -L "'+ url +'" -o '+ path  )
@@ -367,6 +373,7 @@ if __name__ == '__main__':
     parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
+    parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
