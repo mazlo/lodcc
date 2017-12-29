@@ -324,9 +324,9 @@ def parse_resource_urls( cur, no_of_threads=1 ):
 
     for dataset in datasets:
         
-        log.debug( 'Starting job for %s', dataset )
+        log.info( 'Starting job for %s', dataset )
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start, name = 'Thread: '+ dataset[1], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
         t.start()
 
         threads.append( t )
@@ -343,7 +343,7 @@ if __name__ == '__main__':
     parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
     parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
-    parser.add_argument( '--limit-datasets', '-dl', required = False, type = int, default = 10, help = 'If --dry-run is set this value will be used to limit the datasets loaded from database, otherwise 10.' )
+    parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
@@ -361,9 +361,9 @@ if __name__ == '__main__':
     args = z
     
     if args['log_level_debug']:
-        log.basicConfig( level = log.DEBUG, format = '%(levelname)s %(asctime)s %(message)s', )
-    elif args['log_level_info']:
-        log.basicConfig( level = log.INFO, format = '%(levelname)s %(asctime)s %(message)s', )
+        log.basicConfig( level = log.DEBUG, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+    else:
+        log.basicConfig( level = log.INFO, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
@@ -416,11 +416,24 @@ if __name__ == '__main__':
     # option 2
     if args['parse_resource_urls']:
         if args['dry_run']:
-            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE name = %s AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)', ('museums-in-italy',) )
+	    log.info( 'Running in dry-run mode' )
+
+            if args['use_datasets']:
+                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+                names = tuple( args['use_datasets'] )
+            else:
+                names_query = 'name = %s'
+                names = tuple( ['museums-in-italy'] )
+
+            log.debug( 'Configured datasets: '+ ', '.join( names ) )
+            
+	    sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)'
+
+            cur.execute( sql, names )
         else:
             cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL' )
 
-        parse_resource_urls( cur )
+        parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
 
 
     # close communication with the database
