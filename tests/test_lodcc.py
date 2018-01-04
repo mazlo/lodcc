@@ -62,19 +62,22 @@ class LodccTestCase( unittest.TestCase ):
     def test_download_data__Fails_first( self ):
 
         # ntriples fails, n3 is ok
-        folder, filename = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2020', 'application_n_triples'), ('http://www.gesis.org/missy/metadata/MZ/2012', 'text_n3')] )
+        folder, filename, format_ = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2020', 'application_n_triples'), ('http://www.gesis.org/missy/metadata/MZ/2012', 'text_n3')] )
         self.assertEqual( 'dumps/foo-lod', folder )
         self.assertEqual( 'foo-lod.n3', filename )
+        self.assertEqual( 'text_n3', format_ )
 
     def test_download_data( self ):
 
         # no filename in url, suppose filename is taken from dataset name
-        folder, filename = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml')] )
+        folder, filename, format_ = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml')] )
         self.assertEqual( 'dumps/foo-lod', folder )
         self.assertEqual( 'foo-lod.rdf', filename )
+        self.assertEqual( 'application_rdf_xml', format_ )
 
         # 
         lodcc.args['no_cache'] = True
-        folder, filename = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml')] )
+        folder, filename, format_ = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml')] )
         self.assertEqual( 'dumps/foo-lod', folder )
         self.assertEqual( 'foo-lod.rdf', filename )
+        self.assertEqual( 'application_rdf_xml', format_ )

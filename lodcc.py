@@ -266,7 +266,7 @@ def download_data( dataset, urls ):
         valid = ensure_valid_download_data( path )
         if not args['no_cache'] and valid:
             log.info( 'Reusing dump for %s', dataset[1] )
-            return folder, filename
+            return folder, filename, format_
 
         # download anew otherwise
         # thread waits until this is finished
@@ -277,9 +277,9 @@ def download_data( dataset, urls ):
         if not valid:
             continue
         else:
-            return folder, filename
+            return folder, filename, format_
 
-    return None, None
+    return None, None, None
 
 def get_file_mediatype( filename ):
     """get_file_mediatype
@@ -302,8 +302,14 @@ def get_file_mediatype( filename ):
 
     return ( types[0], True )
 
-def build_graph_prepare( dataset, folder, filename, format_ ):
+def build_graph_prepare( dataset, details ):
     ```build_graph_prepare```
+
+    if not details:
+        log.error( 'Cannot continue due to error in downloading data. returning.' )
+        return
+
+    folder, filename, format_ = details
 
     if not filename:
         log.error( 'Cannot prepare graph for %s, aborting', dataset[1] )
@@ -341,14 +347,10 @@ def job_start( dataset, sem ):
         urls = download_prepare( dataset )
 
         # - download_data
-        folder, filename = download_data( dataset, urls )
-
-        if not filename:
-            log.error( 'Cannot continue due to error in downloading data. returning.' )
-            return
+        url_details = download_data( dataset, urls )
 
         # - build_graph_prepare
-        build_graph_prepare( dataset, folder, filename, format_ )
+        build_graph_prepare( dataset, url_details )
 
         # - build_graph_analyse
 
