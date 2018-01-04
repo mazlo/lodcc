@@ -474,13 +474,17 @@ if __name__ == '__main__':
 
     # option 2
     if args['parse_resource_urls']:
+
+        # respect --use-datasets argument
+        if args['use_datasets']:
+            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+            names = tuple( args['use_datasets'] )
+
         if args['dry_run']:
             log.info( 'Running in dry-run mode' )
 
-            if args['use_datasets']:
-                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-                names = tuple( args['use_datasets'] )
-            else:
+            # if not given explicitely above, shrink available datasets to one special
+            if not args['use_datasets']:
                 names_query = 'name = %s'
                 names = tuple( ['museums-in-italy'] )
 
@@ -490,7 +494,7 @@ if __name__ == '__main__':
 
             cur.execute( sql, names )
         else:
-            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id' )
+            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id LIMIT 100' )
 
         parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
 
