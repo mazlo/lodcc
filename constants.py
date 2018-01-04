@@ -7,14 +7,14 @@ TEXT_N3 = 'text_n3'
 
 MEDIATYPES = { 
     APPLICATION_RDF_XML: { 
-        'cmd_to_ntriples': './to_ntriples.sh %s rdfxml', 
-        'cmd_to_csv': './to_csv.sh %s', 
+        'cmd_to_ntriples': './to_ntriples.sh %s rdfxml %s', 
+        'cmd_to_csv': './to_csv.sh %s %s', 
         'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
         'extension': '.rdf' 
     },
     APPLICATION_N_QUADS: {
-        'cmd_to_ntriples': './to_ntriples.sh %s nquads',
-        'cmd_to_csv': './to_csv.sh %s', 
+        'cmd_to_ntriples': './to_ntriples.sh %s nquads %s',
+        'cmd_to_csv': './to_csv.sh %s %s', 
         'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
         'extension': '.nq'
     },
@@ -25,14 +25,14 @@ MEDIATYPES = {
         'extension': '.nt'
     },
     TEXT_TURTLE: {
-        'cmd_to_ntriples': './to_ntriples.sh %s turtle', 
-        'cmd_to_csv': './to_csv.sh %s', 
+        'cmd_to_ntriples': './to_ntriples.sh %s turtle %s', 
+        'cmd_to_csv': './to_csv.sh %s %s', 
         'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
         'extension': '.ttl'
     },
     TEXT_N3: {
-        'cmd_to_ntriples': './to_ntriples.sh %s turtle', 
-        'cmd_to_csv': './to_csv.sh %s', 
+        'cmd_to_ntriples': './to_ntriples.sh %s turtle %s', 
+        'cmd_to_csv': './to_csv.sh %s %s', 
         'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
         'extension': '.n3'
     }
