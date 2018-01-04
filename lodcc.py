@@ -332,16 +332,18 @@ def build_graph_prepare( dataset, details ):
     
     # TODO check correct mediatype if not compressed
 
+    no_cache = 'true' if args['no_cache'] else ''
+
     path = '/'.join( [ folder, filename ] )
 
     # transform into ntriples if necessary
     if not format_ == APPLICATION_N_TRIPLES:
         log.info( 'Need to transform to ntriples.. this may take a while' )
-        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % path )
+        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
 
     # transform into graph csv
     log.info( 'Preparing required graph structure.. this may take a while' )
-    os.popen( MEDIATYPES[format_]['cmd_to_csv'] % path )
+    os.popen( MEDIATYPES[format_]['cmd_to_csv'] % (path,no_cache) )
 
 # real job
 def job_start( dataset, sem ):
