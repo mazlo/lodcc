@@ -152,7 +152,10 @@ def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
 # -----------------
 
 def download_prepare( dataset ):
-    ```download_prepare```
+    """download_prepare
+
+    returns a tuple of url and application media type, if it can be discovered from the given dataset. For instance,
+    returns ( 'http://example.org/foo.nt', APPLICATION_N_TRIPLES ) if { _, _, http://example.org/foo.nt, ... } was passed."""
 
     if not dataset:
         log.error( 'dataset is None' )

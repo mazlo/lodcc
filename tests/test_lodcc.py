@@ -29,10 +29,22 @@ class LodccTestCase( unittest.TestCase ):
         url, format_ = lodcc.download_prepare( ['id', 'name', None, 'https://example.org/dataset.rdf'] )
         self.assertEqual( ( url, format_ ), ( 'https://example.org/dataset.rdf', 'application_rdf_xml' ) )
 
+        # turtle
+        url, format_ = lodcc.download_prepare( ['id', 'name', None, None, 'https://example.org/dataset.ttl'] )
+        self.assertEqual( ( url, format_ ), ( 'https://example.org/dataset.ttl', 'text_turtle' ) )
+
+        # notation3
+        url, format_ = lodcc.download_prepare( ['id', 'name', None, None, None, 'https://example.org/dataset.n3'] )
+        self.assertEqual( ( url, format_ ), ( 'https://example.org/dataset.n3', 'text_n3' ) )
+
     def test_download_prepare__None( self ):
 
+        # returns a tuple
         self.assertIsNotNone( lodcc.download_prepare( None ) )
+        # returns None and APPLICATION_UNKNOWN when None passed as dataset
         self.assertIsNone( lodcc.download_prepare( None )[0] )
+        self.assertEqual( lodcc.download_prepare( None )[1], 'unknown' )
+        # returns None if fields are None
         self.assertIsNone( lodcc.download_prepare( ['id', 'name', None, None, None, None] )[0] )
 
     def test_download_data( self ):
