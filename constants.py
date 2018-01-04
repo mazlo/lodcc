@@ -20,7 +20,7 @@ MEDIATYPES = {
     },
     APPLICATION_N_TRIPLES: {
         'cmd_to_ntriples': None,    # does not need to be transformed 
-        'cmd_to_csv': './to_csv.sh %s', 
+        'cmd_to_csv': './to_csv.sh %s %s', 
         'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
         'extension': '.nt'
     },
