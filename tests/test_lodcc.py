@@ -53,3 +53,9 @@ class LodccTestCase( unittest.TestCase ):
         folder, filename = lodcc.download_data( [None,'foo-lod'], 'http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml' )
         self.assertEqual( 'dumps/foo-lod', folder )
         self.assertEqual( 'foo-lod.rdf', filename )
+
+        # 
+        lodcc.args['no_cache'] = True
+        folder, filename = lodcc.download_data( [None,'foo-lod'], 'http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml' )
+        self.assertEqual( 'dumps/foo-lod', folder )
+        self.assertEqual( 'foo-lod.rdf', filename )
