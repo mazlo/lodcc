@@ -280,6 +280,7 @@ def download_data( dataset, urls ):
 
         valid = ensure_valid_download_data( path )
         if not valid:
+            log.info( 'Skipping format %s', format_ )
             continue
         else:
             return folder, filename, format_
