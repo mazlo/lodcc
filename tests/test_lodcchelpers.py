@@ -73,3 +73,4 @@ class LodccHelperTestCase( unittest.TestCase ):
 
         self.assertFalse( lodcc.ensure_valid_download_data( 'tests/data' ) )
         self.assertFalse( lodcc.ensure_valid_download_data( 'tests/data/less-than-1kb.txt' ) )
+        self.assertFalse( lodcc.ensure_valid_download_data( 'tests/data/void-descriptions.rdf' ) )

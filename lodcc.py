@@ -239,12 +239,17 @@ def ensure_valid_download_data( path ):
 
     if not os.path.isfile( path ):
         # TODO save error in db
-        log.error( 'Download not valid: file does not exist (%s)', path )
+        log.warn( 'Download not valid: file does not exist (%s)', path )
         return False
 
     if os.path.getsize( path ) < 1000:
         # TODO save error in db
-        log.error( 'Download not valid: file is < 1000 byte (%s)', path )
+        log.warn( 'Download not valid: file is < 1000 byte (%s)', path )
+        return False
+
+    if 'void' in os.path.basename( path ):
+        # TODO save error in db
+        log.warn( 'Download not valid: file contains probably void descriptions, not data (%s)', path )
         return False
 
     return True
