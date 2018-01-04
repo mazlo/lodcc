@@ -190,6 +190,11 @@ def download_prepare( dataset ):
         log.info( 'Using format TEXT_N3 with url: %s', dataset[5] )
         return ( dataset[5], TEXT_N3 )
 
+    # nquads
+    elif dataset[6]:
+        log.info( 'Using format APPLICATION_N_QUADS with url: %s', dataset[6] )
+        return ( dataset[6], APPLICATION_N_QUADS )
+
     # more to follow?
 
     else:
