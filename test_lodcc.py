@@ -33,7 +33,7 @@ class LodccTestCase( unittest.TestCase ):
 
         self.assertIsNotNone( lodcc.download_prepare( None ) )
         self.assertIsNone( lodcc.download_prepare( None )[0] )
-        self.assertIsNone( lodcc.download_prepare( ['id', 'name', None, None] )[0] )
+        self.assertIsNone( lodcc.download_prepare( ['id', 'name', None, None, None, None] )[0] )
 
     def test_download_data( self ):
 
