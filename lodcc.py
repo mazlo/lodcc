@@ -18,20 +18,9 @@ import threading
 import sys
 import urlparse
 
-APPLICATION_N_TRIPLES = 'application_n_triples'
-APPLICATION_RDF_XML = 'application_rdf_xml'
-APPLICATION_UNKNOWN = 'unknown'
+from constants import *
 
 mediatype_mappings = {}
-mediatype_to_command = { 
-    APPLICATION_RDF_XML: { 
-        'cmd_to_ntriples': './to_ntriples.sh %s rdfxml', 
-        'cmd_to_csv': './to_csv.sh %s', 
-        'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
-        'extension': '.rdf' 
-    } 
-}
-mediatypes_compressed = [ 'tar.gz', 'tar.xz', 'tgz', 'gz', 'zip', 'bz2', 'tar' ]    # do not add 'xy.z' types at the end, they have privilege
 
 def ensure_db_schema_complete( cur, attribute ):
     ```ensure_db_schema_complete```
@@ -163,7 +152,10 @@ def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
 # -----------------
 
 def download_prepare( dataset ):
-    ```download_prepare```
+    """download_prepare
+
+    returns a tuple of url and application media type, if it can be discovered from the given dataset. For instance,
+    returns ( 'http://example.org/foo.nt', APPLICATION_N_TRIPLES ) if { _, _, http://example.org/foo.nt, ... } was passed."""
 
     if not dataset:
         log.error( 'dataset is None' )
@@ -188,9 +180,20 @@ def download_prepare( dataset ):
         log.info( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
         return ( dataset[3], APPLICATION_RDF_XML )
 
-    # more to follow
+    # turtle
+    elif dataset[4]:
+        log.info( 'Using format TEXT_TURTLE with url: %s', dataset[4] )
+        return ( dataset[4], TEXT_TURTLE )
+
+    # notation3
+    elif dataset[5]:
+        log.info( 'Using format TEXT_N3 with url: %s', dataset[5] )
+        return ( dataset[5], TEXT_N3 )
+
+    # more to follow?
 
     else:
+        log.warn( 'Could not determine format. returning APPLICATION_UNKNOWN instead' )
         return ( None, APPLICATION_UNKNOWN )
     
 def ensure_valid_filename_from_url( dataset, url, format_ ):
@@ -211,7 +214,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = dataset[1] + mediatype_to_command[format_]['extension']
+        filename = dataset[1] + MEDIATYPES[format_]['extension']
         log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
         log.info( 'Using composed valid filename %s', filename )
         
@@ -220,19 +223,41 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     log.info( 'Found valid filename %s', basename )
     return basename
 
+def ensure_valid_download_data( path ):
+    """ensure_valid_download_data"""
+
+    if not os.path.isfile( path ):
+        # TODO save error in db
+        log.error( 'Download not valid: file does not exist (%s)', path )
+        return False
+
+    if os.path.getsize( path ) < 1000:
+        # TODO save error in db
+        log.error( 'Download not valid: file is < 1000 byte (%s)', path )
+        return False
+
+    return True
+
 def download_data( dataset, url, format_ ):
     ```download_data```
 
     filename = ensure_valid_filename_from_url( dataset, url, format_ )
     folder = '/'.join( ['dumps', dataset[1]] )
     path = '/'.join( [ folder, filename ] )
+
+    # reuse dump if exists
+    valid = ensure_valid_download_data( path )
+    if not args['no_cache'] and valid:
+        log.info( 'Reusing dump for %s', dataset[1] )
+        return folder, filename
+
     # thread waits until this is finished
     log.info( 'Downloading dump for %s ...', dataset[1] )
     os.popen( 'curl -s -L "'+ url +'" -o '+ path  )
 
-    if os.path.getsize( path ) < 1000:
-        log.error( 'Downloaded file is < 1000B.. this shouldn''t be correct' )
-        return folder, filename
+    valid = ensure_valid_download_data( path )
+    if not valid:
+        return folder, None
 
     return folder, filename
 
@@ -251,7 +276,7 @@ def get_file_mediatype( filename ):
 
     mediatype = filename[idx:]
 
-    types = [ type_ for type_ in mediatypes_compressed if mediatype.endswith( '.'+ type_ ) ]
+    types = [ type_ for type_ in MEDIATYPES_COMPRESSED if mediatype.endswith( '.'+ type_ ) ]
     if len( types ) == 0:
         return ( filename[idx+1:], False )
 
@@ -269,7 +294,7 @@ def build_graph_prepare( dataset, folder, filename, format_ ):
     if filespec[1]:
         log.info( 'Need to decompress %s', filename )
 
-        os.popen( mediatype_to_command[format_]['cmd_to_one-liner'] % ( folder, filename, '.'+ filespec[0] ) )
+        os.popen( MEDIATYPES[format_]['cmd_to_one-liner'] % ( folder, filename, '.'+ filespec[0] ) )
 
         filename = re.sub( '.'+ filespec[0], '', filename )
     
@@ -277,13 +302,14 @@ def build_graph_prepare( dataset, folder, filename, format_ ):
 
     path = '/'.join( [ folder, filename ] )
 
-    # transform into ntriples
-    # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
-    os.popen( mediatype_to_command[format_]['cmd_to_ntriples'] % path )
+    # transform into ntriples if necessary
+    if not format_ == APPLICATION_N_TRIPLES:
+        log.info( 'Need to transform to ntriples.. this may take a while' )
+        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % path )
 
     # transform into graph csv
-    # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
-    os.popen( mediatype_to_command[format_]['cmd_to_csv'] % path )
+    log.info( 'Preparing required graph structure.. this may take a while' )
+    os.popen( MEDIATYPES[format_]['cmd_to_csv'] % path )
 
 # real job
 def job_start( dataset, sem ):
@@ -301,6 +327,10 @@ def job_start( dataset, sem ):
         # - download_data
         folder, filename = download_data( dataset, url, format_ )
 
+        if not filename:
+            log.error( 'Cannot continue due to error in downloading data. returning.' )
+            return
+
         # - build_graph_prepare
         build_graph_prepare( dataset, folder, filename, format_ )
 
@@ -308,6 +338,7 @@ def job_start( dataset, sem ):
 
         # - job_cleanup
 
+        log.info( 'Done' ) 
 
 def parse_resource_urls( cur, no_of_threads=1 ):
     ```parse_resource_urls```
@@ -344,6 +375,7 @@ if __name__ == '__main__':
     parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
+    parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
@@ -416,7 +448,7 @@ if __name__ == '__main__':
     # option 2
     if args['parse_resource_urls']:
         if args['dry_run']:
-	    log.info( 'Running in dry-run mode' )
+            log.info( 'Running in dry-run mode' )
 
             if args['use_datasets']:
                 names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
@@ -427,7 +459,7 @@ if __name__ == '__main__':
 
             log.debug( 'Configured datasets: '+ ', '.join( names ) )
             
-	    sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)'
+            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)'
 
             cur.execute( sql, names )
         else:
