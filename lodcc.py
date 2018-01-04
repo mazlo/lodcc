@@ -404,6 +404,7 @@ if __name__ == '__main__':
     parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
+    parser.add_argument( '--log-file', '-lf', required = False, type = str, default = 'lodcc.log', help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
     # read all properties in file into args-dict
@@ -419,9 +420,9 @@ if __name__ == '__main__':
     args = z
     
     if args['log_level_debug']:
-        log.basicConfig( level = log.DEBUG, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        log.basicConfig( filename = args['log_file'], level = log.DEBUG, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     else:
-        log.basicConfig( level = log.INFO, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        log.basicConfig( filename = args['log_file'], level = log.INFO, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
@@ -473,13 +474,17 @@ if __name__ == '__main__':
 
     # option 2
     if args['parse_resource_urls']:
+
+        # respect --use-datasets argument
+        if args['use_datasets']:
+            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+            names = tuple( args['use_datasets'] )
+
         if args['dry_run']:
             log.info( 'Running in dry-run mode' )
 
-            if args['use_datasets']:
-                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-                names = tuple( args['use_datasets'] )
-            else:
+            # if not given explicitely above, shrink available datasets to one special
+            if not args['use_datasets']:
                 names_query = 'name = %s'
                 names = tuple( ['museums-in-italy'] )
 
@@ -489,7 +494,7 @@ if __name__ == '__main__':
 
             cur.execute( sql, names )
         else:
-            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id' )
+            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id LIMIT 100' )
 
         parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
 
