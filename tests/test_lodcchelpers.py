@@ -64,3 +64,12 @@ class LodccHelperTestCase( unittest.TestCase ):
     def test_ensure_valid_filename_from_url_None( self ):
 
         self.assertIsNone( lodcc.ensure_valid_filename_from_url( [None,'testfile'], None, None ) )
+
+    def test_ensure_valid_download_data__True( self ):
+
+        self.assertTrue( lodcc.ensure_valid_download_data( 'tests/data/more-than-1kb.txt' ) )
+
+    def test_ensure_valid_download_data__False( self ):
+
+        self.assertFalse( lodcc.ensure_valid_download_data( 'tests/data' ) )
+        self.assertFalse( lodcc.ensure_valid_download_data( 'tests/data/less-than-1kb.txt' ) )
