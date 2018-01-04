@@ -159,47 +159,53 @@ def download_prepare( dataset ):
 
     if not dataset:
         log.error( 'dataset is None' )
-        return ( None, APPLICATION_UNKNOWN )
+        return [( None, APPLICATION_UNKNOWN )]
 
     if not dataset[1]:
         log.error( 'dataset name is None' )
-        return ( None, APPLICATION_UNKNOWN )
+        return [( None, APPLICATION_UNKNOWN )]
 
     log.info( 'Download folder will be %s', 'dumps/'+ dataset[1] )
     os.popen( 'mkdir -p dumps/'+ dataset[1] )
 
     # id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads
 
+    urls = list()
+
+    # this list of if-else's also respects priority
+
     # n-triples
-    if dataset[2]:
+    if len( dataset ) >= 3 and dataset[2]:
         log.info( 'Using format APPLICATION_N_TRIPLES with url %s', dataset[2] )
-        return ( dataset[2], APPLICATION_N_TRIPLES )
+        urls.append( ( dataset[2], APPLICATION_N_TRIPLES ) )
 
     # rdf+xml
-    elif dataset[3]:
+    if len( dataset ) >= 4 and dataset[3]:
         log.info( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
-        return ( dataset[3], APPLICATION_RDF_XML )
+        urls.append( ( dataset[3], APPLICATION_RDF_XML ) )
 
     # turtle
-    elif dataset[4]:
+    if len( dataset ) >= 5 and dataset[4]:
         log.info( 'Using format TEXT_TURTLE with url: %s', dataset[4] )
-        return ( dataset[4], TEXT_TURTLE )
+        urls.append( ( dataset[4], TEXT_TURTLE ) )
 
     # notation3
-    elif dataset[5]:
+    if len( dataset ) >= 6 and dataset[5]:
         log.info( 'Using format TEXT_N3 with url: %s', dataset[5] )
-        return ( dataset[5], TEXT_N3 )
+        urls.append( ( dataset[5], TEXT_N3 ) )
 
     # nquads
-    elif dataset[6]:
+    if len( dataset ) >= 7 and dataset[6]:
         log.info( 'Using format APPLICATION_N_QUADS with url: %s', dataset[6] )
-        return ( dataset[6], APPLICATION_N_QUADS )
+        urls.append( ( dataset[6], APPLICATION_N_QUADS ) )
 
     # more to follow?
 
-    else:
+    if len( urls ) == 0:
         log.warn( 'Could not determine format. returning APPLICATION_UNKNOWN instead' )
-        return ( None, APPLICATION_UNKNOWN )
+        return [( None, APPLICATION_UNKNOWN )]
+    
+    return urls
     
 def ensure_valid_filename_from_url( dataset, url, format_ ):
     """ensure_valid_filename_from_url
@@ -243,28 +249,37 @@ def ensure_valid_download_data( path ):
 
     return True
 
-def download_data( dataset, url, format_ ):
+def download_data( dataset, urls ):
     ```download_data```
 
-    filename = ensure_valid_filename_from_url( dataset, url, format_ )
-    folder = '/'.join( ['dumps', dataset[1]] )
-    path = '/'.join( [ folder, filename ] )
+    for url, format_ in urls:
 
-    # reuse dump if exists
-    valid = ensure_valid_download_data( path )
-    if not args['no_cache'] and valid:
-        log.info( 'Reusing dump for %s', dataset[1] )
-        return folder, filename
+        if format_ == APPLICATION_UNKNOWN:
+            log.error( 'Could not continue due to unknown format. %s', dataset[1] )
+            continue
 
-    # thread waits until this is finished
-    log.info( 'Downloading dump for %s ...', dataset[1] )
-    os.popen( 'curl -s -L "'+ url +'" -o '+ path  )
+        filename = ensure_valid_filename_from_url( dataset, url, format_ )
+        folder = '/'.join( ['dumps', dataset[1]] )
+        path = '/'.join( [ folder, filename ] )
 
-    valid = ensure_valid_download_data( path )
-    if not valid:
-        return folder, None
+        # reuse dump if exists
+        valid = ensure_valid_download_data( path )
+        if not args['no_cache'] and valid:
+            log.info( 'Reusing dump for %s', dataset[1] )
+            return folder, filename
 
-    return folder, filename
+        # download anew otherwise
+        # thread waits until this is finished
+        log.info( 'Downloading dump for %s ...', dataset[1] )
+        os.popen( 'curl -s -L "'+ url +'" -o '+ path  )
+
+        valid = ensure_valid_download_data( path )
+        if not valid:
+            continue
+        else:
+            return folder, filename
+
+    return None, None
 
 def get_file_mediatype( filename ):
     """get_file_mediatype
@@ -323,14 +338,10 @@ def job_start( dataset, sem ):
     # let's go
     with sem:
         # - download_prepare
-        url, format_ = download_prepare( dataset )
-
-        if format_ == APPLICATION_UNKNOWN:
-            log.error( 'Could not continue due to unknown format. %s', dataset[1] )
-            return
+        urls = download_prepare( dataset )
 
         # - download_data
-        folder, filename = download_data( dataset, url, format_ )
+        folder, filename = download_data( dataset, urls )
 
         if not filename:
             log.error( 'Cannot continue due to error in downloading data. returning.' )
@@ -464,11 +475,11 @@ if __name__ == '__main__':
 
             log.debug( 'Configured datasets: '+ ', '.join( names ) )
             
-            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL)'
+            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
 
             cur.execute( sql, names )
         else:
-            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL' )
+            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id' )
 
         parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
 
