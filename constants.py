@@ -1,3 +1,4 @@
+APPLICATION_N_QUADS = 'application_n_quads'
 APPLICATION_N_TRIPLES = 'application_n_triples'
 APPLICATION_RDF_XML = 'application_rdf_xml'
 APPLICATION_UNKNOWN = 'unknown'
@@ -10,6 +11,12 @@ MEDIATYPES = {
         'cmd_to_csv': './to_csv.sh %s', 
         'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
         'extension': '.rdf' 
+    },
+    APPLICATION_N_QUADS: {
+        'cmd_to_ntriples': './to_ntriples.sh %s nquads',
+        'cmd_to_csv': './to_csv.sh %s', 
+        'cmd_to_one-liner': './to_one-liner.sh %s %s %s', # e.g. /to_one-liner.sh dumps/foo-dataset bar.nt.tgz .tgz
+        'extension': '.nq'
     },
     APPLICATION_N_TRIPLES: {
         'cmd_to_ntriples': None,    # does not need to be transformed 
