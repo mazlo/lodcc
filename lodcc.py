@@ -22,23 +22,23 @@ from constants import *
 
 mediatype_mappings = {}
 
-def ensure_db_schema_complete( cur, attribute ):
+def ensure_db_schema_complete( cur, table_name, attribute ):
     ```ensure_db_schema_complete```
 
     log.debug( 'Checking if column %s exists', attribute )
-    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", ('stats', attribute) )
+    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", (table_name, attribute) )
 
     if cur.rowcount == 0:
         log.info( 'Creating missing attribute %s', attribute )
-        cur.execute( "ALTER TABLE stats ADD COLUMN "+ attribute +" varchar;" )
+        cur.execute( "ALTER TABLE %s ADD COLUMN "+ attribute +" varchar;", (table_name,) )
 
     log.debug( 'Found %s-attribute', attribute )
     return attribute
 
-def ensure_db_record_is_unique( cur, name, attribute, value ):
+def ensure_db_record_is_unique( cur, name, table_name, attribute, value ):
     ```ensure_db_record_is_unique```
 
-    cur.execute( 'SELECT id FROM stats WHERE name = %s AND ('+ attribute +' IS NULL OR '+ attribute +' = %s)', (name, "") )
+    cur.execute( 'SELECT id FROM %s WHERE name = %s AND ('+ attribute +' IS NULL OR '+ attribute +' = %s)', (table_name, name, "") )
 
     if cur.rowcount != 0:
         # returns the id of the row to be updated
@@ -46,7 +46,7 @@ def ensure_db_record_is_unique( cur, name, attribute, value ):
     else:
         # insert new row and return the id of the row to be updated
         log.info( 'Attribute %s not unique for "%s". Will create a new row.', attribute, name )
-        cur.execute( 'INSERT INTO stats (id, name, '+ attribute +') VALUES (default, %s, %s) RETURNING id', (name, value) )
+        cur.execute( 'INSERT INTO %s (id, name, '+ attribute +') VALUES (default, %s, %s) RETURNING id', (table_name, name, value) )
 
         return cur.fetchone()[0]
 
@@ -83,10 +83,10 @@ def ensure_format_is_valid( r ):
 
     return format_
 
-def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
+def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, check=True ):
     ```save_value```
 
-    ensure_db_schema_complete( cur, attribute )
+    ensure_db_schema_complete( cur, table_name, attribute )
 
     if check and not value:
         # TODO create warning message
@@ -94,10 +94,10 @@ def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
         return
     elif check:
         # returns the id of the row to be updated
-        dataset_id = ensure_db_record_is_unique( cur, dataset_name, attribute, value )
+        dataset_id = ensure_db_record_is_unique( cur, dataset_name, table_name, attribute, value )
     
     log.debug( 'Saving value "%s" for attribute "%s" for "%s"', value, attribute, dataset_name )
-    cur.execute( 'UPDATE stats SET '+ attribute +' = %s WHERE id = %s;', ( value, dataset_id ) )
+    cur.execute( 'UPDATE %s SET '+ attribute +' = %s WHERE id = %s;', (table_name, value, dataset_id) )
 
 def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
     ```parse_datapackages```
@@ -118,8 +118,8 @@ def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
             dp = json.load( file )
 
             if 'name' in dp:
-                name = dp['name']
-                save_value( cur, dataset_id, name, 'name', name, False )
+                dataset_name = dp['name']
+                save_value( cur, dataset_id, dataset_name, 'stats', 'name', dataset_name, False )
             else:
                 log.warn( 'No name-property given. File will be saved in datapackage.json' )
 
@@ -136,11 +136,11 @@ def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
                 if not format_:
                     continue
 
-                save_value( cur, dataset_id, name, format_, r['url'], True )
+                save_value( cur, dataset_id, dataset_name, 'stats', format_, r['url'], True )
 
-            save_value( cur, dataset_id, name, 'keywords', dp['keywords'] if 'keywords' in dp else None, False )
+            save_value( cur, dataset_id, dataset_name, 'stats', 'keywords', dp['keywords'] if 'keywords' in dp else None, False )
             # save whole datapackage.json in column
-            save_value( cur, dataset_id, name, 'datapackage_content', str( json.dumps( dp ) ), False )
+            save_value( cur, dataset_id, dataset_name, 'stats', 'datapackage_content', str( json.dumps( dp ) ), False )
 
         except:
             # TODO create error message and exit
