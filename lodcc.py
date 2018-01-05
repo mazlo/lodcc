@@ -247,9 +247,9 @@ def ensure_valid_download_data( path ):
         log.warn( 'Download not valid: file is < 1000 byte (%s)', path )
         return False
 
-    if 'void' in os.path.basename( path ):
+    if 'void' in os.path.basename( path ) or 'metadata' in os.path.basename( path ):
         # TODO save error in db
-        log.warn( 'Download not valid: file contains probably void descriptions, not data (%s)', path )
+        log.warn( 'Download not valid: file contains probably void or metadata descriptions, not data (%s)', path )
         return False
 
     return True
