@@ -99,20 +99,20 @@ def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, che
     log.debug( 'Saving value "%s" for attribute "%s" for "%s"', value, attribute, dataset_name )
     cur.execute( 'UPDATE %s SET '+ attribute +' = %s WHERE id = %s;', (table_name, value, dataset_id) )
 
-def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
+def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
     ```parse_datapackages```
 
     dp = None
 
-    datapackage_filename = 'datapackage_'+ name +'.json'
+    datapackage_filename = 'datapackage_'+ dataset_name +'.json'
     if not os.path.isfile( datapackage_filename ):
-        log.info( 'cURLing datapackage.json for %s', name )
+        log.info( 'cURLing datapackage.json for %s', dataset_name )
         os.popen( 'curl -s -L "'+ datahub_url +'/datapackage.json" -o '+ datapackage_filename )
         # TODO ensure the process succeeds
     else:
-        log.info( 'Using local datapackage.json for %s', name )
+        log.info( 'Using local datapackage.json for %s', dataset_name )
 
-    with open( 'datapackage_'+ name +'.json', 'r' ) as file:
+    with open( 'datapackage_'+ dataset_name +'.json', 'r' ) as file:
         try:
             log.debug( 'Parsing datapackage.json' )
             dp = json.load( file )
@@ -124,7 +124,7 @@ def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
                 log.warn( 'No name-property given. File will be saved in datapackage.json' )
 
             if not 'resources' in dp:
-                log.error( '"resources" does not exist for %s', name )
+                log.error( '"resources" does not exist for %s', dataset_name )
                 # TODO create error message and exit
                 return None
 
