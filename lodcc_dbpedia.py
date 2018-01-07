@@ -1,5 +1,6 @@
 
 import os
+import sys
 import logging as log
 import threading
 
@@ -118,13 +119,13 @@ if __name__ == '__main__':
 
     if not os.path.isfile( urlsfile ):
         log.error( 'File with links not found. nothing to do' )
-        return 
+        sys.exit() 
 
     with open( urlsfile, 'rt' ) as f:
         urls = [ line.strip() for line in f ]
 
     if len( urls ) == 0:
         log.error( 'File empty' )
-        return
+        sys.exit()
 
     start_crawling( urls, 'dumps/dbpedia-en', 4 )
