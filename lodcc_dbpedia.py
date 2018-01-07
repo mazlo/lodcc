@@ -76,7 +76,7 @@ def handle_url( sem, url ):
         dump_cleanup( file )
 
         # append
-        dump_append( file, 'dbpedia-all-en.ttl.csv' )
+        # dump_append( file, 'dbpedia-all-en.ttl.csv' )
 
 def start_crawling( urls, no_of_threads=1 ):
     """"""
