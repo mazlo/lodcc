@@ -16,7 +16,7 @@ def dump_download( url, directory ):
     path = '/'.join( [directory, filename] )
 
     if os.path.isfile( path ):
-        log.info( 'Download %s already exists', filename )
+        log.info( 'File already downloaded. see %s', path )
         return path
 
     # download anew
@@ -49,7 +49,8 @@ def dump_convert( file ):
     if not os.path.isfile( file ):
         log.error( 'File to extract not found, %s', file )
         return None
-    
+   
+    log.info( 'Converting %s', file )
     os.popen( './to_csv.sh %s %s %s' % ( file, 'true', '.ttl' ) )
 
     return file
@@ -76,6 +77,9 @@ def dump_cleanup( file ):
 def handle_url( sem, url, directory ):
     """"""
     with sem:
+
+        log.info( 'Handling %s', url )
+
         # returns downloaded file
         file = dump_download( url, directory )
 
@@ -91,6 +95,8 @@ def handle_url( sem, url, directory ):
         # append
         # dump_append( file, directory + '/dbpedia-all-en.ttl.csv' )
 
+        log.info( 'Done' )
+
 def start_crawling( urls, directory, no_of_threads=1 ):
     """"""
     download_prepare( directory )
@@ -101,10 +107,9 @@ def start_crawling( urls, directory, no_of_threads=1 ):
 
     for url in urls:
         
-        log.info( 'Handling %s', url )
         filename = url[url.rfind( '/' )+1:]
         # create a thread for each url. work load is limited by the semaphore
-        t = threading.Thread( target = handle_url, name = 'Thread: '+ filename, args = ( sem, url, directory ) )
+        t = threading.Thread( target = handle_url, name = filename, args = ( sem, url, directory ) )
         t.start()
 
         threads.append( t )
