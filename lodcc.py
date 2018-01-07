@@ -345,6 +345,18 @@ def build_graph_prepare( dataset, details ):
     log.info( 'Preparing required graph structure.. this may take a while' )
     os.popen( MEDIATYPES[format_]['cmd_to_csv'] % (path,no_cache) )
 
+def job_cleanup_intermediate( dataset, details ):
+    """"""
+
+    # TODO remove 1. decompressed and transformed 2. .nt file
+
+def build_graph_analyse( cur, dataset, details ):
+    """"""
+
+    # TODO save values for dataset
+
+    save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
+
 # real job
 def job_start( dataset, sem ):
     ```job_start```
@@ -360,7 +372,11 @@ def job_start( dataset, sem ):
         # - build_graph_prepare
         build_graph_prepare( dataset, url_details )
 
+        # - job_cleanup_intermediate
+        job_cleanup_intermediate( dataset, url_details )
+
         # - build_graph_analyse
+        build_graph_analyse( dataset, url_details )
 
         # - job_cleanup
 
