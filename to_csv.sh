@@ -34,5 +34,5 @@ if file_exists; then
 fi
 
 # paste the content | add a . at the end | as long as there are lines, rewrite their position
-cat "$INPUT" | sed 's#.$##' | while read -r s p o; do echo "$s $o {'edge':'$p'}"; done > "$OUTPUT"
+cat "$INPUT" | while read -r s p o; do echo "$s $o {'edge':'$p'}"; done > "$OUTPUT"
 
