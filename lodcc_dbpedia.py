@@ -13,7 +13,7 @@ def dump_download( url, directory ):
     """"""
     # extract filename from url
     filename =  url[url.rfind( '/' )+1:]
-    path = directory + filename
+    path = '/'.join( [directory, filename] )
 
     if os.path.isfile( path ):
         log.info( 'Download %s already exists', filename )
@@ -114,6 +114,12 @@ def start_crawling( urls, directory, no_of_threads=1 ):
         t.join()
 
 if __name__ == '__main__':
+
+    log.basicConfig( 
+            filename = 'lodcc_dbpedia.log', 
+            filemode='w', 
+            level = log.INFO, 
+            format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
 
     urlsfile = 'dbpedia-links.txt'
 
