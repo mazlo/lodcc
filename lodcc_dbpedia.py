@@ -36,10 +36,15 @@ def dump_extract( file ):
         log.error( 'File not found, %s', file )
         return None
 
+    xfile = file[0:file.rfind( '.bz2' )]
+    if os.path.isfile(xfile + '.csv'):
+        log.info( 'File already converted. see %s', xfile + '.csv' )
+        return xfile
+
     log.info( 'Extracting %s', file )
     os.popen( './to_one-liner.sh %s %s %s' % ( os.path.dirname( file ), os.path.basename( file ), '.bz2' ) )
 
-    return file[0:file.rfind( '.bz2' )]
+    return xfile
 
 def dump_convert( file ):
     """"""
