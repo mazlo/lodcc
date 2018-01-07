@@ -2,18 +2,30 @@
 import os
 import logging as log
 
-def dump_download( url ):
+def download_prepare( no_of_threads, directory ):
+    """"""
+    log.info( 'Creating dumps directory' )
+    os.popen( 'mkdir -p %s/', directory )
+
+    return threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
+
+def dump_download( url, directory ):
     """"""
     # extract filename from url
     filename =  url[url.rfind( '/' )+1:]
+    path = directory + filename
 
-    if os.path.isfile( filename ):
-        return filename
+    if os.path.isfile( path ):
+        log.info( 'Download %s already exists', filename )
+        return path
 
     # download anew
+    log.info( 'Downloading %s ..', filename )
     os.popen( 'wget --quiet %s ' % url )
+    log.info( 'Moving to dumps-directory ..' )
+    os.popen( 'mv %s %s' % ( filename, directory ) )
 
-    return filename
+    return path
 
 def dump_extract( file ):
     """"""
@@ -24,7 +36,8 @@ def dump_extract( file ):
         log.error( 'File not found, %s', file )
         return None
 
-    os.popen( 'dtrx %s' % file )
+    log.info( 'Extracting %s', file )
+    os.popen( './to_one-liner.sh %s %s %s' % ( os.path.dirname( file ), os.path.basename( file ), '.bz2' ) )
 
     return file[0:file.rfind( '.bz2' )]
 
@@ -60,11 +73,11 @@ def dump_cleanup( file ):
 
     os.remove( file )
 
-def handle_url( sem, url ):
+def handle_url( sem, url, directory ):
     """"""
     with sem:
         # returns downloaded file
-        file = dump_download( url )
+        file = dump_download( url, directory )
 
         # returns extracted file
         file = dump_extract( file )
@@ -76,11 +89,11 @@ def handle_url( sem, url ):
         dump_cleanup( file )
 
         # append
-        # dump_append( file, 'dbpedia-all-en.ttl.csv' )
+        # dump_append( file, directory + '/dbpedia-all-en.ttl.csv' )
 
-def start_crawling( urls, no_of_threads=1 ):
+def start_crawling( urls, directory, no_of_threads=1 ):
     """"""
-    sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
+    sem = download_prepare( no_of_threads )
 
     threads = []
 
@@ -88,7 +101,7 @@ def start_crawling( urls, no_of_threads=1 ):
         
         log.info( 'Starting job for %s', url )
         # create a thread for each url. work load is limited by the semaphore
-        t = threading.Thread( target = handle_url, name = 'Url: '+ url, args = ( semd, url ) )
+        t = threading.Thread( target = handle_url, name = 'Url: '+ url, args = ( semd, url, directory ) )
         t.start()
 
         threads.append( t )
@@ -112,4 +125,4 @@ if __name__ == '__main__':
         log.error( 'File empty' )
         return
 
-    start_crawling( urls, 4 )
+    start_crawling( urls, 'dumps/dbpedia-en', 4 )
