@@ -338,6 +338,9 @@ def build_graph_prepare( dataset, details ):
 
     # transform into ntriples if necessary
     if not format_ == APPLICATION_N_TRIPLES:
+        # TODO do not transform if file has ntriples format
+        # TODO check content of file
+        # TODO check if file ends with .nt
         log.info( 'Need to transform to ntriples.. this may take a while' )
         os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
 
