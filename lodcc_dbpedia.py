@@ -1,13 +1,12 @@
 
 import os
 import logging as log
+import threading
 
-def download_prepare( no_of_threads, directory ):
+def download_prepare( directory ):
     """"""
     log.info( 'Creating dumps directory' )
-    os.popen( 'mkdir -p %s/', directory )
-
-    return threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
+    os.popen( 'mkdir -p %s' % directory )
 
 def dump_download( url, directory ):
     """"""
@@ -93,15 +92,18 @@ def handle_url( sem, url, directory ):
 
 def start_crawling( urls, directory, no_of_threads=1 ):
     """"""
-    sem = download_prepare( no_of_threads )
+    download_prepare( directory )
 
     threads = []
 
+    sem = threading.Semaphore( no_of_threads )
+
     for url in urls:
         
-        log.info( 'Starting job for %s', url )
+        log.info( 'Handling %s', url )
+        filename = url[url.rfind( '/' )+1:]
         # create a thread for each url. work load is limited by the semaphore
-        t = threading.Thread( target = handle_url, name = 'Url: '+ url, args = ( semd, url, directory ) )
+        t = threading.Thread( target = handle_url, name = 'Thread: '+ filename, args = ( sem, url, directory ) )
         t.start()
 
         threads.append( t )
