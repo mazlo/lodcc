@@ -144,4 +144,4 @@ if __name__ == '__main__':
         log.error( 'File empty' )
         sys.exit()
 
-    start_crawling( urls, 'dumps/dbpedia-en', 4 )
+    start_crawling( urls, 'dumps/dbpedia-en', 12 )
