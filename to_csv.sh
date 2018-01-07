@@ -6,10 +6,12 @@
 INPUT="$1"
 OUTPUT="$1.csv"
 NO_CACHE=${2:-false}
+INPUT_EXT=${3:-".nt"}
 
-# add .nt extension if the file does not have it already
-if [[ ! $INPUT == *.nt ]]; then
-    INPUT="$1.nt"
+# we're reading from a file with INPUT_EXT, so
+# add extension if the file does not have it already
+if [[ "$INPUT" == "${INPUT%$INPUT_EXT}" ]]; then
+    INPUT=$1$INPUT_EXT
 fi
 
 file_exists() 
