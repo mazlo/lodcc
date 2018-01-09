@@ -46,6 +46,11 @@ do_extract()
 
 do_convert()
 {
+    # ignore ntriple INPUT format
+    if [[ $FILE_FORMAT == 'ntriples' ]]; then
+        return 0 # return success
+    fi
+
     # convert all files in directory
     if [[ -d "$FILENAME_STRIPPED" ]]; then
         echo "Converting all files in folder $FILENAME_STRIPPED"
