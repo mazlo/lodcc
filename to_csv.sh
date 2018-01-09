@@ -6,10 +6,12 @@
 INPUT="$1"
 OUTPUT="$1.csv"
 NO_CACHE=${2:-false}
+INPUT_EXT=${3:-".nt"}
 
-# add .nt extension if the file does not have it already
-if [[ ! $INPUT == *.nt ]]; then
-    INPUT="$1.nt"
+# we're reading from a file with INPUT_EXT, so
+# add extension if the file does not have it already
+if [[ "$INPUT" == "${INPUT%$INPUT_EXT}" ]]; then
+    INPUT=$1$INPUT_EXT
 fi
 
 file_exists() 
@@ -32,5 +34,5 @@ if file_exists; then
 fi
 
 # paste the content | add a . at the end | as long as there are lines, rewrite their position
-cat "$INPUT" | sed 's#.$##' | while read -r s p o; do echo "$s $o {'edge':'$p'}"; done > "$OUTPUT"
+cat "$INPUT" | while read -r s p o; do echo "$s $o {'edge':'$p'}"; done > "$OUTPUT"
 
