@@ -4,11 +4,11 @@
 #
 
 FILE_FORMAT="${1:-rdfxml}"
-PATH=$2 # e.g. dumps/foo/bar.gz
+FPATH="$2" # e.g. dumps/foo/bar.gz
 
 # from PATH
-FILENAME=`echo ${FILE##*/}`
-FOLDER=`echo ${FILE%/*}`
+FILENAME=`echo ${FPATH##*/}`
+FOLDER_DEST=`echo ${FPATH%/*}`
 
 get_xmtype()
 {
@@ -22,12 +22,6 @@ get_xmtype()
     done
 }
 
-# 1. bar.nt.tgz -> bar.nt
-# 2. bar.tar.gz -> bar
-# this will be the directory or filename
-XMTYPE=`get_xmtype`
-FILENAME_STRIPPED=`echo "$FILENAME" | sed "s/.$XMTYPE//"`
-
 do_extract()
 {
     # 'tar.gz', 'tar.xz', 'tgz', 'gz', 'zip', 'bz2', 'tar'
@@ -39,7 +33,7 @@ do_extract()
         [[ $XMTYPE == 'bz2' ]] || 
         [[ $XMTYPE == 'tar' ]]; then
 
-        echo "Extracting $FILENAME to $FOLDER_DEST"
+        #echo "Extracting $FILENAME to $FOLDER_DEST"
         FOLDER_SRC=`pwd`
         cd $FOLDER_DEST
         dtrx --one rename --overwrite $FILENAME
@@ -55,17 +49,17 @@ do_convert()
     fi
 
     # convert all files in directory
-    if [[ -d "$FILENAME_STRIPPED" ]]; then
-        echo "Converting all files in folder $FILENAME_STRIPPED"
-        for f in `find "$FILENAME_STRIPPED" -type f`; do
+    if [[ -d "$FPATH_STRIPPED" ]]; then
+        #echo "Converting all files in folder $FPATH_STRIPPED"
+        for f in `find "$FPATH_STRIPPED" -type f`; do
             rapper --input "$FILE_FORMAT" --output "ntriples" "$f" > "$f.nt"
         done
     fi
 
     # convert file
-    if [[ -f "$FILENAME_STRIPPED" ]]; then
-        echo "Converting $FILENAME_STRIPPED"
-        rapper --input "$FILE_FORMAT" --output "ntriples" "$FILENAME_STRIPPED" > "$FILENAME_STRIPPED.nt"
+    if [[ -f "$FPATH_STRIPPED" ]]; then
+        #echo "Converting $FPATH_STRIPPED"
+        rapper --input "$FILE_FORMAT" --output "ntriples" "$FPATH_STRIPPED" > "$FPATH_STRIPPED.nt"
     fi
 }
 
@@ -73,13 +67,19 @@ do_oneliner()
 {
     # check if extracted file is directory
     # if so, create one file from all the files there
-    if [ -d "$FILENAME_STRIPPED" ]; then
-        echo "Make oneliner"
-        find "$FILENAME_STRIPPED" -name "*.nt" -type f -exec cat {} >> "$FILENAME_STRIPPED.tmp"  \; \
-            && rm -rf "$FILENAME_STRIPPED" \
-            && mv "$FILENAME_STRIPPED.tmp" "$FILENAME_STRIPPED.nt"
+    if [ -d "$FPATH_STRIPPED" ]; then
+        #echo "Make oneliner"
+        find "$FPATH_STRIPPED" -name "*.nt" -type f -exec cat {} >> "$FPATH_STRIPPED.tmp"  \; \
+            && rm -rf "$FPATH_STRIPPED" \
+            && mv "$FPATH_STRIPPED.tmp" "$FPATH_STRIPPED.nt"
     fi
 }
+
+# 1. dumps/foo/bar.nt.tgz -> dumps/foo/bar.nt
+# 2. dumps/foo/bar.tar.gz -> dumps/foo/bar
+# this will be the directory or filename
+XMTYPE=`get_xmtype`
+FPATH_STRIPPED=`echo ${FPATH%*.$XMTYPE}`
 
 do_extract
 do_convert
