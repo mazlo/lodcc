@@ -4,8 +4,11 @@
 #
 
 FILE_FORMAT="${1:-rdfxml}"
-FILENAME=$2
-FOLDER_DEST=$3 # e.g. dumps/dataset
+PATH=$2 # e.g. dumps/foo/bar.gz
+
+# from PATH
+FILENAME=`echo ${FILE##*/}`
+FOLDER=`echo ${FILE%/*}`
 
 get_xmtype()
 {

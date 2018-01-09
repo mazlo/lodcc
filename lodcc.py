@@ -287,32 +287,6 @@ def download_data( dataset, urls ):
 
     return dict()
 
-def get_file_mediatype( file ):
-    """get_file_mediatype
-
-    returns ('tgz', True) for 'foo.bar.tgz' (filename ends with a compressed mediatype). 
-    returns ('bar.nt', False) for 'foo.bar.nt' (filename does not end with compressed mediatype).
-    returns ('foo', False) for 'foo' (filename has no mediatype).
-    """
-
-    idx = file['filename'].find( '.' )
-    if idx <= 0:
-        log.error( 'No file extension found for: %s', file['filename'] )
-        file['is_compressed'] = False
-        return file
-
-    mediatype = file['filename'][idx:]
-
-    types = [ type_ for type_ in MEDIATYPES_COMPRESSED if mediatype.endswith( '.'+ type_ ) ]
-    if len( types ) == 0:
-        file['is_compressed'] = False
-        file['mediatype'] = file['filename'][idx+1:]
-        return file
-
-    file['is_compressed'] = True
-    file['mediatype'] = types[0]
-    return file
-
 def build_graph_prepare( dataset, file ):
     ```build_graph_prepare```
 
@@ -324,21 +298,8 @@ def build_graph_prepare( dataset, file ):
         log.error( 'Cannot prepare graph for %s, aborting', dataset[1] )
         return
 
-    file = get_file_mediatype( file )
     format_ = file['format']
-    folder = file['folder']
-    filename = file['filename']
     path = file['path']
-
-    # decompress if necessary
-    if file['is_compressed']:
-        log.info( 'Need to decompress %s', file['filename'] )
-
-        os.popen( MEDIATYPES[format_]['cmd_to_one-liner'] % ( folder, filename, '.'+ file['mediatype'] ) )
-
-        file['filename'] = re.sub( '.'+ file['mediatype'], '', filename )
-    
-    # TODO check correct mediatype if not compressed
 
     no_cache = 'true' if args['no_cache'] else ''
 
@@ -346,6 +307,8 @@ def build_graph_prepare( dataset, file ):
     if not format_ == APPLICATION_N_TRIPLES:
         log.info( 'Need to transform to ntriples.. this may take a while' )
         os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
+
+    # TODO check correct mediatype if not compressed
 
     # transform into graph csv
     log.info( 'Preparing required graph structure.. this may take a while' )
