@@ -7,10 +7,22 @@ FILE_FORMAT="${1:-rdfxml}"
 FILENAME=$2
 FOLDER_DEST=$3 # e.g. dumps/dataset
 
+get_xmtype()
+{
+    for mtype in 'tar.gz' 'tar.xz' 'tgz' 'gz' 'zip' 'bz2' 'tar'; do
+        # ${"foo.bar.tar.gz"%*.tar.gz} returns "foo.bar"
+        # ${"foo.bar.bz2"%*.gz} returns "foo.bar.bz2"
+        if [[ "${FILENAME%*.$mtype}" != "$FILENAME" ]]; then
+            echo $mtype
+            return
+        fi
+    done
+}
+
 # 1. bar.nt.tgz -> bar.nt
 # 2. bar.tar.gz -> bar
-# this will be the directory name
-XMTYPE=`echo ${FILENAME#*.}`
+# this will be the directory or filename
+XMTYPE=`get_xmtype`
 FILENAME_STRIPPED=`echo "$FILENAME" | sed "s/.$XMTYPE//"`
 
 do_extract()
