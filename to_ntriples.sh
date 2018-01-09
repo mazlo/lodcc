@@ -6,24 +6,25 @@
 FILE_FORMAT="${1:-rdfxml}"
 FILENAME=$2
 FOLDER_DEST=$3 # e.g. dumps/dataset
-XMTYPE=$4 # e.g. .tar.gz
 
 # 1. bar.nt.tgz -> bar.nt
 # 2. bar.tar.gz -> bar
 # this will be the directory name
-FILENAME_STRIPPED=`echo "$FILENAME" | sed "s/$XMTYPE//"`
+XMTYPE=`echo ${FILENAME#*.}`
+FILENAME_STRIPPED=`echo "$FILENAME" | sed "s/.$XMTYPE//"`
 
 do_extract()
 {
     # 'tar.gz', 'tar.xz', 'tgz', 'gz', 'zip', 'bz2', 'tar'
-    if  [[ $XMTYPE == '*.tar.gz' ]] || 
-        [[ $XMTYPE == '*.tar.xz']] || 
-        [[ $XMTYPE == '*.tgz' ]] || 
-        [[ $XMTYPE == '*.gz' ]] || 
-        [[ $XMTYPE == '*.zip' ]] ||
-        [[ $XMTYPE == '*.bz2' ]] || 
-        [[ $XMTYPE == '*.tar' ]]; then
+    if  [[ $XMTYPE == 'tar.gz' ]] || 
+        [[ $XMTYPE == 'tar.xz' ]] || 
+        [[ $XMTYPE == 'tgz' ]] || 
+        [[ $XMTYPE == 'gz' ]] || 
+        [[ $XMTYPE == 'zip' ]] ||
+        [[ $XMTYPE == 'bz2' ]] || 
+        [[ $XMTYPE == 'tar' ]]; then
 
+        echo "Extracting $FILENAME to $FOLDER_DEST"
         FOLDER_SRC=`pwd`
         cd $FOLDER_DEST
         dtrx --one rename --overwrite $FILENAME
@@ -35,14 +36,16 @@ do_convert()
 {
     # convert all files in directory
     if [[ -d "$FILENAME_STRIPPED" ]]; then
-        for f in $FOLDER_DEST; do
-            rapper --ignore-errors --quiet --input "$FILE_FORMAT" --output "ntriples" "$f" > "$f.nt"
+        echo "Converting all files in folder $FILENAME_STRIPPED"
+        for f in `find "$FILENAME_STRIPPED" -type f`; do
+            rapper --input "$FILE_FORMAT" --output "ntriples" "$f" > "$f.nt"
         done
     fi
 
     # convert file
     if [[ -f "$FILENAME_STRIPPED" ]]; then
-        rapper --ignore-errors --quiet --input "$FILE_FORMAT" --output "ntriples" "$FILENAME" > "$FILENAME.nt"
+        echo "Converting $FILENAME_STRIPPED"
+        rapper --input "$FILE_FORMAT" --output "ntriples" "$FILENAME_STRIPPED" > "$FILENAME_STRIPPED.nt"
     fi
 }
 
@@ -51,9 +54,10 @@ do_oneliner()
     # check if extracted file is directory
     # if so, create one file from all the files there
     if [ -d "$FILENAME_STRIPPED" ]; then
-      find "$FILENAME_STRIPPED" -type f -exec cat {} >> "$FILENAME_STRIPPED.tmp"  \; \
-      && rm -rf "$FILENAME_STRIPPED" \
-      && mv "$FILENAME_STRIPPED.tmp" "$FILENAME_STRIPPED"
+        echo "Make oneliner"
+        find "$FILENAME_STRIPPED" -name "*.nt" -type f -exec cat {} >> "$FILENAME_STRIPPED.tmp"  \; \
+            && rm -rf "$FILENAME_STRIPPED" \
+            && mv "$FILENAME_STRIPPED.tmp" "$FILENAME_STRIPPED.nt"
     fi
 }
 
