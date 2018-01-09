@@ -306,6 +306,7 @@ def build_graph_prepare( dataset, file ):
     # transform into ntriples if necessary
     if not format_ == APPLICATION_N_TRIPLES:
         log.info( 'Need to transform to ntriples.. this may take a while' )
+        log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
         os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
 
     # TODO check correct mediatype if not compressed

@@ -3,16 +3,15 @@
 # given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
 #
 
+FPATH="$1"
+
+# from PATH
+FILENAME=`echo ${FPATH##*/}`
+
 INPUT="$1"
 OUTPUT="$1.csv"
 NO_CACHE=${2:-false}
 INPUT_EXT=${3:-".nt"}
-
-# we're reading from a file with INPUT_EXT, so
-# add extension if the file does not have it already
-if [[ "$INPUT" == "${INPUT%$INPUT_EXT}" ]]; then
-    INPUT=$1$INPUT_EXT
-fi
 
 file_exists() 
 {
