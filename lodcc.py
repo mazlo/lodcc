@@ -320,12 +320,12 @@ def job_cleanup_intermediate( dataset, file ):
     # TODO remove 1. decompressed and transformed 2. .nt file
 
 
-def build_graph_analyse( cur, dataset, file ):
+def build_graph_analyse( dataset, file ):
     """"""
 
     # TODO save values for dataset
 
-    save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
+    # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
 
 # real job
 def job_start( dataset, sem ):
