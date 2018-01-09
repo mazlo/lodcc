@@ -271,7 +271,7 @@ def download_data( dataset, urls ):
         valid = ensure_valid_download_data( path )
         if not args['no_cache'] and valid:
             log.info( 'Reusing dump for %s', dataset[1] )
-            return folder, filename, format_
+            return dict( { 'path': path, 'filename': filename, 'folder': folder, 'format': format_ } )
 
         # download anew otherwise
         # thread waits until this is finished
@@ -283,11 +283,11 @@ def download_data( dataset, urls ):
             log.info( 'Skipping format %s', format_ )
             continue
         else:
-            return folder, filename, format_
+            return dict( { 'path': path, 'filename': filename, 'folder': folder, 'format': format_ } )
 
-    return None, None, None
+    return dict()
 
-def get_file_mediatype( filename ):
+def get_file_mediatype( file ):
     """get_file_mediatype
 
     returns ('tgz', True) for 'foo.bar.tgz' (filename ends with a compressed mediatype). 
@@ -295,46 +295,52 @@ def get_file_mediatype( filename ):
     returns ('foo', False) for 'foo' (filename has no mediatype).
     """
 
-    idx = filename.find( '.' )
+    idx = file['filename'].find( '.' )
     if idx <= 0:
-        log.error( 'No file extension found for: %s', filename )
-        return ( filename, False )
+        log.error( 'No file extension found for: %s', file['filename'] )
+        file['is_compressed'] = False
+        return file
 
-    mediatype = filename[idx:]
+    mediatype = file['filename'][idx:]
 
     types = [ type_ for type_ in MEDIATYPES_COMPRESSED if mediatype.endswith( '.'+ type_ ) ]
     if len( types ) == 0:
-        return ( filename[idx+1:], False )
+        file['is_compressed'] = False
+        file['mediatype'] = file['filename'][idx+1:]
+        return file
 
-    return ( types[0], True )
+    file['is_compressed'] = True
+    file['mediatype'] = types[0]
+    return file
 
-def build_graph_prepare( dataset, details ):
+def build_graph_prepare( dataset, file ):
     ```build_graph_prepare```
 
-    if not details:
+    if not file:
         log.error( 'Cannot continue due to error in downloading data. returning.' )
         return
 
-    folder, filename, format_ = details
-
-    if not filename:
+    if not 'filename' in file:
         log.error( 'Cannot prepare graph for %s, aborting', dataset[1] )
         return
 
+    file = get_file_mediatype( file )
+    format_ = file['format']
+    folder = file['folder']
+    filename = file['filename']
+    path = file['path']
+
     # decompress if necessary
-    filespec = get_file_mediatype( filename )
-    if filespec[1]:
-        log.info( 'Need to decompress %s', filename )
+    if file['is_compressed']:
+        log.info( 'Need to decompress %s', file['filename'] )
 
-        os.popen( MEDIATYPES[format_]['cmd_to_one-liner'] % ( folder, filename, '.'+ filespec[0] ) )
+        os.popen( MEDIATYPES[format_]['cmd_to_one-liner'] % ( folder, filename, '.'+ file['mediatype'] ) )
 
-        filename = re.sub( '.'+ filespec[0], '', filename )
+        file['filename'] = re.sub( '.'+ file['mediatype'], '', filename )
     
     # TODO check correct mediatype if not compressed
 
     no_cache = 'true' if args['no_cache'] else ''
-
-    path = '/'.join( [ folder, filename ] )
 
     # transform into ntriples if necessary
     if not format_ == APPLICATION_N_TRIPLES:
@@ -345,12 +351,13 @@ def build_graph_prepare( dataset, details ):
     log.info( 'Preparing required graph structure.. this may take a while' )
     os.popen( MEDIATYPES[format_]['cmd_to_csv'] % (path,no_cache) )
 
-def job_cleanup_intermediate( dataset, details ):
+def job_cleanup_intermediate( dataset, file ):
     """"""
 
     # TODO remove 1. decompressed and transformed 2. .nt file
 
-def build_graph_analyse( cur, dataset, details ):
+
+def build_graph_analyse( cur, dataset, file ):
     """"""
 
     # TODO save values for dataset
@@ -367,16 +374,16 @@ def job_start( dataset, sem ):
         urls = download_prepare( dataset )
 
         # - download_data
-        url_details = download_data( dataset, urls )
+        file = download_data( dataset, urls )
 
         # - build_graph_prepare
-        build_graph_prepare( dataset, url_details )
+        build_graph_prepare( dataset, file )
 
         # - job_cleanup_intermediate
-        job_cleanup_intermediate( dataset, url_details )
+        job_cleanup_intermediate( dataset, file )
 
         # - build_graph_analyse
-        build_graph_analyse( dataset, url_details )
+        build_graph_analyse( dataset, file )
 
         # - job_cleanup
 
