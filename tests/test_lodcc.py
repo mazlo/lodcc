@@ -16,6 +16,7 @@ class LodccTestCase( unittest.TestCase ):
     def tearDown( self ):
 
         os.popen( 'rm -rf dumps/foo-lod' )
+        os.popen( 'rm tests/data/tests/data/dump-extracted.txt' )
 
     def test_download_prepare( self ):
 
@@ -62,22 +63,35 @@ class LodccTestCase( unittest.TestCase ):
     def test_download_data__Fails_first( self ):
 
         # ntriples fails, n3 is ok
-        folder, filename, format_ = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2020', 'application_n_triples'), ('http://www.gesis.org/missy/metadata/MZ/2012', 'text_n3')] )
-        self.assertEqual( 'dumps/foo-lod', folder )
-        self.assertEqual( 'foo-lod.n3', filename )
-        self.assertEqual( 'text_n3', format_ )
+        file = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2020', 'application_n_triples'), ('http://www.gesis.org/missy/metadata/MZ/2012', 'text_n3')] )
+        self.assertEqual( 'dumps/foo-lod', file['folder'] )
+        self.assertEqual( 'foo-lod.n3', file['filename'] )
+        self.assertEqual( 'text_n3', file['format'] )
 
     def test_download_data( self ):
 
         # no filename in url, suppose filename is taken from dataset name
-        folder, filename, format_ = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml')] )
-        self.assertEqual( 'dumps/foo-lod', folder )
-        self.assertEqual( 'foo-lod.rdf', filename )
-        self.assertEqual( 'application_rdf_xml', format_ )
+        file = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml')] )
+        self.assertEqual( 'dumps/foo-lod', file['folder'] )
+        self.assertEqual( 'foo-lod.rdf', file['filename'] )
+        self.assertEqual( 'application_rdf_xml', file['format'] )
 
         # 
         lodcc.args['no_cache'] = True
-        folder, filename, format_ = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml')] )
-        self.assertEqual( 'dumps/foo-lod', folder )
-        self.assertEqual( 'foo-lod.rdf', filename )
-        self.assertEqual( 'application_rdf_xml', format_ )
+        file = lodcc.download_data( [None,'foo-lod'], [('http://www.gesis.org/missy/metadata/MZ/2012', 'application_rdf_xml')] )
+        self.assertEqual( 'dumps/foo-lod', file['folder'] )
+        self.assertEqual( 'foo-lod.rdf', file['filename'] )
+        self.assertEqual( 'application_rdf_xml', file['format'] )
+
+    def test_build_graph_prepare__x_and_nt( self ):
+
+        lodcc.build_graph_prepare( [None, 'dump-compressed'], { 'path': 'tests/data/dump-compressed.tar.gz', 'filename': 'dump-compressed.tar.gz', 'folder': 'tests/data', 'format': 'text_turtle' } )
+        # check if file was extracted
+        self.assertTrue( os.path.isfile( 'tests/data/dump-extracted.txt' ) )
+
+    #def test_build_graph_prepare__x_and_not_nt( self ):
+
+    #def test_build_graph_prepare__not_x_and_nt( self ):
+
+    #def test_build_graph_prepare__not_x_and_not_nt( self ):
+
