@@ -1,6 +1,9 @@
 #!/bin/bash
 #
-# given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.csv'
+# This script takes a file with ntriple format as input. It converts this file
+# into a edge-list structure, i.e. "node_src node_trg { edge }".
+# Given a file with name 'foo.bar' or 'foo.bar.nt', this process will write the
+# data into a file named: 'foo.bar.csv'
 #
 
 FPATH="$1"

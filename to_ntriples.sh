@@ -1,6 +1,12 @@
 #!/bin/bash
 # 
-# given a filename called 'foo.bar', this process will write the data into a file named: 'foo.bar.nt'
+# This script takes an rdf format and a file as input. It converts the file
+# from the given format into ntriples, while it also extracts the file if
+# necessary. If the compressed file is an archive containing more than one
+# file, all files will be converted and merged.
+# 
+# Given a file with name 'foo.bar' or 'foo.bar.tar.gz', this process will 
+# write the data into a file named: 'foo.bar.nt'.
 #
 
 FILE_FORMAT="${1:-rdfxml}"
