@@ -3,45 +3,6 @@ import lodcc
 
 class LodccHelperTestCase( unittest.TestCase ):
 
-    def test_compressed_file_mediatype( self ):
-
-        file =  lodcc.get_file_mediatype( { 'filename' : 'compressed.bz2' } )
-        self.assertTrue( file['is_compressed'] )
-        self.assertEqual( 'bz2', file['mediatype'] )
-        file =  lodcc.get_file_mediatype( { 'filename' : 'compressed.tar.xz' } )
-        self.assertTrue( file['is_compressed'] )
-        self.assertEqual( 'tar.xz', file['mediatype'] )
-        file =  lodcc.get_file_mediatype( { 'filename' : 'compressed.tar' } )
-        self.assertTrue( file['is_compressed'] )
-        self.assertEqual( 'tar', file['mediatype'] )
-        file =  lodcc.get_file_mediatype( { 'filename' : 'compressed.zip' } )
-        self.assertTrue( file['is_compressed'] )
-        self.assertEqual( 'zip', file['mediatype'] )
-        file =  lodcc.get_file_mediatype( { 'filename' : 'compressed.nt.gz' } )
-        self.assertTrue( file['is_compressed'] )
-        self.assertEqual( 'gz', file['mediatype'] )
-        file =  lodcc.get_file_mediatype( { 'filename' : 'compressed.rdf.bz2' } )
-        self.assertTrue( file['is_compressed'] )
-        self.assertEqual( 'bz2', file['mediatype'] )
-
-        file =  lodcc.get_file_mediatype( { 'filename' : 'compressed.rdf' } )
-        self.assertFalse( file['is_compressed'] )
-        self.assertEqual( 'rdf', file['mediatype'] )
-        file =  lodcc.get_file_mediatype( { 'filename' : 'compressed.rdf.xml' } )
-        self.assertFalse( file['is_compressed'] )
-        self.assertEqual( 'rdf.xml', file['mediatype'] )
-        file =  lodcc.get_file_mediatype( { 'filename' : 'compressed' } )
-        self.assertFalse( file['is_compressed'] )
-        self.assertTrue( 'mediatype' not in file )
-
-    def test_get_file_mediatype( self ):
-
-        self.assertTrue( 'mediatype' not in lodcc.get_file_mediatype( { 'filename' : 'without' } ) )
-        self.assertEqual( lodcc.get_file_mediatype( { 'filename' : 'filename.rdf' } )['mediatype'], 'rdf' )
-        self.assertEqual( lodcc.get_file_mediatype( { 'filename' : 'filename.tgz' } )['mediatype'], 'tgz' )
-        self.assertEqual( lodcc.get_file_mediatype( { 'filename' : 'filename.tar.gz' } )['mediatype'], 'tar.gz' )
-        self.assertEqual( lodcc.get_file_mediatype( { 'filename' : 'filename.nt.gz' } )['mediatype'], 'gz' )
-
     def test_ensure_valid_filename_from_url( self ):
         
         basenames = [ 
