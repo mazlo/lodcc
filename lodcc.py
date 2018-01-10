@@ -22,23 +22,23 @@ from constants import *
 
 mediatype_mappings = {}
 
-def ensure_db_schema_complete( cur, attribute ):
+def ensure_db_schema_complete( cur, table_name, attribute ):
     ```ensure_db_schema_complete```
 
     log.debug( 'Checking if column %s exists', attribute )
-    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", ('stats', attribute) )
+    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", (table_name, attribute) )
 
     if cur.rowcount == 0:
         log.info( 'Creating missing attribute %s', attribute )
-        cur.execute( "ALTER TABLE stats ADD COLUMN "+ attribute +" varchar;" )
+        cur.execute( "ALTER TABLE %s ADD COLUMN "+ attribute +" varchar;", (table_name,) )
 
     log.debug( 'Found %s-attribute', attribute )
     return attribute
 
-def ensure_db_record_is_unique( cur, name, attribute, value ):
+def ensure_db_record_is_unique( cur, name, table_name, attribute, value ):
     ```ensure_db_record_is_unique```
 
-    cur.execute( 'SELECT id FROM stats WHERE name = %s AND ('+ attribute +' IS NULL OR '+ attribute +' = %s)', (name, "") )
+    cur.execute( 'SELECT id FROM %s WHERE name = %s AND ('+ attribute +' IS NULL OR '+ attribute +' = %s)', (table_name, name, "") )
 
     if cur.rowcount != 0:
         # returns the id of the row to be updated
@@ -46,7 +46,7 @@ def ensure_db_record_is_unique( cur, name, attribute, value ):
     else:
         # insert new row and return the id of the row to be updated
         log.info( 'Attribute %s not unique for "%s". Will create a new row.', attribute, name )
-        cur.execute( 'INSERT INTO stats (id, name, '+ attribute +') VALUES (default, %s, %s) RETURNING id', (name, value) )
+        cur.execute( 'INSERT INTO %s (id, name, '+ attribute +') VALUES (default, %s, %s) RETURNING id', (table_name, name, value) )
 
         return cur.fetchone()[0]
 
@@ -83,10 +83,10 @@ def ensure_format_is_valid( r ):
 
     return format_
 
-def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
+def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, check=True ):
     ```save_value```
 
-    ensure_db_schema_complete( cur, attribute )
+    ensure_db_schema_complete( cur, table_name, attribute )
 
     if check and not value:
         # TODO create warning message
@@ -94,37 +94,37 @@ def save_value( cur, dataset_id, dataset_name, attribute, value, check=True ):
         return
     elif check:
         # returns the id of the row to be updated
-        dataset_id = ensure_db_record_is_unique( cur, dataset_name, attribute, value )
+        dataset_id = ensure_db_record_is_unique( cur, dataset_name, table_name, attribute, value )
     
     log.debug( 'Saving value "%s" for attribute "%s" for "%s"', value, attribute, dataset_name )
-    cur.execute( 'UPDATE stats SET '+ attribute +' = %s WHERE id = %s;', ( value, dataset_id ) )
+    cur.execute( 'UPDATE %s SET '+ attribute +' = %s WHERE id = %s;', (table_name, value, dataset_id) )
 
-def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
+def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
     ```parse_datapackages```
 
     dp = None
 
-    datapackage_filename = 'datapackage_'+ name +'.json'
+    datapackage_filename = 'datapackage_'+ dataset_name +'.json'
     if not os.path.isfile( datapackage_filename ):
-        log.info( 'cURLing datapackage.json for %s', name )
+        log.info( 'cURLing datapackage.json for %s', dataset_name )
         os.popen( 'curl -s -L "'+ datahub_url +'/datapackage.json" -o '+ datapackage_filename )
         # TODO ensure the process succeeds
     else:
-        log.info( 'Using local datapackage.json for %s', name )
+        log.info( 'Using local datapackage.json for %s', dataset_name )
 
-    with open( 'datapackage_'+ name +'.json', 'r' ) as file:
+    with open( 'datapackage_'+ dataset_name +'.json', 'r' ) as file:
         try:
             log.debug( 'Parsing datapackage.json' )
             dp = json.load( file )
 
             if 'name' in dp:
-                name = dp['name']
-                save_value( cur, dataset_id, name, 'name', name, False )
+                dataset_name = dp['name']
+                save_value( cur, dataset_id, dataset_name, 'stats', 'name', dataset_name, False )
             else:
                 log.warn( 'No name-property given. File will be saved in datapackage.json' )
 
             if not 'resources' in dp:
-                log.error( '"resources" does not exist for %s', name )
+                log.error( '"resources" does not exist for %s', dataset_name )
                 # TODO create error message and exit
                 return None
 
@@ -136,11 +136,11 @@ def parse_datapackages( dataset_id, datahub_url, name, dry_run=False ):
                 if not format_:
                     continue
 
-                save_value( cur, dataset_id, name, format_, r['url'], True )
+                save_value( cur, dataset_id, dataset_name, 'stats', format_, r['url'], True )
 
-            save_value( cur, dataset_id, name, 'keywords', dp['keywords'] if 'keywords' in dp else None, False )
+            save_value( cur, dataset_id, dataset_name, 'stats', 'keywords', dp['keywords'] if 'keywords' in dp else None, False )
             # save whole datapackage.json in column
-            save_value( cur, dataset_id, name, 'datapackage_content', str( json.dumps( dp ) ), False )
+            save_value( cur, dataset_id, dataset_name, 'stats', 'datapackage_content', str( json.dumps( dp ) ), False )
 
         except:
             # TODO create error message and exit
@@ -271,79 +271,62 @@ def download_data( dataset, urls ):
         valid = ensure_valid_download_data( path )
         if not args['no_cache'] and valid:
             log.info( 'Reusing dump for %s', dataset[1] )
-            return folder, filename, format_
+            return dict( { 'path': path, 'filename': filename, 'folder': folder, 'format': format_ } )
 
         # download anew otherwise
         # thread waits until this is finished
         log.info( 'Downloading dump for %s ...', dataset[1] )
-        os.popen( 'curl -s -L "'+ url +'" -o '+ path  )
+        os.popen( 'wget --quiet --output-document %s %s' % (path,url)  )
 
         valid = ensure_valid_download_data( path )
         if not valid:
             log.info( 'Skipping format %s', format_ )
             continue
         else:
-            return folder, filename, format_
+            return dict( { 'path': path, 'filename': filename, 'folder': folder, 'format': format_ } )
 
-    return None, None, None
+    return dict()
 
-def get_file_mediatype( filename ):
-    """get_file_mediatype
-
-    returns ('tgz', True) for 'foo.bar.tgz' (filename ends with a compressed mediatype). 
-    returns ('bar.nt', False) for 'foo.bar.nt' (filename does not end with compressed mediatype).
-    returns ('foo', False) for 'foo' (filename has no mediatype).
-    """
-
-    idx = filename.find( '.' )
-    if idx <= 0:
-        log.error( 'No file extension found for: %s', filename )
-        return ( filename, False )
-
-    mediatype = filename[idx:]
-
-    types = [ type_ for type_ in MEDIATYPES_COMPRESSED if mediatype.endswith( '.'+ type_ ) ]
-    if len( types ) == 0:
-        return ( filename[idx+1:], False )
-
-    return ( types[0], True )
-
-def build_graph_prepare( dataset, details ):
+def build_graph_prepare( dataset, file ):
     ```build_graph_prepare```
 
-    if not details:
+    if not file:
         log.error( 'Cannot continue due to error in downloading data. returning.' )
         return
 
-    folder, filename, format_ = details
-
-    if not filename:
+    if not 'filename' in file:
         log.error( 'Cannot prepare graph for %s, aborting', dataset[1] )
         return
 
-    # decompress if necessary
-    filespec = get_file_mediatype( filename )
-    if filespec[1]:
-        log.info( 'Need to decompress %s', filename )
-
-        os.popen( MEDIATYPES[format_]['cmd_to_one-liner'] % ( folder, filename, '.'+ filespec[0] ) )
-
-        filename = re.sub( '.'+ filespec[0], '', filename )
-    
-    # TODO check correct mediatype if not compressed
+    format_ = file['format']
+    path = file['path']
 
     no_cache = 'true' if args['no_cache'] else ''
-
-    path = '/'.join( [ folder, filename ] )
 
     # transform into ntriples if necessary
     if not format_ == APPLICATION_N_TRIPLES:
         log.info( 'Need to transform to ntriples.. this may take a while' )
+        log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
         os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
+
+    # TODO check correct mediatype if not compressed
 
     # transform into graph csv
     log.info( 'Preparing required graph structure.. this may take a while' )
     os.popen( MEDIATYPES[format_]['cmd_to_csv'] % (path,no_cache) )
+
+def job_cleanup_intermediate( dataset, file ):
+    """"""
+
+    # TODO remove 1. decompressed and transformed 2. .nt file
+
+
+def build_graph_analyse( dataset, file ):
+    """"""
+
+    # TODO save values for dataset
+
+    # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
 
 # real job
 def job_start( dataset, sem ):
@@ -355,12 +338,16 @@ def job_start( dataset, sem ):
         urls = download_prepare( dataset )
 
         # - download_data
-        url_details = download_data( dataset, urls )
+        file = download_data( dataset, urls )
 
         # - build_graph_prepare
-        build_graph_prepare( dataset, url_details )
+        build_graph_prepare( dataset, file )
+
+        # - job_cleanup_intermediate
+        job_cleanup_intermediate( dataset, file )
 
         # - build_graph_analyse
+        build_graph_analyse( dataset, file )
 
         # - job_cleanup
 
@@ -488,13 +475,14 @@ if __name__ == '__main__':
                 names_query = 'name = %s'
                 names = tuple( ['museums-in-italy'] )
 
-            log.debug( 'Configured datasets: '+ ', '.join( names ) )
-            
-            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
+        log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
-            cur.execute( sql, names )
+        if names_query:
+            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
         else:
-            cur.execute( 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id LIMIT 100' )
+            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
+
+        cur.execute( sql, names )
 
         parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
 

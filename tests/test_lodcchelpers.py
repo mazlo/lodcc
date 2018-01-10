@@ -3,45 +3,6 @@ import lodcc
 
 class LodccHelperTestCase( unittest.TestCase ):
 
-    def test_compressed_file_mediatype( self ):
-
-        mediatype = lodcc.get_file_mediatype( 'compressed.bz2' )
-        self.assertTrue( mediatype[1] )
-        self.assertEqual( 'bz2', mediatype[0] )
-        mediatype = lodcc.get_file_mediatype( 'compressed.tar.xz' )
-        self.assertTrue( mediatype[1] )
-        self.assertEqual( 'tar.xz', mediatype[0] )
-        mediatype = lodcc.get_file_mediatype( 'compressed.tar' )
-        self.assertTrue( mediatype[1] )
-        self.assertEqual( 'tar', mediatype[0] )
-        mediatype = lodcc.get_file_mediatype( 'compressed.zip' )
-        self.assertTrue( mediatype[1] )
-        self.assertEqual( 'zip', mediatype[0] )
-        mediatype = lodcc.get_file_mediatype( 'compressed.nt.gz' )
-        self.assertTrue( mediatype[1] )
-        self.assertEqual( 'gz', mediatype[0] )
-        mediatype = lodcc.get_file_mediatype( 'compressed.rdf.bz2' )
-        self.assertTrue( mediatype[1] )
-        self.assertEqual( 'bz2', mediatype[0] )
-
-        mediatype = lodcc.get_file_mediatype( 'compressed.rdf' )
-        self.assertFalse( mediatype[1] )
-        self.assertEqual( 'rdf', mediatype[0] )
-        mediatype = lodcc.get_file_mediatype( 'compressed.rdf.xml' )
-        self.assertFalse( mediatype[1] )
-        self.assertEqual( 'rdf.xml', mediatype[0] )
-        mediatype = lodcc.get_file_mediatype( 'compressed' )
-        self.assertFalse( mediatype[1] )
-        self.assertEqual( 'compressed', mediatype[0] )
-
-    def test_get_file_mediatype( self ):
-
-        self.assertEqual( lodcc.get_file_mediatype( 'without' )[0], 'without' )
-        self.assertEqual( lodcc.get_file_mediatype( 'filename.rdf' )[0], 'rdf' )
-        self.assertEqual( lodcc.get_file_mediatype( 'filename.tgz' )[0], 'tgz' )
-        self.assertEqual( lodcc.get_file_mediatype( 'filename.tar.gz' )[0], 'tar.gz' )
-        self.assertEqual( lodcc.get_file_mediatype( 'filename.nt.gz' )[0], 'gz' )
-
     def test_ensure_valid_filename_from_url( self ):
         
         basenames = [ 
