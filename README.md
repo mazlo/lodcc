@@ -1,8 +1,22 @@
 [![pipeline status](https://git.gesis.org/matthaeus/lodcc/badges/master/pipeline.svg)](https://git.gesis.org/matthaeus/lodcc/commits/master)
 
-#### Commands
+### Commands
 
-##### File system
+#### Tests
+
+- Small dataset
+
+`python lodcc.py --parse-resource-urls --use-datasets museums-in-italy --log-level-debug`
+
+- Larger dataset
+
+`python lodcc.py --parse-resource-urls --use-datasets pokepedia-fr --log-level-debug`
+
+- Multithreaded processing
+
+`python lodcc.py --parse-resource-urls --use-datasets museums-in-italy pokepedia-fr --threads 2`
+
+#### File system
 
 - Determine file sizes of all dumps
 
@@ -11,7 +25,7 @@ $ find dumps/ -type f -exec ls -s {} \; > dumps-sizes.txt
 $ cat dumps-sizes.txt | sort -h -r | less
 ```
 
-##### dbpedia 
+#### dbpedia 
 
 - Download all filenames of all datasets into a file `dbpedia-link.txt`
 
