@@ -388,7 +388,7 @@ def build_graph_analyse( dataset ):
         os.popen( 'cat %s >> %s' % (filename_path,edgelist_path) )
 
     stats = {}
-    build_graph( dataset, edgelist_path, stats )
+    graph_analyze( dataset, edgelist_path, stats )
 
     # TODO save values for dataset
 
@@ -397,15 +397,16 @@ def build_graph_analyse( dataset ):
     # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
 
 # real job
-def job_start_build_graph( dataset, sem, cur ):
+def job_start_build_graph( dataset, sem ):
     """job_start_build_graph"""
 
     # let's go
     with sem:
         log.info( 'Let''s go' )
+        log.debug( dataset )
 
         # - build_graph_analyse
-        build_graph_analyse( dataset, cur )
+        build_graph_analyse( dataset )
 
         # - job_cleanup
 
@@ -608,6 +609,13 @@ if __name__ == '__main__':
                 names = tuple( ['museums-in-italy'] )
 
         log.debug( 'Configured datasets: '+ ', '.join( names ) )
+
+        if names_query:
+            sql = 'SELECT id,name,files_path FROM stats_graph WHERE '+ names_query +' ORDER BY id'
+        else:
+            sql = 'SELECT id,name,files_path FROM stats_graph ORDER BY id'
+        
+        cur.execute( sql, names )
 
         build_graph( cur, None if 'threads' not in args else args['threads'] )
 
