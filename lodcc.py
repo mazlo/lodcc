@@ -338,11 +338,11 @@ def graph_compute_directed_basic_properties( D, stats ):
     stats['avg_deg_in_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
     stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
 
-def build_graph( dataset, src, stats={} ):
+def graph_analyze( dataset, src, stats ):
     """"""
     
     if not os.path.isfile( src ):
-        log.error( 'edgelist.csv not found in %s', dataset['files_path'] )
+        log.error( 'edgelist.csv not found in %s', dataset[2] )
         return stats
 
     D=nx.read_adjlist( src, create_using=nx.DiGraph(), delimiter=' ' )
@@ -369,22 +369,22 @@ def build_graph( dataset, src, stats={} ):
 def build_graph_analyse( dataset ):
     """"""
 
-    if not 'files_path' in dataset:
-        log.error( '' )
+    if not dataset[2]:
+        log.error( 'No path given for dataset %s', dataset[1] )
         return 
 
-    edgelist_path = '/'.join( [dataset['files_path'],dataset['name'],'edgelist.csv'] )
+    edgelist_path = '/'.join( [dataset[2],'edgelist.csv'] )
 
     # writes all csv-files into edgelist.csv
-    for filename in os.listdir( dataset['files_path'] ):
-        filename_path = '/'.join( [dataset['files_path'],filename] )
+    for filename in os.listdir( dataset[2] ):
+        filename_path = '/'.join( [dataset[2],filename] )
         
         if not re.search( '.csv$', filename ):
             log.info( 'Skipping %s', filename )
             continue
 
         log.info( 'Appending %s to edgelist', filename )
-        log.debug( 'Calling command cat %s >> edgelist.csv' % (filename,dataset['name']) )
+        log.debug( 'Calling command cat %s >> edgelist.csv', filename )
         os.popen( 'cat %s >> %s' % (filename_path,edgelist_path) )
 
     stats = {}
@@ -490,7 +490,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description = 'lodcc' )
     parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
     parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
-    parser.add_argument( '--build-graph', 'pa', action = "store_true", help = '' )
+    parser.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
     parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
@@ -592,7 +592,7 @@ if __name__ == '__main__':
         parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
 
     # option 3
-    if args['build-graph']:
+    if args['build_graph']:
 
         # respect --use-datasets argument
         if args['use_datasets']:
