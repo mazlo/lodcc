@@ -320,20 +320,105 @@ def job_cleanup_intermediate( dataset, file ):
 
     # TODO remove 1. decompressed and transformed 2. .nt file
 
+import networkx as nx
+import numpy as n
 
-def build_graph_analyse( dataset, file ):
+def graph_compute_directed_basic_properties( D, stats ):
     """"""
 
+    stats['n']=D.order()
+    stats['k']=D.size()
+    stats['max_deg(D)']=n.max( D.degree().values() )
+    stats['avg_deg(D)']=float( D.order() ) / D.size()
+    stats['max_deg_in(D)']=n.max( D.in_degree().values() )
+    stats['avg_deg_in(D)']=n.mean( D.in_degree().values() )
+    stats['max_deg_out(D)']=n.max( D.out_degree().values() )
+    stats['avg_deg_out(D)']=n.mean( D.out_degree().values() )
+    stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
+    stats['avg_deg_in_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
+    stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
+
+def build_graph( dataset, src, stats={} ):
+    """"""
+    
+    if not os.path.isfile( src ):
+        log.error( 'edgelist.csv not found in %s', dataset['files_path'] )
+        return stats
+
+    D=nx.read_adjlist( src, create_using=nx.DiGraph(), delimiter=' ' )
+    
+    graph_compute_directed_basic_properties( D, stats )
+    
+    #U=D.to_undirected()
+    # use a undirected graph for this
+    
+    # slow
+    #stats['k_core(U)']=nx.k_core(U)
+    # slow
+    #stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
+    # slow
+    #stats['avg_clustering(U)']=nx.average_clustering(U)
+    #stats['avg_deg_centrality(U)']=n.mean( nx.degree_centrality(U).values() )
+    #stats['avg_deg_centrality(D)']=n.mean( nx.degree_centrality(D).values() )
+    # slow
+    #stats['radius(U)']=nx.radius(U)
+    #stats['diameter(U)']=nx.diameter(U)
+    
+    return stats
+
+def build_graph_analyse( dataset ):
+    """"""
+
+    if not 'files_path' in dataset:
+        log.error( '' )
+        return 
+
+    edgelist_path = '/'.join( [dataset['files_path'],dataset['name'],'edgelist.csv'] )
+
+    # writes all csv-files into edgelist.csv
+    for filename in os.listdir( dataset['files_path'] ):
+        filename_path = '/'.join( [dataset['files_path'],filename] )
+        
+        if not re.search( '.csv$', filename ):
+            log.info( 'Skipping %s', filename )
+            continue
+
+        log.info( 'Appending %s to edgelist', filename )
+        log.debug( 'Calling command cat %s >> edgelist.csv' % (filename,dataset['name']) )
+        os.popen( 'cat %s >> %s' % (filename_path,edgelist_path) )
+
+    stats = {}
+    build_graph( dataset, edgelist_path, stats )
+
     # TODO save values for dataset
+
+    print stats
 
     # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
 
 # real job
-def job_start( dataset, sem ):
+def job_start_build_graph( dataset, sem, cur ):
+    """job_start_build_graph"""
+
+    # let's go
+    with sem:
+        log.info( 'Let''s go' )
+
+        # - build_graph_analyse
+        build_graph_analyse( dataset, cur )
+
+        # - job_cleanup
+
+        log.info( 'Done' ) 
+
+# real job
+def job_start_download_and_prepare( dataset, sem ):
     ```job_start```
 
     # let's go
     with sem:
+        log.info( 'Let''s go' )
+        
         # - download_prepare
         urls = download_prepare( dataset )
 
@@ -345,11 +430,6 @@ def job_start( dataset, sem ):
 
         # - job_cleanup_intermediate
         job_cleanup_intermediate( dataset, file )
-
-        # - build_graph_analyse
-        build_graph_analyse( dataset, file )
-
-        # - job_cleanup
 
         log.info( 'Done' ) 
 
@@ -368,9 +448,33 @@ def parse_resource_urls( cur, no_of_threads=1 ):
 
     for dataset in datasets:
         
-        log.info( 'Starting job for %s', dataset )
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start_download_and_prepare, name = 'Job: '+ dataset[1], args = ( dataset, sem, cur ) )
+        t.start()
+
+        threads.append( t )
+
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
+
+def build_graph( cur, no_of_threads=1 ):
+    """"""
+
+    datasets = cur.fetchall()
+
+    if cur.rowcount == 0:
+        log.error( 'No datasets to parse. exiting' )
+        return None
+
+    sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
+
+    threads = []
+
+    for dataset in datasets:
+        
+        # create a thread for each dataset. work load is limited by the semaphore
+        t = threading.Thread( target = job_start_build_graph, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
         t.start()
 
         threads.append( t )
@@ -386,6 +490,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description = 'lodcc' )
     parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
     parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
+    parser.add_argument( '--build-graph', 'pa', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
     parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
@@ -486,6 +591,25 @@ if __name__ == '__main__':
 
         parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
 
+    # option 3
+    if args['build-graph']:
+
+        # respect --use-datasets argument
+        if args['use_datasets']:
+            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+            names = tuple( args['use_datasets'] )
+
+        if args['dry_run']:
+            log.info( 'Running in dry-run mode' )
+
+            # if not given explicitely above, shrink available datasets to one special
+            if not args['use_datasets']:
+                names_query = 'name = %s'
+                names = tuple( ['museums-in-italy'] )
+
+        log.debug( 'Configured datasets: '+ ', '.join( names ) )
+
+        build_graph( cur, None if 'threads' not in args else args['threads'] )
 
     # close communication with the database
     cur.close()
