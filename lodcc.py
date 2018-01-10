@@ -418,17 +418,21 @@ def build_graph_analyse( dataset ):
 
     edgelist_path = '/'.join( [dataset[2],'edgelist.csv'] )
 
-    # writes all csv-files into edgelist.csv
-    for filename in os.listdir( dataset[2] ):
-        filename_path = '/'.join( [dataset[2],filename] )
-        
-        if not re.search( '.csv$', filename ):
-            log.info( 'Skipping %s', filename )
-            continue
+    if not os.path.isfile( edgelist_path ):
 
-        log.info( 'Appending %s to edgelist', filename )
-        log.debug( 'Calling command cat %s >> edgelist.csv', filename )
-        os.popen( 'cat %s >> %s' % (filename_path,edgelist_path) )
+        # writes all csv-files into edgelist.csv
+        for filename in os.listdir( dataset[2] ):
+            filename_path = '/'.join( [dataset[2],filename] )
+        
+            if not re.search( '.csv$', filename ):
+                log.info( 'Skipping %s', filename )
+                continue
+
+            log.info( 'Appending %s to edgelist', filename )
+            log.debug( 'Calling command cat %s >> edgelist.csv', filename )
+            os.popen( 'cat %s >> %s' % (filename_path,edgelist_path) )
+    else:
+        log.info( 'File edgelist.csv already exists' )
 
     stats = {}
     graph_analyze( dataset, edgelist_path, stats )
