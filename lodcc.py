@@ -323,20 +323,63 @@ def job_cleanup_intermediate( dataset, file ):
 import networkx as nx
 import numpy as n
 
-def graph_compute_directed_basic_properties( D, stats ):
+def order( D, stats ):
+    stats['n']=D.order()
+    log.info( 'order' )
+def size( D, stats ):
+    stats['k']=D.size()
+    log.info( 'size' )
+def max_deg( D, stats ):
+    stats['max_deg(D)']=n.max( D.degree().values() )
+    log.info( 'max_deg' )
+def avg_deg( D, stats ):
+    stats['avg_deg(D)']=float( D.order() ) / D.size()
+    log.info( 'avg_deg' )
+def max_deg_in( D, stats ):
+    stats['max_deg_in(D)']=n.max( D.in_degree().values() )
+    log.info( 'max_deg_in' )
+def avg_deg_in( D, stats ):
+    stats['avg_deg_in(D)']=n.mean( D.in_degree().values() )
+    log.info( 'avg_deg_in' )
+def max_deg_out( D, stats ):
+    stats['max_deg_out(D)']=n.max( D.out_degree().values() )
+    log.info( 'max_deg_out' )
+def avg_deg_out( D, stats ):
+    stats['avg_deg_out(D)']=n.mean( D.out_degree().values() )
+    log.info( 'avg_deg_out' )
+def avg_deg_in_centrality( D, stats ):
+    stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
+    log.info( 'avg_deg_in_centrality' )
+def avg_deg_out_centrality( D, stats ):
+    stats['avg_deg_out_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
+    log.info( 'avg_deg_out_centrality' )
+def avg_pagerank( D, stats ):
+    stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
+    log.info( 'avg_pagerank' )
+
+def graph_compute_directed_basic_properties( dataset, D, stats ):
     """"""
 
-    stats['n']=D.order()
-    stats['k']=D.size()
-    stats['max_deg(D)']=n.max( D.degree().values() )
-    stats['avg_deg(D)']=float( D.order() ) / D.size()
-    stats['max_deg_in(D)']=n.max( D.in_degree().values() )
-    stats['avg_deg_in(D)']=n.mean( D.in_degree().values() )
-    stats['max_deg_out(D)']=n.max( D.out_degree().values() )
-    stats['avg_deg_out(D)']=n.mean( D.out_degree().values() )
-    stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
-    stats['avg_deg_in_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
-    stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
+    features = [ 
+            order, size, max_deg, avg_deg, 
+            max_deg_in, avg_deg_in, max_deg_out, avg_deg_out, 
+            avg_deg_in_centrality, avg_deg_out_centrality, 
+            avg_pagerank ]
+
+    sem = threading.Semaphore( 4 ) 
+    threads = []
+
+    for ftr in features:
+                           
+        # create a thread for each feature. work load is limited by the semaphore
+        t = threading.Thread( target = ftr, name = 'Job: %s, Feature: %s ' % (dataset[1],ftr.__name__), args = ( D, stats ) )
+        t.start()
+
+        threads.append( t )
+
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
 
 def graph_analyze( dataset, src, stats ):
     """"""
@@ -347,7 +390,7 @@ def graph_analyze( dataset, src, stats ):
 
     D=nx.read_adjlist( src, create_using=nx.DiGraph(), delimiter=' ' )
     
-    graph_compute_directed_basic_properties( D, stats )
+    graph_compute_directed_basic_properties( dataset, D, stats )
     
     #U=D.to_undirected()
     # use a undirected graph for this
