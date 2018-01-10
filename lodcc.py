@@ -23,7 +23,7 @@ from constants import *
 mediatype_mappings = {}
 
 def ensure_db_schema_complete( cur, table_name, attribute ):
-    ```ensure_db_schema_complete```
+    """ensure_db_schema_complete"""
 
     log.debug( 'Checking if column %s exists', attribute )
     cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", (table_name, attribute) )
@@ -36,7 +36,7 @@ def ensure_db_schema_complete( cur, table_name, attribute ):
     return attribute
 
 def ensure_db_record_is_unique( cur, name, table_name, attribute, value ):
-    ```ensure_db_record_is_unique```
+    """ensure_db_record_is_unique"""
 
     cur.execute( 'SELECT id FROM %s WHERE name = %s AND ('+ attribute +' IS NULL OR '+ attribute +' = %s)', (table_name, name, "") )
 
@@ -51,7 +51,7 @@ def ensure_db_record_is_unique( cur, name, table_name, attribute, value ):
         return cur.fetchone()[0]
 
 def ensure_format_in_dictionary( format_ ):
-    ```ensure_format_in_dictionary```
+    """ensure_format_in_dictionary"""
 
     if format_ in mediatype_mappings:
         log.info( 'Format %s will be mapped to %s', format_, mediatype_mappings[format_] )
@@ -60,7 +60,7 @@ def ensure_format_in_dictionary( format_ ):
     return format_
 
 def ensure_format_is_valid( r ):
-    ```ensure_format_is_valid```
+    """ensure_format_is_valid"""
 
     if not 'format' in r:
         log.error( 'resources-object is missing format-property. Cannot save this value' )
@@ -84,7 +84,7 @@ def ensure_format_is_valid( r ):
     return format_
 
 def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, check=True ):
-    ```save_value```
+    """save_value"""
 
     ensure_db_schema_complete( cur, table_name, attribute )
 
@@ -100,7 +100,7 @@ def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, che
     cur.execute( 'UPDATE %s SET '+ attribute +' = %s WHERE id = %s;', (table_name, value, dataset_id) )
 
 def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
-    ```parse_datapackages```
+    """parse_datapackages"""
 
     dp = None
 
@@ -255,7 +255,7 @@ def ensure_valid_download_data( path ):
     return True
 
 def download_data( dataset, urls ):
-    ```download_data```
+    """download_data"""
 
     for url, format_ in urls:
 
@@ -288,7 +288,7 @@ def download_data( dataset, urls ):
     return dict()
 
 def build_graph_prepare( dataset, file ):
-    ```build_graph_prepare```
+    """build_graph_prepare"""
 
     if not file:
         log.error( 'Cannot continue due to error in downloading data. returning.' )
@@ -414,7 +414,7 @@ def job_start_build_graph( dataset, sem ):
 
 # real job
 def job_start_download_and_prepare( dataset, sem ):
-    ```job_start```
+    """job_start_download_and_prepare"""
 
     # let's go
     with sem:
@@ -435,7 +435,7 @@ def job_start_download_and_prepare( dataset, sem ):
         log.info( 'Done' ) 
 
 def parse_resource_urls( cur, no_of_threads=1 ):
-    ```parse_resource_urls```
+    """parse_resource_urls"""
 
     datasets = cur.fetchall()
 
