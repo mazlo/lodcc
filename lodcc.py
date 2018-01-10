@@ -276,7 +276,7 @@ def download_data( dataset, urls ):
         # download anew otherwise
         # thread waits until this is finished
         log.info( 'Downloading dump for %s ...', dataset[1] )
-        os.popen( 'curl -s -L "'+ url +'" -o '+ path  )
+        os.popen( 'wget --quiet --output-document %s %s' % (path,url)  )
 
         valid = ensure_valid_download_data( path )
         if not valid:
