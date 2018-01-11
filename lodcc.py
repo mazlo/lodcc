@@ -323,39 +323,61 @@ def job_cleanup_intermediate( dataset, file ):
 import networkx as nx
 import numpy as n
 
-def order( D, stats ):
-    stats['n']=D.order()
-    log.info( 'order' )
-def size( D, stats ):
-    stats['k']=D.size()
-    log.info( 'size' )
-def max_deg( D, stats ):
-    stats['max_deg(D)']=n.max( D.degree().values() )
-    log.info( 'max_deg' )
-def avg_deg( D, stats ):
-    stats['avg_deg(D)']=float( D.order() ) / D.size()
-    log.info( 'avg_deg' )
-def max_deg_in( D, stats ):
-    stats['max_deg_in(D)']=n.max( D.in_degree().values() )
-    log.info( 'max_deg_in' )
-def avg_deg_in( D, stats ):
-    stats['avg_deg_in(D)']=n.mean( D.in_degree().values() )
-    log.info( 'avg_deg_in' )
-def max_deg_out( D, stats ):
-    stats['max_deg_out(D)']=n.max( D.out_degree().values() )
-    log.info( 'max_deg_out' )
-def avg_deg_out( D, stats ):
-    stats['avg_deg_out(D)']=n.mean( D.out_degree().values() )
-    log.info( 'avg_deg_out' )
-def avg_deg_in_centrality( D, stats ):
-    stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
-    log.info( 'avg_deg_in_centrality' )
-def avg_deg_out_centrality( D, stats ):
-    stats['avg_deg_out_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
-    log.info( 'avg_deg_out_centrality' )
-def avg_pagerank( D, stats ):
-    stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
-    log.info( 'avg_pagerank' )
+def order( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['n']=D.order()
+        log.info( 'order' )
+def size( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['k']=D.size()
+        log.info( 'size' )
+def max_deg( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['max_deg(D)']=n.max( D.degree().values() )
+        log.info( 'max_deg' )
+def avg_deg( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['avg_deg(D)']=float( D.order() ) / D.size()
+        log.info( 'avg_deg' )
+def max_deg_in( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['max_deg_in(D)']=n.max( D.in_degree().values() )
+        log.info( 'max_deg_in' )
+def avg_deg_in( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['avg_deg_in(D)']=n.mean( D.in_degree().values() )
+        log.info( 'avg_deg_in' )
+def max_deg_out( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['max_deg_out(D)']=n.max( D.out_degree().values() )
+        log.info( 'max_deg_out' )
+def avg_deg_out( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['avg_deg_out(D)']=n.mean( D.out_degree().values() )
+        log.info( 'avg_deg_out' )
+def avg_deg_in_centrality( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
+        log.info( 'avg_deg_in_centrality' )
+def avg_deg_out_centrality( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['avg_deg_out_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
+        log.info( 'avg_deg_out_centrality' )
+def avg_pagerank( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
+        log.info( 'avg_pagerank' )
 
 def graph_compute_directed_basic_properties( dataset, D, stats ):
     """"""
@@ -372,7 +394,7 @@ def graph_compute_directed_basic_properties( dataset, D, stats ):
     for ftr in features:
                            
         # create a thread for each feature. work load is limited by the semaphore
-        t = threading.Thread( target = ftr, name = 'Job: %s, Feature: %s ' % (dataset[1],ftr.__name__), args = ( D, stats ) )
+        t = threading.Thread( target = ftr, name = 'Job: %s, Feature: %s ' % (dataset[1],ftr.__name__), args = ( D, stats, sem ) )
         t.start()
 
         threads.append( t )
