@@ -346,40 +346,47 @@ def avg_deg( D, stats, sem ):
 def max_deg_in( D, stats, sem ):
     # can I?
     with sem:
-        stats['max_deg_in(D)']=n.max( D.in_degree().values() )
         log.info( 'max_deg_in' )
+        stats['max_deg_in(D)']=n.max( D.in_degree().values() )
+        log.info( 'done max_deg_in' )
 def avg_deg_in( D, stats, sem ):
     # can I?
     with sem:
-        stats['avg_deg_in(D)']=n.mean( D.in_degree().values() )
         log.info( 'avg_deg_in' )
+        stats['avg_deg_in(D)']=n.mean( D.in_degree().values() )
+        log.info( 'done avg_deg_in' )
 def max_deg_out( D, stats, sem ):
     # can I?
     with sem:
-        stats['max_deg_out(D)']=n.max( D.out_degree().values() )
         log.info( 'max_deg_out' )
+        stats['max_deg_out(D)']=n.max( D.out_degree().values() )
+        log.info( 'done max_deg_out' )
 def avg_deg_out( D, stats, sem ):
     # can I?
     with sem:
-        stats['avg_deg_out(D)']=n.mean( D.out_degree().values() )
         log.info( 'avg_deg_out' )
+        stats['avg_deg_out(D)']=n.mean( D.out_degree().values() )
+        log.info( 'done avg_deg_out' )
 def avg_deg_in_centrality( D, stats, sem ):
     # can I?
     with sem:
-        stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
         log.info( 'avg_deg_in_centrality' )
+        stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
+        log.info( 'done avg_deg_in_centrality' )
 def avg_deg_out_centrality( D, stats, sem ):
     # can I?
     with sem:
-        stats['avg_deg_out_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
         log.info( 'avg_deg_out_centrality' )
+        stats['avg_deg_out_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
+        log.info( 'done avg_deg_out_centrality' )
 def avg_pagerank( D, stats, sem ):
     # can I?
     with sem:
-        stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
         log.info( 'avg_pagerank' )
+        stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
+        log.info( 'done avg_pagerank' )
 
-def graph_compute_directed_basic_properties( dataset, D, stats ):
+def digraph_basic_feature_set( dataset, D, stats ):
     """"""
 
     features = [ 
@@ -394,7 +401,56 @@ def graph_compute_directed_basic_properties( dataset, D, stats ):
     for ftr in features:
                            
         # create a thread for each feature. work load is limited by the semaphore
-        t = threading.Thread( target = ftr, name = 'Job: %s, Feature: %s ' % (dataset[1],ftr.__name__), args = ( D, stats, sem ) )
+        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( D, stats, sem ) )
+        t.start()
+
+        threads.append( t )
+
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
+
+def avg_shortest_path( U, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_shortest_path' )
+        stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
+        log.info( 'done avg_shortest_path' )
+def avg_clustering( U, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_clustering' )
+        stats['avg_clustering(U)']=nx.average_clustering(U)
+        log.info( 'done avg_clustering' )
+def avg_deg_centrality( U, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_deg_centrality' )
+        stats['avg_deg_centrality(U)']=n.mean( nx.degree_centrality(U).values() )
+        log.info( 'done avg_deg_centrality' )
+def diameter( U, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'diameter' )
+        stats['diameter(U)']=nx.diameter(U)
+        log.info( 'done diameter' )
+
+def ugraph_basic_feature_set( dataset, U, stats ):
+    """"""
+
+    features = [ 
+            order, size, max_deg, avg_deg, 
+            max_deg_in, avg_deg_in, max_deg_out, avg_deg_out, 
+            avg_deg_in_centrality, avg_deg_out_centrality, 
+            avg_pagerank ]
+
+    sem = threading.Semaphore( 4 ) 
+    threads = []
+
+    for ftr in features:
+                           
+        # create a thread for each feature. work load is limited by the semaphore
+        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( D, stats, sem ) )
         t.start()
 
         threads.append( t )
@@ -410,25 +466,24 @@ def graph_analyze( dataset, src, stats ):
         log.error( 'edgelist.csv not found in %s', dataset[2] )
         return stats
 
+    log.info( 'Constructing DiGraph with edgelist' )
     D=nx.read_adjlist( src, create_using=nx.DiGraph(), delimiter=' ' )
     
-    graph_compute_directed_basic_properties( dataset, D, stats )
+    log.info( 'Computing feature set DiGraph' )
+    digraph_basic_feature_set( dataset, D, stats )
     
-    #U=D.to_undirected()
-    # use a undirected graph for this
+    log.info( 'Converting to undirected' )
+    U=D.to_undirected()
+
+    log.info( 'Computing feature set UGraph' )
+    ugraph_basic_feature_set( dataset, U, stats )
     
     # slow
     #stats['k_core(U)']=nx.k_core(U)
-    # slow
-    #stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
-    # slow
-    #stats['avg_clustering(U)']=nx.average_clustering(U)
-    #stats['avg_deg_centrality(U)']=n.mean( nx.degree_centrality(U).values() )
-    #stats['avg_deg_centrality(D)']=n.mean( nx.degree_centrality(D).values() )
-    # slow
     #stats['radius(U)']=nx.radius(U)
-    #stats['diameter(U)']=nx.diameter(U)
     
+    # plot distributions
+
     return stats
 
 def build_graph_analyse( dataset ):
