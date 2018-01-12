@@ -23,7 +23,7 @@ from constants import *
 mediatype_mappings = {}
 
 def ensure_db_schema_complete( cur, table_name, attribute ):
-    ```ensure_db_schema_complete```
+    """ensure_db_schema_complete"""
 
     log.debug( 'Checking if column %s exists', attribute )
     cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", (table_name, attribute) )
@@ -36,7 +36,7 @@ def ensure_db_schema_complete( cur, table_name, attribute ):
     return attribute
 
 def ensure_db_record_is_unique( cur, name, table_name, attribute, value ):
-    ```ensure_db_record_is_unique```
+    """ensure_db_record_is_unique"""
 
     cur.execute( 'SELECT id FROM %s WHERE name = %s AND ('+ attribute +' IS NULL OR '+ attribute +' = %s)', (table_name, name, "") )
 
@@ -51,7 +51,7 @@ def ensure_db_record_is_unique( cur, name, table_name, attribute, value ):
         return cur.fetchone()[0]
 
 def ensure_format_in_dictionary( format_ ):
-    ```ensure_format_in_dictionary```
+    """ensure_format_in_dictionary"""
 
     if format_ in mediatype_mappings:
         log.info( 'Format %s will be mapped to %s', format_, mediatype_mappings[format_] )
@@ -60,7 +60,7 @@ def ensure_format_in_dictionary( format_ ):
     return format_
 
 def ensure_format_is_valid( r ):
-    ```ensure_format_is_valid```
+    """ensure_format_is_valid"""
 
     if not 'format' in r:
         log.error( 'resources-object is missing format-property. Cannot save this value' )
@@ -84,7 +84,7 @@ def ensure_format_is_valid( r ):
     return format_
 
 def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, check=True ):
-    ```save_value```
+    """save_value"""
 
     ensure_db_schema_complete( cur, table_name, attribute )
 
@@ -100,7 +100,7 @@ def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, che
     cur.execute( 'UPDATE %s SET '+ attribute +' = %s WHERE id = %s;', (table_name, value, dataset_id) )
 
 def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
-    ```parse_datapackages```
+    """parse_datapackages"""
 
     dp = None
 
@@ -255,7 +255,7 @@ def ensure_valid_download_data( path ):
     return True
 
 def download_data( dataset, urls ):
-    ```download_data```
+    """download_data"""
 
     for url, format_ in urls:
 
@@ -288,7 +288,7 @@ def download_data( dataset, urls ):
     return dict()
 
 def build_graph_prepare( dataset, file ):
-    ```build_graph_prepare```
+    """build_graph_prepare"""
 
     if not file:
         log.error( 'Cannot continue due to error in downloading data. returning.' )
@@ -323,20 +323,228 @@ def job_cleanup_intermediate( dataset, file ):
 
     # TODO remove 1. decompressed and transformed 2. .nt file
 
+import networkx as nx
+import numpy as n
 
-def build_graph_analyse( dataset, file ):
+def order( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['n']=D.order()
+        log.info( 'order' )
+def size( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['k']=D.size()
+        log.info( 'size' )
+def max_deg( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['max_deg(D)']=n.max( D.degree().values() )
+        log.info( 'max_deg' )
+def avg_deg( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['avg_deg(D)']=float( D.order() ) / D.size()
+        log.info( 'avg_deg' )
+def max_deg_in( D, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'max_deg_in' )
+        stats['max_deg_in(D)']=n.max( D.in_degree().values() )
+        log.info( 'done max_deg_in' )
+def avg_deg_in( D, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_deg_in' )
+        stats['avg_deg_in(D)']=n.mean( D.in_degree().values() )
+        log.info( 'done avg_deg_in' )
+def max_deg_out( D, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'max_deg_out' )
+        stats['max_deg_out(D)']=n.max( D.out_degree().values() )
+        log.info( 'done max_deg_out' )
+def avg_deg_out( D, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_deg_out' )
+        stats['avg_deg_out(D)']=n.mean( D.out_degree().values() )
+        log.info( 'done avg_deg_out' )
+def avg_deg_in_centrality( D, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_deg_in_centrality' )
+        stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
+        log.info( 'done avg_deg_in_centrality' )
+def avg_deg_out_centrality( D, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_deg_out_centrality' )
+        stats['avg_deg_out_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
+        log.info( 'done avg_deg_out_centrality' )
+def avg_pagerank( D, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_pagerank' )
+        stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
+        log.info( 'done avg_pagerank' )
+
+def digraph_basic_feature_set( dataset, D, stats ):
     """"""
 
+    features = [ 
+            order, size, max_deg, avg_deg, 
+            max_deg_in, avg_deg_in, max_deg_out, avg_deg_out, 
+            avg_deg_in_centrality, avg_deg_out_centrality, 
+            avg_pagerank ]
+
+    sem = threading.Semaphore( 4 ) 
+    threads = []
+
+    for ftr in features:
+                           
+        # create a thread for each feature. work load is limited by the semaphore
+        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( D, stats, sem ) )
+        t.start()
+
+        threads.append( t )
+
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
+
+def avg_shortest_path( U, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_shortest_path' )
+        stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
+        log.info( 'done avg_shortest_path' )
+def avg_clustering( U, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_clustering' )
+        stats['avg_clustering(U)']=nx.average_clustering(U)
+        log.info( 'done avg_clustering' )
+def avg_deg_centrality( U, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'avg_deg_centrality' )
+        stats['avg_deg_centrality(U)']=n.mean( nx.degree_centrality(U).values() )
+        log.info( 'done avg_deg_centrality' )
+def diameter( U, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'diameter' )
+        stats['diameter(U)']=nx.diameter(U)
+        log.info( 'done diameter' )
+
+def ugraph_basic_feature_set( dataset, U, stats ):
+    """"""
+
+    features = [ 
+            avg_shortest_path, avg_clustering, 
+            avg_deg_centrality, diameter ]
+
+    sem = threading.Semaphore( 4 ) 
+    threads = []
+
+    for ftr in features:
+                           
+        # create a thread for each feature. work load is limited by the semaphore
+        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( U, stats, sem ) )
+        t.start()
+
+        threads.append( t )
+
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
+
+def graph_analyze( dataset, src, stats ):
+    """"""
+    
+    if not os.path.isfile( src ):
+        log.error( 'edgelist.csv not found in %s', dataset[2] )
+        return stats
+
+    log.info( 'Constructing DiGraph with edgelist' )
+    D=nx.read_adjlist( src, create_using=nx.DiGraph(), delimiter=' ' )
+    
+    log.info( 'Computing feature set DiGraph' )
+    digraph_basic_feature_set( dataset, D, stats )
+    
+    log.info( 'Converting to undirected' )
+    U=D.to_undirected()
+
+    log.info( 'Computing feature set UGraph' )
+    ugraph_basic_feature_set( dataset, U, stats )
+    
+    # slow
+    #stats['k_core(U)']=nx.k_core(U)
+    #stats['radius(U)']=nx.radius(U)
+    
+    # plot distributions
+
+    return stats
+
+def build_graph_analyse( dataset ):
+    """"""
+
+    if not dataset[2]:
+        log.error( 'No path given for dataset %s', dataset[1] )
+        return 
+
+    edgelist_path = '/'.join( [dataset[2],'edgelist.csv'] )
+
+    if not os.path.isfile( edgelist_path ):
+
+        # writes all csv-files into edgelist.csv
+        for filename in os.listdir( dataset[2] ):
+            filename_path = '/'.join( [dataset[2],filename] )
+        
+            if not re.search( '.csv$', filename ):
+                log.info( 'Skipping %s', filename )
+                continue
+
+            log.info( 'Appending %s to edgelist', filename )
+            log.debug( 'Calling command cat %s >> edgelist.csv', filename )
+            os.popen( 'cat %s >> %s' % (filename_path,edgelist_path) )
+    else:
+        log.info( 'File edgelist.csv already exists' )
+
+    stats = {}
+    graph_analyze( dataset, edgelist_path, stats )
+
     # TODO save values for dataset
+
+    #print stats
 
     # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
 
 # real job
-def job_start( dataset, sem ):
-    ```job_start```
+def job_start_build_graph( dataset, sem ):
+    """job_start_build_graph"""
 
     # let's go
     with sem:
+        log.info( 'Let''s go' )
+        log.debug( dataset )
+
+        # - build_graph_analyse
+        build_graph_analyse( dataset )
+
+        # - job_cleanup
+
+        log.info( 'Done' ) 
+
+# real job
+def job_start_download_and_prepare( dataset, sem ):
+    """job_start_download_and_prepare"""
+
+    # let's go
+    with sem:
+        log.info( 'Let''s go' )
+        
         # - download_prepare
         urls = download_prepare( dataset )
 
@@ -349,15 +557,10 @@ def job_start( dataset, sem ):
         # - job_cleanup_intermediate
         job_cleanup_intermediate( dataset, file )
 
-        # - build_graph_analyse
-        build_graph_analyse( dataset, file )
-
-        # - job_cleanup
-
         log.info( 'Done' ) 
 
 def parse_resource_urls( cur, no_of_threads=1 ):
-    ```parse_resource_urls```
+    """parse_resource_urls"""
 
     datasets = cur.fetchall()
 
@@ -371,9 +574,33 @@ def parse_resource_urls( cur, no_of_threads=1 ):
 
     for dataset in datasets:
         
-        log.info( 'Starting job for %s', dataset )
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start_download_and_prepare, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
+        t.start()
+
+        threads.append( t )
+
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
+
+def build_graph( cur, no_of_threads=1 ):
+    """"""
+
+    datasets = cur.fetchall()
+
+    if cur.rowcount == 0:
+        log.error( 'No datasets to parse. exiting' )
+        return None
+
+    sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
+
+    threads = []
+
+    for dataset in datasets:
+        
+        # create a thread for each dataset. work load is limited by the semaphore
+        t = threading.Thread( target = job_start_build_graph, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
         t.start()
 
         threads.append( t )
@@ -389,6 +616,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description = 'lodcc' )
     parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
     parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
+    parser.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
     parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
@@ -410,9 +638,9 @@ if __name__ == '__main__':
     args = z
     
     if args['log_level_debug']:
-        log.basicConfig( filename = args['log_file'], level = log.DEBUG, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        log.basicConfig( filename = args['log_file'], filemode='w', level = log.DEBUG, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     else:
-        log.basicConfig( filename = args['log_file'], level = log.INFO, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        log.basicConfig( filename = args['log_file'], filemode='w', level = log.INFO, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
@@ -489,6 +717,32 @@ if __name__ == '__main__':
 
         parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
 
+    # option 3
+    if args['build_graph']:
+
+        # respect --use-datasets argument
+        if args['use_datasets']:
+            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+            names = tuple( args['use_datasets'] )
+
+        if args['dry_run']:
+            log.info( 'Running in dry-run mode' )
+
+            # if not given explicitely above, shrink available datasets to one special
+            if not args['use_datasets']:
+                names_query = 'name = %s'
+                names = tuple( ['museums-in-italy'] )
+
+        log.debug( 'Configured datasets: '+ ', '.join( names ) )
+
+        if names_query:
+            sql = 'SELECT id,name,files_path FROM stats_graph WHERE '+ names_query +' ORDER BY id'
+        else:
+            sql = 'SELECT id,name,files_path FROM stats_graph ORDER BY id'
+        
+        cur.execute( sql, names )
+
+        build_graph( cur, None if 'threads' not in args else args['threads'] )
 
     # close communication with the database
     cur.close()

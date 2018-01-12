@@ -57,6 +57,6 @@ if file_exists; then
     exit 0 # exit success
 fi
 
-# paste the content | add a . at the end | as long as there are lines, rewrite their position
-cat "$FPATH_STRIPPED" | while read -r s p o; do echo "$s $o {'edge':'$p'}"; done > "$FPATH_OUTPUT"
+# paste the content | remove . from the end | as long as there are lines, rewrite their position
+cat "$FPATH_STRIPPED" | sed 's#.$##' | while read -r s p o; do echo "$s $o {'edge':'$p'}"; done > "$FPATH_OUTPUT"
 
