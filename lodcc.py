@@ -439,10 +439,8 @@ def ugraph_basic_feature_set( dataset, U, stats ):
     """"""
 
     features = [ 
-            order, size, max_deg, avg_deg, 
-            max_deg_in, avg_deg_in, max_deg_out, avg_deg_out, 
-            avg_deg_in_centrality, avg_deg_out_centrality, 
-            avg_pagerank ]
+            avg_shortest_path, avg_clustering, 
+            avg_deg_centrality, diameter ]
 
     sem = threading.Semaphore( 4 ) 
     threads = []
@@ -450,7 +448,7 @@ def ugraph_basic_feature_set( dataset, U, stats ):
     for ftr in features:
                            
         # create a thread for each feature. work load is limited by the semaphore
-        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( D, stats, sem ) )
+        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( U, stats, sem ) )
         t.start()
 
         threads.append( t )
@@ -516,7 +514,7 @@ def build_graph_analyse( dataset ):
 
     # TODO save values for dataset
 
-    print stats
+    #print stats
 
     # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
 
