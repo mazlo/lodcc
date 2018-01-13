@@ -658,7 +658,7 @@ if __name__ == '__main__':
     parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
-    parser.add_argument( '--log-file', '-lf', required = False, type = str, default = 'lodcc.log', help = '' )
+    parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
     # read all properties in file into args-dict
@@ -674,9 +674,14 @@ if __name__ == '__main__':
     args = z
     
     if args['log_level_debug']:
-        log.basicConfig( filename = args['log_file'], filemode='w', level = log.DEBUG, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        level = log.DEBUG
     else:
-        log.basicConfig( filename = args['log_file'], filemode='w', level = log.INFO, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        level = log.INFO
+
+    if args['log_stdout']:
+        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+    else:
+        log.basicConfig( filename = args['log_file'], filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
