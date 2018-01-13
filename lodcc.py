@@ -388,6 +388,24 @@ def avg_pagerank( D, stats, sem ):
         log.info( 'avg_pagerank' )
         stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
         log.info( 'done avg_pagerank' )
+def h_index_d( D, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'h_index_d' )
+
+        degrees = D.in_degree().values()
+        degrees.sort(reverse=True)
+        
+        h = 0
+        for x in degrees:
+            if x >= h + 1:
+                h += 1
+            else:
+                break
+        
+        stats['h_index_d']=h
+
+        log.info( 'done h-index-d' )
 
 def digraph_basic_feature_set( dataset, D, stats ):
     """"""
@@ -396,7 +414,7 @@ def digraph_basic_feature_set( dataset, D, stats ):
             order, size, max_deg, avg_deg, 
             max_deg_in, avg_deg_in, max_deg_out, avg_deg_out, 
             avg_deg_in_centrality, avg_deg_out_centrality, 
-            avg_pagerank ]
+            avg_pagerank, h_index_d ]
 
     sem = threading.Semaphore( 4 ) 
     threads = []
@@ -437,13 +455,32 @@ def diameter( U, stats, sem ):
         log.info( 'diameter' )
         stats['diameter(U)']=nx.diameter(U)
         log.info( 'done diameter' )
+def h_index_u( U, stats, sem ):
+    # can I?
+    with sem:
+        log.info( 'h-index-u' )
+
+        degrees = U.degree().values()
+        degrees.sort(reverse=True)
+        
+        h = 0
+        for x in degrees:
+            if x >= h + 1:
+                h += 1
+            else:
+                break
+        
+        stats['h_index_u']=h
+
+        log.info( 'done h-index-u' )
 
 def ugraph_basic_feature_set( dataset, U, stats ):
     """"""
 
     features = [ 
-            avg_shortest_path, avg_clustering, 
-            avg_deg_centrality, diameter ]
+            #avg_shortest_path, diameter,
+            avg_clustering, 
+            avg_deg_centrality, h_index_u ]
 
     sem = threading.Semaphore( 4 ) 
     threads = []
@@ -622,7 +659,7 @@ if __name__ == '__main__':
     parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
-    parser.add_argument( '--log-file', '-lf', required = False, type = str, default = 'lodcc.log', help = '' )
+    parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
     # read all properties in file into args-dict
@@ -638,9 +675,14 @@ if __name__ == '__main__':
     args = z
     
     if args['log_level_debug']:
-        log.basicConfig( filename = args['log_file'], filemode='w', level = log.DEBUG, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        level = log.DEBUG
     else:
-        log.basicConfig( filename = args['log_file'], filemode='w', level = log.INFO, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        level = log.INFO
+
+    if args['log_stdout']:
+        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+    else:
+        log.basicConfig( filename = 'logcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
