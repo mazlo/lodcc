@@ -330,70 +330,67 @@ def order( D, stats, sem ):
     # can I?
     with sem:
         stats['n']=D.order()
-        log.info( 'order' )
+        log.info( 'done order' )
 def size( D, stats, sem ):
     # can I?
     with sem:
         stats['k']=D.size()
-        log.info( 'size' )
-def max_deg( D, stats, sem ):
+        log.info( 'done size' )
+def max_degree( D, stats, sem ):
     # can I?
     with sem:
-        stats['max_deg(D)']=n.max( D.degree().values() )
-        log.info( 'max_deg' )
-def avg_deg( D, stats, sem ):
+        deg = D.degree
+        stats['max_deg(D)']=n.max( [d for nd, d in deg] )
+        log.info( 'done max_degree' )
+def avg_degree( D, stats, sem ):
     # can I?
     with sem:
         stats['avg_deg(D)']=float( D.order() ) / D.size()
-        log.info( 'avg_deg' )
-def max_deg_in( D, stats, sem ):
+        log.info( 'done avg_degree' )
+def max_in_degree( D, stats, sem ):
     # can I?
     with sem:
-        log.info( 'max_deg_in' )
-        stats['max_deg_in(D)']=n.max( D.in_degree().values() )
-        log.info( 'done max_deg_in' )
-def avg_deg_in( D, stats, sem ):
+        indeg = D.in_degree
+        stats['max_deg_in(D)']=n.max( [d for nd, d in indeg] )
+        log.info( 'done max_in_degree' )
+def avg_in_degree( D, stats, sem ):
     # can I?
     with sem:
-        log.info( 'avg_deg_in' )
-        stats['avg_deg_in(D)']=n.mean( D.in_degree().values() )
-        log.info( 'done avg_deg_in' )
-def max_deg_out( D, stats, sem ):
+        indeg = D.in_degree
+        stats['avg_deg_in(D)']=n.mean( [d for nd, d in indeg] )
+        log.info( 'done avg_in_degree' )
+def max_out_degree( D, stats, sem ):
     # can I?
     with sem:
-        log.info( 'max_deg_out' )
-        stats['max_deg_out(D)']=n.max( D.out_degree().values() )
-        log.info( 'done max_deg_out' )
-def avg_deg_out( D, stats, sem ):
+        outdeg = D.out_degree
+        stats['max_deg_out(D)']=n.max( [d for nd, d in outdeg] )
+        log.info( 'done max_out_degree' )
+def avg_out_degree( D, stats, sem ):
     # can I?
     with sem:
-        log.info( 'avg_deg_out' )
-        stats['avg_deg_out(D)']=n.mean( D.out_degree().values() )
-        log.info( 'done avg_deg_out' )
-def avg_deg_in_centrality( D, stats, sem ):
+        outdeg = D.out_degree
+        stats['avg_deg_out(D)']=n.mean( [d for nd, d in outdeg] )
+        log.info( 'done avg_out_degree' )
+def avg_in_degree_centrality( D, stats, sem ):
     # can I?
     with sem:
-        log.info( 'avg_deg_in_centrality' )
         stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
-        log.info( 'done avg_deg_in_centrality' )
-def avg_deg_out_centrality( D, stats, sem ):
+        log.info( 'done avg_in_degree_centrality' )
+def avg_out_degree_centrality( D, stats, sem ):
     # can I?
     with sem:
-        log.info( 'avg_deg_out_centrality' )
         stats['avg_deg_out_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
-        log.info( 'done avg_deg_out_centrality' )
+        log.info( 'done avg_out_degree_centrality' )
 def avg_pagerank( D, stats, sem ):
     # can I?
     with sem:
-        log.info( 'avg_pagerank' )
         stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
         log.info( 'done avg_pagerank' )
 def h_index_d( D, stats, sem ):
     # can I?
     with sem:
-        log.info( 'h_index_d' )
-
-        degrees = D.in_degree().values()
+        indeg = D.in_degree
+        degrees = [d for nd, d in indeg]
         degrees.sort(reverse=True)
         
         h = 0
@@ -405,15 +402,15 @@ def h_index_d( D, stats, sem ):
         
         stats['h_index_d']=h
 
-        log.info( 'done h-index-d' )
+        log.info( 'done h_index_d' )
 
 def digraph_basic_feature_set( dataset, D, stats ):
     """"""
 
     features = [ 
-            order, size, max_deg, avg_deg, 
-            max_deg_in, avg_deg_in, max_deg_out, avg_deg_out, 
-            avg_deg_in_centrality, avg_deg_out_centrality, 
+            order, size, max_degree, avg_degree, 
+            max_in_degree, avg_in_degree, max_out_degree, avg_out_degree, 
+            avg_in_degree_centrality, avg_out_degree_centrality, 
             avg_pagerank, h_index_d ]
 
     sem = threading.Semaphore( 4 ) 
@@ -434,33 +431,28 @@ def digraph_basic_feature_set( dataset, D, stats ):
 def avg_shortest_path( U, stats, sem ):
     # can I?
     with sem:
-        log.info( 'avg_shortest_path' )
         stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
         log.info( 'done avg_shortest_path' )
 def avg_clustering( U, stats, sem ):
     # can I?
     with sem:
-        log.info( 'avg_clustering' )
         stats['avg_clustering(U)']=nx.average_clustering(U)
         log.info( 'done avg_clustering' )
-def avg_deg_centrality( U, stats, sem ):
+def avg_degree_centrality( U, stats, sem ):
     # can I?
     with sem:
-        log.info( 'avg_deg_centrality' )
-        stats['avg_deg_centrality(U)']=n.mean( nx.degree_centrality(U).values() )
-        log.info( 'done avg_deg_centrality' )
+        stats['avg_degree_centrality(U)']=n.mean( nx.degree_centrality(U).values() )
+        log.info( 'done avg_degree_centrality' )
 def diameter( U, stats, sem ):
     # can I?
     with sem:
-        log.info( 'diameter' )
         stats['diameter(U)']=nx.diameter(U)
         log.info( 'done diameter' )
 def h_index_u( U, stats, sem ):
     # can I?
     with sem:
-        log.info( 'h-index-u' )
-
-        degrees = U.degree().values()
+        deg = U.degree
+        degrees = [d for nd, d in deg]
         degrees.sort(reverse=True)
         
         h = 0
@@ -472,7 +464,7 @@ def h_index_u( U, stats, sem ):
         
         stats['h_index_u']=h
 
-        log.info( 'done h-index-u' )
+        log.info( 'done h_index_u' )
 
 def ugraph_basic_feature_set( dataset, U, stats ):
     """"""
@@ -480,7 +472,7 @@ def ugraph_basic_feature_set( dataset, U, stats ):
     features = [ 
             #avg_shortest_path, diameter,
             avg_clustering, 
-            avg_deg_centrality, h_index_u ]
+            avg_degree_centrality, h_index_u ]
 
     sem = threading.Semaphore( 4 ) 
     threads = []
@@ -504,13 +496,13 @@ def graph_analyze( dataset, src, stats ):
         log.error( 'edgelist.csv not found in %s', dataset[2] )
         return stats
 
-    log.info( 'Constructing DiGraph with edgelist' )
+    log.info( 'Constructing DiGraph from edgelist' )
     D=nx.read_adjlist( src, create_using=nx.DiGraph(), delimiter=' ' )
     
     log.info( 'Computing feature set DiGraph' )
     digraph_basic_feature_set( dataset, D, stats )
     
-    log.info( 'Converting to undirected' )
+    log.info( 'Converting to undirected graph' )
     U=D.to_undirected()
 
     log.info( 'Computing feature set UGraph' )
