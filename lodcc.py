@@ -403,6 +403,11 @@ def h_index_d( D, stats, sem ):
         stats['h_index_d']=h
 
         log.info( 'done h_index_d' )
+def reciprocity( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['reciprocity']=nx.reciprocity( D )
+        log.info( 'done reciprocity' )
 
 def digraph_basic_feature_set( dataset, D, stats ):
     """"""
@@ -411,7 +416,7 @@ def digraph_basic_feature_set( dataset, D, stats ):
             order, size, max_degree, avg_degree, 
             max_in_degree, avg_in_degree, max_out_degree, avg_out_degree, 
             avg_in_degree_centrality, avg_out_degree_centrality, 
-            avg_pagerank, h_index_d ]
+            avg_pagerank, h_index_d, reciprocity ]
 
     sem = threading.Semaphore( 4 ) 
     threads = []
