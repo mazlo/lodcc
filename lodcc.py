@@ -470,7 +470,7 @@ def h_index_u( U, stats, sem ):
             else:
                 break
         
-        stats['h-index-u']=h
+        stats['h_index_u']=h
 
         log.info( 'done h-index-u' )
 
@@ -478,8 +478,9 @@ def ugraph_basic_feature_set( dataset, U, stats ):
     """"""
 
     features = [ 
-            avg_shortest_path, avg_clustering, 
-            avg_deg_centrality, diameter, h_index_u ]
+            #avg_shortest_path, diameter,
+            avg_clustering, 
+            avg_deg_centrality, h_index_u ]
 
     sem = threading.Semaphore( 4 ) 
     threads = []
