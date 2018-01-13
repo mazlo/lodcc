@@ -1,3 +1,4 @@
 argparse
 logging
+networkx
 psycopg2
