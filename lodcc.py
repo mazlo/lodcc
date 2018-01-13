@@ -682,7 +682,7 @@ if __name__ == '__main__':
     if args['log_stdout']:
         log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     else:
-        log.basicConfig( filename = args['log_file'], filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        log.basicConfig( filename = 'logcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
