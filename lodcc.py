@@ -334,7 +334,7 @@ def order( D, stats, sem ):
 def size( D, stats, sem ):
     # can I?
     with sem:
-        stats['k']=D.size()
+        stats['m']=D.size()
         log.info( 'done size' )
 def max_degree( D, stats, sem ):
     # can I?
@@ -351,7 +351,7 @@ def max_in_degree( D, stats, sem ):
     # can I?
     with sem:
         indeg = D.in_degree
-        stats['max_deg_in(D)']=n.max( [d for nd, d in indeg] )
+        stats['max_in_degree(D)']=n.max( [d for nd, d in indeg] )
         log.info( 'done max_in_degree' )
 def avg_in_degree( D, stats, sem ):
     # can I?
@@ -363,7 +363,7 @@ def max_out_degree( D, stats, sem ):
     # can I?
     with sem:
         outdeg = D.out_degree
-        stats['max_deg_out(D)']=n.max( [d for nd, d in outdeg] )
+        stats['max_out_degree(D)']=n.max( [d for nd, d in outdeg] )
         log.info( 'done max_out_degree' )
 def avg_out_degree( D, stats, sem ):
     # can I?
@@ -374,12 +374,12 @@ def avg_out_degree( D, stats, sem ):
 def avg_in_degree_centrality( D, stats, sem ):
     # can I?
     with sem:
-        stats['avg_deg_in_centrality(D)']=n.mean( nx.in_degree_centrality(D).values() )
+        stats['avg_in_degree_centrality(D)']=n.sum( nx.in_degree_centrality(D).values() )
         log.info( 'done avg_in_degree_centrality' )
 def avg_out_degree_centrality( D, stats, sem ):
     # can I?
     with sem:
-        stats['avg_deg_out_centrality(D)']=n.mean( nx.out_degree_centrality(D).values() )
+        stats['avg_out_degree_centrality(D)']=n.sum( nx.out_degree_centrality(D).values() )
         log.info( 'done avg_out_degree_centrality' )
 def avg_pagerank( D, stats, sem ):
     # can I?
@@ -446,7 +446,7 @@ def avg_clustering( U, stats, sem ):
 def avg_degree_centrality( U, stats, sem ):
     # can I?
     with sem:
-        stats['avg_degree_centrality(U)']=n.mean( nx.degree_centrality(U).values() )
+        stats['avg_degree_centrality(U)']=n.sum( nx.degree_centrality(U).values() )
         log.info( 'done avg_degree_centrality' )
 def diameter( U, stats, sem ):
     # can I?
