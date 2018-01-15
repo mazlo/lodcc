@@ -550,10 +550,10 @@ def build_graph_analyse( dataset ):
     graph_analyze( dataset, edgelist_path, stats )
 
     # TODO save values for dataset
-
-    #print stats
-
     # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
+
+    if args['print_stats']:
+        print stats
 
 # real job
 def job_start_build_graph( dataset, sem ):
@@ -657,6 +657,7 @@ if __name__ == '__main__':
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
+    parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
     # read all properties in file into args-dict
