@@ -353,24 +353,12 @@ def max_in_degree( D, stats, sem ):
         indeg = D.in_degree
         stats['max_in_degree(D)']=n.max( [d for nd, d in indeg] )
         log.info( 'done max_in_degree' )
-def avg_in_degree( D, stats, sem ):
-    # can I?
-    with sem:
-        indeg = D.in_degree
-        stats['avg_deg_in(D)']=n.mean( [d for nd, d in indeg] )
-        log.info( 'done avg_in_degree' )
 def max_out_degree( D, stats, sem ):
     # can I?
     with sem:
         outdeg = D.out_degree
         stats['max_out_degree(D)']=n.max( [d for nd, d in outdeg] )
         log.info( 'done max_out_degree' )
-def avg_out_degree( D, stats, sem ):
-    # can I?
-    with sem:
-        outdeg = D.out_degree
-        stats['avg_deg_out(D)']=n.mean( [d for nd, d in outdeg] )
-        log.info( 'done avg_out_degree' )
 def avg_in_degree_centrality( D, stats, sem ):
     # can I?
     with sem:
