@@ -400,13 +400,13 @@ def h_index_d( D, stats, sem ):
             else:
                 break
         
-        stats['h_index_d']=h
+        stats['h_index(D)']=h
 
         log.info( 'done h_index_d' )
 def reciprocity( D, stats, sem ):
     # can I?
     with sem:
-        stats['reciprocity']=nx.reciprocity( D )
+        stats['reciprocity(D)']=nx.reciprocity( D )
         log.info( 'done reciprocity' )
 
 def digraph_basic_feature_set( dataset, D, stats ):
@@ -467,7 +467,7 @@ def h_index_u( U, stats, sem ):
             else:
                 break
         
-        stats['h_index_u']=h
+        stats['h_index(U)']=h
 
         log.info( 'done h_index_u' )
 
