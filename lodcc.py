@@ -396,6 +396,11 @@ def reciprocity( D, stats, sem ):
     with sem:
         stats['reciprocity(D)']=nx.reciprocity( D )
         log.info( 'done reciprocity' )
+def eigenvector_centrality( D, stats, sem ):
+    # can I?
+    with sem:
+        stats['eigenvector_centrality(D)']=nx.eigenvector_centrality(D)
+        log.info( 'done eigenvector_centerality' )
 
 def digraph_basic_feature_set( dataset, D, stats ):
     """"""
@@ -404,7 +409,9 @@ def digraph_basic_feature_set( dataset, D, stats ):
             order, size, max_degree, avg_degree, 
             max_in_degree, max_out_degree, 
             avg_in_degree_centrality, avg_out_degree_centrality, 
-            avg_pagerank, h_index_d, reciprocity ]
+            avg_pagerank, h_index_d, reciprocity, 
+            #eigenvector_centrality,
+            ]
 
     sem = threading.Semaphore( 4 ) 
     threads = []
@@ -464,7 +471,7 @@ def ugraph_basic_feature_set( dataset, U, stats ):
 
     features = [ 
             #avg_shortest_path, diameter,
-            avg_clustering, 
+            #avg_clustering, 
             avg_degree_centrality, h_index_u ]
 
     sem = threading.Semaphore( 4 ) 
