@@ -19,6 +19,7 @@ import sys
 import urlparse
 
 from constants import *
+from lodcc_xxhash import xxhash_nt
 
 mediatype_mappings = {}
 
@@ -314,9 +315,17 @@ def build_graph_prepare( dataset, file ):
 
     # TODO check correct mediatype if not compressed
 
-    # transform into graph csv
+    # transform into hashed edgelist
     log.info( 'Preparing required graph structure.. this may take a while' )
-    os.popen( MEDIATYPES[format_]['cmd_to_csv'] % (path,no_cache) )
+    log.debug( 'Calling function xxhash_nt( %s )', path )
+    
+    types = [ type_ for type_ in MEDIATYPES_COMPRESSED if re.search( '.%s$' % type_, path ) ]
+    if len( types ) == 0:
+        # file it not compressed
+        xxhash_nt( path, log )
+    else:
+        # file is compressed, strip the type
+        xxhash_nt( re.sub( '.%s' % types[0], '', path ), log )
 
 def job_cleanup_intermediate( dataset, file ):
     """"""
