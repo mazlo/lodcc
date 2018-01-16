@@ -16,6 +16,20 @@ FPATH="$2" # e.g. dumps/foo/bar.gz
 FILENAME=`echo ${FPATH##*/}`
 FOLDER_DEST=`echo ${FPATH%/*}`
 
+file_exists()
+{
+    if [ ! -f "$FPATH_STRIPPED.nt" ]; then
+        return 1 # exit failure
+    fi
+
+    SIZE=`ls -s "$FPATH_STRIPPED.nt" | cut -d ' ' -f1`
+    if [[ $NO_CACHE = false && $SIZE > 1000 ]]; then
+        return 0 # exit success
+    fi
+    
+    return 1 # exit failure
+}
+
 get_xmtype()
 {
     for mtype in 'tar.gz' 'tar.xz' 'tgz' 'gz' 'zip' 'bz2' 'tar'; do
@@ -86,6 +100,12 @@ do_oneliner()
 # this will be the directory or filename
 XMTYPE=`get_xmtype`
 FPATH_STRIPPED=`echo ${FPATH%*.$XMTYPE}`
+
+NO_CACHE=${3:-false}
+
+if file_exists; then
+    exit 0 # exit success
+fi
 
 do_extract
 do_convert
