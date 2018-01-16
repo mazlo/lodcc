@@ -340,12 +340,12 @@ def max_degree( D, stats, sem ):
     # can I?
     with sem:
         deg = D.degree
-        stats['max_deg(D)']=n.max( [d for nd, d in deg] )
+        stats['max_degree(D)']=n.max( [d for nd, d in deg] )
         log.info( 'done max_degree' )
 def avg_degree( D, stats, sem ):
     # can I?
     with sem:
-        stats['avg_deg(D)']=float( D.order() ) / D.size()
+        stats['avg_degree(D)']=float( 2*D.size() ) / D.order()
         log.info( 'done avg_degree' )
 def max_in_degree( D, stats, sem ):
     # can I?
@@ -402,7 +402,7 @@ def digraph_basic_feature_set( dataset, D, stats ):
 
     features = [ 
             order, size, max_degree, avg_degree, 
-            max_in_degree, avg_in_degree, max_out_degree, avg_out_degree, 
+            max_in_degree, max_out_degree, 
             avg_in_degree_centrality, avg_out_degree_centrality, 
             avg_pagerank, h_index_d, reciprocity ]
 
