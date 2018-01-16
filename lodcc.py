@@ -401,6 +401,15 @@ def eigenvector_centrality( D, stats, sem ):
     with sem:
         stats['eigenvector_centrality(D)']=nx.eigenvector_centrality(D)
         log.info( 'done eigenvector_centerality' )
+def p_law_exponent( D, stats, sem ):
+    # can I?
+    with sem:
+        deg = D.degree
+        degrees = [d for nd,d in deg]
+        min_degree = n.min( degrees )
+        sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degrees ] )
+        stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degrees) * sum_of_logs )
+        log.info( 'done p_law_exponent' )
 
 def digraph_basic_feature_set( dataset, D, stats ):
     """"""
@@ -410,6 +419,7 @@ def digraph_basic_feature_set( dataset, D, stats ):
             max_in_degree, max_out_degree, 
             avg_in_degree_centrality, avg_out_degree_centrality, 
             avg_pagerank, h_index_d, reciprocity, 
+            p_law_exponent
             #eigenvector_centrality,
             ]
 
