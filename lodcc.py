@@ -564,30 +564,15 @@ def graph_analyze( dataset, edgelists_path, stats ):
 def build_graph_analyse( dataset ):
     """"""
 
+    # e.g. dataset[2] = 'dumps/dbpedia-en'
     if not dataset[2]:
         log.error( 'No path given for dataset %s', dataset[1] )
         return 
 
-    edgelist_path = '/'.join( [dataset[2],'edgelist.csv'] )
-
-    if not os.path.isfile( edgelist_path ):
-
-        # writes all csv-files into edgelist.csv
-        for filename in os.listdir( dataset[2] ):
-            filename_path = '/'.join( [dataset[2],filename] )
-        
-            if not re.search( '.csv$', filename ):
-                log.info( 'Skipping %s', filename )
-                continue
-
-            log.info( 'Appending %s to edgelist', filename )
-            log.debug( 'Calling command cat %s >> edgelist.csv', filename )
-            os.popen( 'cat %s >> %s' % (filename_path,edgelist_path) )
-    else:
-        log.info( 'File edgelist.csv already exists' )
+    edgelists_path = dataset[2]
 
     stats = {}
-    graph_analyze( dataset, edgelist_path, stats )
+    graph_analyze( dataset, edgelists_path, stats )
 
     # TODO save values for dataset
     # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
