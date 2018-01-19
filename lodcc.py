@@ -357,8 +357,7 @@ def fs_digraph_using_degree( D, stats, sem ):
     # can I?
     with sem:
         # compute once
-        deg = D.degree
-        degree_list = [d for nd, d in deg]
+        degree_list = [d for nd, d in D.degree()]
     
         # feature: max_degree
         stats['max_degree(D)']=n.max( degree_list )
@@ -374,8 +373,7 @@ def fs_digraph_using_indegree( D, stats, sem ):
     # can I?
     with sem:
         # compute once
-        indeg = D.in_degree
-        degree_list = [d for nd, d in indeg]
+        degree_list = [d for nd, d in D.in_degree()]
 
         # feature: max_in_degree
         stats['max_in_degree(D)']=n.max( degree_list )
@@ -403,8 +401,7 @@ def fs_digraph_using_outdegree( D, stats, sem ):
     # can I?
     with sem:
         # compute once
-        outdeg = D.out_degree
-        degree_list = [d for nd, d in outdeg]
+        degree_list = [d for nd, d in D.out_degree()]
 
         # feature: max_out_degree
         stats['max_out_degree(D)']=n.max( degree_list )
