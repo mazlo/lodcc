@@ -694,7 +694,7 @@ if __name__ == '__main__':
     if args['log_stdout']:
         log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     else:
-        log.basicConfig( filename = 'logcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+        log.basicConfig( filename = 'lodcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
@@ -751,6 +751,8 @@ if __name__ == '__main__':
         if args['use_datasets']:
             names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
             names = tuple( args['use_datasets'] )
+        else:
+            names = 'all'
 
         if args['dry_run']:
             log.info( 'Running in dry-run mode' )
@@ -762,7 +764,7 @@ if __name__ == '__main__':
 
         log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
-        if names_query:
+        if 'names_query' in locals():
             sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
         else:
             sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
@@ -778,6 +780,8 @@ if __name__ == '__main__':
         if args['use_datasets']:
             names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
             names = tuple( args['use_datasets'] )
+        else:
+            names = 'all'
 
         if args['dry_run']:
             log.info( 'Running in dry-run mode' )
@@ -789,7 +793,7 @@ if __name__ == '__main__':
 
         log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
-        if names_query:
+        if 'names_query' in locals():
             sql = 'SELECT id,name,files_path FROM stats_graph WHERE '+ names_query +' ORDER BY id'
         else:
             sql = 'SELECT id,name,files_path FROM stats_graph ORDER BY id'
