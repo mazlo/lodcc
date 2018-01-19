@@ -531,7 +531,7 @@ def graph_analyze( dataset, edgelists_path, stats ):
         return
 
     log.info( 'Constructing DiGraph from edgelist' )
-    D=nx.Graph( create_using=nx.DiGraph() )
+    D=nx.DiGraph()
 
     # read all edgelists and add to one graph
     for filename in os.listdir( edgelists_path ):
