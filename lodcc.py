@@ -335,104 +335,114 @@ def job_cleanup_intermediate( dataset, file ):
 import networkx as nx
 import numpy as n
 
-def order( D, stats, sem ):
+def fs_digraph_using_basic_properties( D, stats, sem ):
     # can I?
     with sem:
+        # feature: order
         stats['n']=D.order()
         log.info( 'done order' )
-def size( D, stats, sem ):
-    # can I?
-    with sem:
+
+        # feature: size
         stats['m']=D.size()
         log.info( 'done size' )
-def max_degree( D, stats, sem ):
-    # can I?
-    with sem:
-        deg = D.degree
-        stats['max_degree(D)']=n.max( [d for nd, d in deg] )
-        log.info( 'done max_degree' )
-def avg_degree( D, stats, sem ):
-    # can I?
-    with sem:
+
+        # feature: avg_degree
         stats['avg_degree(D)']=float( 2*D.size() ) / D.order()
         log.info( 'done avg_degree' )
-def max_in_degree( D, stats, sem ):
+
+def fs_digraph_using_degree( D, stats, sem ):
     # can I?
     with sem:
+        # compute once
+        deg = D.degree
+        degree_list = [d for nd, d in deg]
+    
+        # feature: max_degree
+        stats['max_degree(D)']=n.max( degree_list )
+        log.info( 'done max_degree' )
+
+        # feature: p_law_exponent
+        min_degree = n.min( degree_list )
+        sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degree_list ] )
+        stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degree_list) * sum_of_logs )
+        log.info( 'done p_law_exponent' )
+
+def fs_digraph_using_indegree( D, stats, sem ):
+    # can I?
+    with sem:
+        # compute once
         indeg = D.in_degree
-        stats['max_in_degree(D)']=n.max( [d for nd, d in indeg] )
+        degree_list = [d for nd, d in indeg]
+
+        # feature: max_in_degree
+        stats['max_in_degree(D)']=n.max( degree_list )
         log.info( 'done max_in_degree' )
-def max_out_degree( D, stats, sem ):
-    # can I?
-    with sem:
-        outdeg = D.out_degree
-        stats['max_out_degree(D)']=n.max( [d for nd, d in outdeg] )
-        log.info( 'done max_out_degree' )
-def avg_in_degree_centrality( D, stats, sem ):
-    # can I?
-    with sem:
-        stats['avg_in_degree_centrality(D)']=n.sum( nx.in_degree_centrality(D).values() )
-        log.info( 'done avg_in_degree_centrality' )
-def avg_out_degree_centrality( D, stats, sem ):
-    # can I?
-    with sem:
-        stats['avg_out_degree_centrality(D)']=n.sum( nx.out_degree_centrality(D).values() )
-        log.info( 'done avg_out_degree_centrality' )
-def avg_pagerank( D, stats, sem ):
-    # can I?
-    with sem:
-        stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
-        log.info( 'done avg_pagerank' )
-def h_index_d( D, stats, sem ):
-    # can I?
-    with sem:
-        indeg = D.in_degree
-        degrees = [d for nd, d in indeg]
-        degrees.sort(reverse=True)
+
+        # feature: h_index_d
+        degree_list.sort(reverse=True)
         
         h = 0
-        for x in degrees:
+        for x in degree_list:
             if x >= h + 1:
                 h += 1
             else:
                 break
         
         stats['h_index(D)']=h
-
         log.info( 'done h_index_d' )
-def reciprocity( D, stats, sem ):
+
+        # feature: avg_in_degree_centrality
+        s = 1.0 / ( len(D)-1.0 )
+        stats['avg_in_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+        log.info( 'done avg_in_degree_centrality' )
+
+def fs_digraph_using_outdegree( D, stats, sem ):
+    # can I?
+    with sem:
+        # compute once
+        outdeg = D.out_degree
+        degree_list = [d for nd, d in outdeg]
+
+        # feature: max_out_degree
+        stats['max_out_degree(D)']=n.max( degree_list )
+        log.info( 'done max_out_degree' )
+
+        # feature: avg_out_degree_centrality
+        s = 1.0 / ( len(D)-1.0 )
+        stats['avg_out_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+        log.info( 'done avg_out_degree_centrality' )
+
+def f_reciprocity( D, stats, sem ):
     # can I?
     with sem:
         stats['reciprocity(D)']=nx.reciprocity( D )
         log.info( 'done reciprocity' )
-def eigenvector_centrality( D, stats, sem ):
+
+def f_eigenvector_centrality( D, stats, sem ):
     # can I?
     with sem:
         stats['eigenvector_centrality(D)']=nx.eigenvector_centrality(D)
         log.info( 'done eigenvector_centerality' )
-def p_law_exponent( D, stats, sem ):
+        
+def avg_pagerank( D, stats, sem ):
     # can I?
     with sem:
-        deg = D.degree
-        degrees = [d for nd,d in deg]
-        min_degree = n.min( degrees )
-        sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degrees ] )
-        stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degrees) * sum_of_logs )
-        log.info( 'done p_law_exponent' )
+        stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
+        log.info( 'done avg_pagerank' )
 
-def digraph_basic_feature_set( dataset, D, stats ):
+def fs_digraph_start_job( dataset, D, stats ):
     """"""
 
     features = [ 
-            order, size, max_degree, avg_degree, 
-            max_in_degree, max_out_degree, 
-            avg_in_degree_centrality, avg_out_degree_centrality, 
-            avg_pagerank, h_index_d, reciprocity, 
-            p_law_exponent
-            #eigenvector_centrality,
-            ]
+        # fs = feature set
+        fs_digraph_using_basic_properties,
+        fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree
+        f_reciprocity 
+        # f_pagerank,
+        # f_eigenvector_centrality,
+    ]
 
-    sem = threading.Semaphore( 4 ) 
+    sem = threading.Semaphore( 5 ) 
     threads = []
 
     for ftr in features:
@@ -447,51 +457,56 @@ def digraph_basic_feature_set( dataset, D, stats ):
     for t in threads:
         t.join()
 
-def avg_shortest_path( U, stats, sem ):
-    # can I?
-    with sem:
-        stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
-        log.info( 'done avg_shortest_path' )
-def avg_clustering( U, stats, sem ):
-    # can I?
-    with sem:
-        stats['avg_clustering(U)']=nx.average_clustering(U)
-        log.info( 'done avg_clustering' )
-def avg_degree_centrality( U, stats, sem ):
-    # can I?
-    with sem:
-        stats['avg_degree_centrality(U)']=n.sum( nx.degree_centrality(U).values() )
-        log.info( 'done avg_degree_centrality' )
-def diameter( U, stats, sem ):
-    # can I?
-    with sem:
-        stats['diameter(U)']=nx.diameter(U)
-        log.info( 'done diameter' )
-def h_index_u( U, stats, sem ):
+def fs_ugraph_using_degree( U, stats, sem ):
     # can I?
     with sem:
         deg = U.degree
-        degrees = [d for nd, d in deg]
-        degrees.sort(reverse=True)
-        
+        degree_list = [d for nd, d in deg]
+
+        # feature: degree_centrality
+        s = 1.0 / ( len(U)-1.0 )
+        stats['avg_degree_centrality(U)']=n.sum( [ d*s for d in degree_list ] )
+        log.info( 'done avg_degree_centrality' )
+
+        # feature: h_index_u
+        degree_list.sort(reverse=True)
+
         h = 0
-        for x in degrees:
+        for x in degree_list:
             if x >= h + 1:
                 h += 1
             else:
                 break
         
         stats['h_index(U)']=h
-
         log.info( 'done h_index_u' )
 
-def ugraph_basic_feature_set( dataset, U, stats ):
+def f_avg_shortest_path( U, stats, sem ):
+    # can I?
+    with sem:
+        stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
+        log.info( 'done avg_shortest_path' )
+def f_avg_clustering( U, stats, sem ):
+    # can I?
+    with sem:
+        stats['avg_clustering(U)']=nx.average_clustering(U)
+        log.info( 'done avg_clustering' )
+def f_diameter( U, stats, sem ):
+    # can I?
+    with sem:
+        stats['diameter(U)']=nx.diameter(U)
+        log.info( 'done diameter' )
+
+def fs_ugraph_start_job( dataset, U, stats ):
     """"""
 
     features = [ 
-            #avg_shortest_path, diameter,
-            #avg_clustering, 
-            avg_degree_centrality, h_index_u ]
+        # fs = feature set
+        fs_ugraph_using_degree
+        # f_avg_clustering, 
+        # f_avg_shortest_path, 
+        # f_diameter,
+    ]
 
     sem = threading.Semaphore( 4 ) 
     threads = []
@@ -508,24 +523,35 @@ def ugraph_basic_feature_set( dataset, U, stats ):
     for t in threads:
         t.join()
 
-def graph_analyze( dataset, src, stats ):
+def graph_analyze( dataset, edgelists_path, stats ):
     """"""
     
-    if not os.path.isfile( src ):
-        log.error( 'edgelist.csv not found in %s', dataset[2] )
-        return stats
+    if not os.path.isdir( edgelists_path ):
+        log.error( '%s to read edges from does not exist', edgelists_path )
+        return
 
     log.info( 'Constructing DiGraph from edgelist' )
-    D=nx.read_adjlist( src, create_using=nx.DiGraph(), delimiter=' ' )
+    D=nx.Graph( create_using=nx.DiGraph() )
+
+    # read all edgelists and add to one graph
+    for filename in os.listdir( edgelists_path ):
+        edgelist = '/'.join( edgelists_path,filename] )
+    
+        if not re.search( 'edgelist.csv$', filename ):
+            log.debug( 'Skipping %s', filename )
+            continue
+
+        T=nx.read_adjlist( edgelist, create_using=nx.DiGraph(), delimiter=' ' )
+        D.add_edges_from( T.edges )
     
     log.info( 'Computing feature set DiGraph' )
-    digraph_basic_feature_set( dataset, D, stats )
+    fs_digraph_start_job( dataset, D, stats )
     
     log.info( 'Converting to undirected graph' )
     U=D.to_undirected()
 
     log.info( 'Computing feature set UGraph' )
-    ugraph_basic_feature_set( dataset, U, stats )
+    fs_ugraph_start_job( dataset, U, stats )
     
     # slow
     #stats['k_core(U)']=nx.k_core(U)
