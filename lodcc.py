@@ -19,7 +19,10 @@ import sys
 import urlparse
 
 from constants import *
-from lodcc_xxhash import xxhash_nt
+try:
+    from lodcc_xxhash import xxhash_nt
+except:
+    log.warning( 'xxhash module could not be found' )
 
 mediatype_mappings = {}
 
@@ -436,7 +439,7 @@ def fs_digraph_start_job( dataset, D, stats ):
     features = [ 
         # fs = feature set
         fs_digraph_using_basic_properties,
-        fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree
+        fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
         f_reciprocity 
         # f_pagerank,
         # f_eigenvector_centrality,
@@ -535,7 +538,7 @@ def graph_analyze( dataset, edgelists_path, stats ):
 
     # read all edgelists and add to one graph
     for filename in os.listdir( edgelists_path ):
-        edgelist = '/'.join( edgelists_path,filename] )
+        edgelist = '/'.join( [edgelists_path,filename] )
     
         if not re.search( 'edgelist.csv$', filename ):
             log.debug( 'Skipping %s', filename )
