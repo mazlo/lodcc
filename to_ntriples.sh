@@ -16,13 +16,28 @@ FPATH="$2" # e.g. dumps/foo/bar.gz
 FILENAME=`echo ${FPATH##*/}`
 FOLDER_DEST=`echo ${FPATH%/*}`
 
-file_exists()
+fpath_output()
 {
-    if [ ! -f "$FPATH_STRIPPED.nt" ]; then
+    if [[ "${FPATH_STRIPPED%*.nt}" != "$FPATH_STRIPPED" ]]; then
+        echo "$FPATH_STRIPPED"
+        return
+    fi
+
+    echo "$FPATH_STRIPPED.nt"
+}
+
+do_respect_existing_file()
+{
+    # returns false, 
+    #   if FPATH_OUTPUT does not exist or
+    #   if NO_CACHE is true
+    # returns false otherwise
+    
+    if [ ! -f "$FPATH_OUTPUT" ]; then
         return 1 # exit failure
     fi
 
-    SIZE=`ls -s "$FPATH_STRIPPED.nt" | cut -d ' ' -f1`
+    SIZE=`ls -s "$FPATH_OUTPUT" | cut -d ' ' -f1`
     if [[ $NO_CACHE = false && $SIZE > 1000 ]]; then
         return 0 # exit success
     fi
@@ -72,14 +87,14 @@ do_convert()
     if [[ -d "$FPATH_STRIPPED" ]]; then
         #echo "Converting all files in folder $FPATH_STRIPPED"
         for f in `find "$FPATH_STRIPPED" -type f`; do
-            rapper --input "$FILE_FORMAT" --output "ntriples" "$f" > "$f.nt"
+            rapper --ignore-errors --guess --output "ntriples" "$f" > "$f.nt"
         done
     fi
 
     # convert file
     if [[ -f "$FPATH_STRIPPED" ]]; then
         #echo "Converting $FPATH_STRIPPED"
-        rapper --input "$FILE_FORMAT" --output "ntriples" "$FPATH_STRIPPED" > "$FPATH_STRIPPED.nt"
+        rapper --ignore-errors --guess --output "ntriples" "$FPATH_STRIPPED" > "$FPATH_OUTPUT"
     fi
 }
 
@@ -91,7 +106,7 @@ do_oneliner()
         #echo "Make oneliner"
         find "$FPATH_STRIPPED" -name "*.nt" -type f -exec cat {} >> "$FPATH_STRIPPED.tmp"  \; \
             && rm -rf "$FPATH_STRIPPED" \
-            && mv "$FPATH_STRIPPED.tmp" "$FPATH_STRIPPED.nt"
+            && mv "$FPATH_STRIPPED.tmp" "$FPATH_OUTPUT"
     fi
 }
 
@@ -100,10 +115,11 @@ do_oneliner()
 # this will be the directory or filename
 XMTYPE=`get_xmtype`
 FPATH_STRIPPED=`echo ${FPATH%*.$XMTYPE}`
+FPATH_OUTPUT=`fpath_output`
 
 NO_CACHE=${3:-false}
 
-if file_exists; then
+if do_respect_existing_file; then
     exit 0 # exit success
 fi
 
