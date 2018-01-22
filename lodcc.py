@@ -340,6 +340,8 @@ import numpy as n
 import collections
 import matplotlib.pyplot as plt
 
+lock = threading.Lock()
+
 def fs_digraph_using_basic_properties( D, stats, sem ):
     # can I?
     with sem:
@@ -389,6 +391,8 @@ def fs_digraph_using_degree( D, stats, sem ):
         stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degree_list) * sum_of_logs )
         log.info( 'done p_law_exponent' )
 
+        lock.acquire()
+
         # plot degree distribution
         degreeCount = collections.Counter( degree_list )
         deg, cnt = zip( *degreeCount.items() )
@@ -408,6 +412,8 @@ def fs_digraph_using_degree( D, stats, sem ):
         plt.tight_layout()
         plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
         log.info( 'Done plotting degree distribution' )
+
+        lock.release()
 
 def fs_digraph_using_indegree( D, stats, sem ):
     # can I?
@@ -437,6 +443,8 @@ def fs_digraph_using_indegree( D, stats, sem ):
         stats['h_index(D)']=h
         log.info( 'done h_index_d' )
         
+        lock.acquire()
+
         # plot degree distribution
         degreeCount = collections.Counter( degree_list )
         deg, cnt = zip( *degreeCount.items() )
@@ -456,6 +464,8 @@ def fs_digraph_using_indegree( D, stats, sem ):
         plt.tight_layout()
         plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
         log.info( 'Done plotting in-degree distribution' )
+
+        lock.release()
 
 def fs_digraph_using_outdegree( D, stats, sem ):
     # can I?
@@ -497,7 +507,7 @@ def fs_digraph_start_job( dataset, D, stats ):
         # fs = feature set
         fs_digraph_using_basic_properties,
         fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
-        f_reciprocity 
+        f_reciprocity,
         # f_pagerank,
         # f_eigenvector_centrality,
     ]
@@ -540,8 +550,7 @@ def fs_ugraph_start_job( dataset, U, stats ):
 
     features = [ 
         # fs = feature set
-        fs_ugraph_using_degree
-        # f_avg_clustering, 
+        f_avg_clustering, 
         # f_avg_shortest_path, 
         # f_diameter,
     ]
