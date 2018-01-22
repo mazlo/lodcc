@@ -6,3 +6,7 @@ lines.linestyle   :
 lines.color       : b
 lines.marker      : o
 lines.markersize  : 3
+
+### FONTS
+font.family     : serif
+font.size        : 15
