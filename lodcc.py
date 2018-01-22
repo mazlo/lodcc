@@ -337,6 +337,8 @@ def job_cleanup_intermediate( dataset, file ):
 
 import networkx as nx
 import numpy as n
+import collections
+import matplotlib.pyplot as plt
 
 def fs_digraph_using_basic_properties( D, stats, sem ):
     # can I?
@@ -357,11 +359,29 @@ def fs_digraph_using_degree( D, stats, sem ):
     # can I?
     with sem:
         # compute once
-        degree_list = [d for nd, d in D.degree()]
+        degree_list = [d for nd, d in D.degree]
     
         # feature: max_degree
         stats['max_degree(D)']=n.max( degree_list )
         log.info( 'done max_degree' )
+
+        # feature: degree_centrality
+        s = 1.0 / ( len(D)-1.0 )
+        stats['avg_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+        log.info( 'done avg_degree_centrality' )
+
+        # feature: h_index_u
+        degree_list.sort(reverse=True)
+        
+        h = 0
+        for x in degree_list:
+            if x >= h + 1:
+                h += 1
+            else:
+                break
+
+        stats['h_index(U)']=h
+        log.info( 'done h_index_u' )
 
         # feature: p_law_exponent
         min_degree = n.min( degree_list )
@@ -369,15 +389,40 @@ def fs_digraph_using_degree( D, stats, sem ):
         stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degree_list) * sum_of_logs )
         log.info( 'done p_law_exponent' )
 
+        # plot degree distribution
+        degreeCount = collections.Counter( degree_list )
+        deg, cnt = zip( *degreeCount.items() )
+
+        fig, ax = plt.subplots()
+        plt.plot( deg, cnt )
+
+        plt.title( 'Degree Histogram' )
+        plt.ylabel( 'Frequency' )
+        plt.xlabel( 'Degree' )
+
+        ax.set_xticklabels( deg )
+
+        ax.set_xscale( 'log' )
+        ax.set_yscale( 'log' )
+
+        plt.tight_layout()
+        plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
+        log.info( 'Done plotting degree distribution' )
+
 def fs_digraph_using_indegree( D, stats, sem ):
     # can I?
     with sem:
         # compute once
-        degree_list = [d for nd, d in D.in_degree()]
+        degree_list = [d for nd, d in D.in_degree]
 
         # feature: max_in_degree
         stats['max_in_degree(D)']=n.max( degree_list )
         log.info( 'done max_in_degree' )
+
+        # feature: avg_in_degree_centrality
+        s = 1.0 / ( len(D)-1.0 )
+        stats['avg_in_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+        log.info( 'done avg_in_degree_centrality' )
 
         # feature: h_index_d
         degree_list.sort(reverse=True)
@@ -391,17 +436,32 @@ def fs_digraph_using_indegree( D, stats, sem ):
         
         stats['h_index(D)']=h
         log.info( 'done h_index_d' )
+        
+        # plot degree distribution
+        degreeCount = collections.Counter( degree_list )
+        deg, cnt = zip( *degreeCount.items() )
 
-        # feature: avg_in_degree_centrality
-        s = 1.0 / ( len(D)-1.0 )
-        stats['avg_in_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
-        log.info( 'done avg_in_degree_centrality' )
+        fig, ax = plt.subplots()
+        plt.plot( deg, cnt )
+
+        plt.title( 'In-Degree Histogram' )
+        plt.ylabel( 'Frequency' )
+        plt.xlabel( 'In-Degree' )
+
+        ax.set_xticklabels( deg )
+
+        ax.set_xscale( 'log' )
+        ax.set_yscale( 'log' )
+
+        plt.tight_layout()
+        plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
+        log.info( 'Done plotting in-degree distribution' )
 
 def fs_digraph_using_outdegree( D, stats, sem ):
     # can I?
     with sem:
         # compute once
-        degree_list = [d for nd, d in D.out_degree()]
+        degree_list = [d for nd, d in D.out_degree]
 
         # feature: max_out_degree
         stats['max_out_degree(D)']=n.max( degree_list )
@@ -457,40 +517,18 @@ def fs_digraph_start_job( dataset, D, stats ):
     for t in threads:
         t.join()
 
-def fs_ugraph_using_degree( U, stats, sem ):
-    # can I?
-    with sem:
-        deg = U.degree
-        degree_list = [d for nd, d in deg]
-
-        # feature: degree_centrality
-        s = 1.0 / ( len(U)-1.0 )
-        stats['avg_degree_centrality(U)']=n.sum( [ d*s for d in degree_list ] )
-        log.info( 'done avg_degree_centrality' )
-
-        # feature: h_index_u
-        degree_list.sort(reverse=True)
-
-        h = 0
-        for x in degree_list:
-            if x >= h + 1:
-                h += 1
-            else:
-                break
-        
-        stats['h_index(U)']=h
-        log.info( 'done h_index_u' )
-
 def f_avg_shortest_path( U, stats, sem ):
     # can I?
     with sem:
         stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
         log.info( 'done avg_shortest_path' )
+
 def f_avg_clustering( U, stats, sem ):
     # can I?
     with sem:
         stats['avg_clustering(U)']=nx.average_clustering(U)
         log.info( 'done avg_clustering' )
+
 def f_diameter( U, stats, sem ):
     # can I?
     with sem:
@@ -571,7 +609,7 @@ def build_graph_analyse( dataset ):
 
     edgelists_path = dataset[2]
 
-    stats = {}
+    stats = { 'files_path': edgelists_path }
     graph_analyze( dataset, edgelists_path, stats )
 
     # TODO save values for dataset

@@ -1,0 +1,8 @@
+### HOW TO PLOT (here: no x-window)
+backend: Agg
+
+### LINES
+lines.linestyle   : 
+lines.color       : b
+lines.marker      : o
+lines.markersize  : 3
