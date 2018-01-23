@@ -485,17 +485,19 @@ def fs_digraph_using_outdegree( D, stats, sem ):
 def fs_digraph_connected_components_statistics( D, stats, sem ):
     # can I?
     with sem:
-        sccs = nx.strongly_connected_components(D)
-        stats['n(scc)'] = sum( 1 for scc in sccs )
+        sccs_len = nx.number_strongly_connected_components(D)
+        stats['n(scc)'] = sccs_len
 
-        if len(sccs) > 0:
-            stats['n(scc_largest)'] = max( sccs, key=len )
+        if sccs_len > 0:
+            # unfortunately this has to be invoked the second time, because the api returns a generator
+            stats['n(scc_largest)'] = len( max( nx.strongly_connected_components(D), key=len ) )
 
-        wccs = nx.weakly_connected_components(D)
-        stats['n(wcc)'] = sum( 1 for wcc in wccs )
+        #wccs_len = nx.number_weakly_connected_components(D)
+        #stats['n(wcc)'] = wccs_len
 
-        if len(wccs) > 0:
-            stats['n(wcc_largest)'] = max( wccs, key=len )
+        #if wccs_len > 0:
+            # unfortunately this has to be invoked the second time, because the api returns a generator
+         #   stats['n(wcc_largest)'] = len( max( nx.weakly_connected_components(D), key=len ) )
 
         log.info( 'done strongly/weakly connected component statistics' )
 
