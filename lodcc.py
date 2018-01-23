@@ -391,27 +391,27 @@ def fs_digraph_using_degree( D, stats, sem ):
         stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degree_list) * sum_of_logs )
         log.info( 'done p_law_exponent' )
 
+        # plot degree distribution
+        degree_counted = collections.Counter( degree_list )
+        degree, counted = zip( *degree_counted.items() )
+
         lock.acquire()
 
-        # plot degree distribution
-        degreeCount = collections.Counter( degree_list )
-        deg, cnt = zip( *degreeCount.items() )
-
         fig, ax = plt.subplots()
-        plt.plot( deg, cnt )
+        plt.plot( degree, counted )
 
         plt.title( 'Degree Histogram' )
         plt.ylabel( 'Frequency' )
         plt.xlabel( 'Degree' )
 
-        ax.set_xticklabels( deg )
+        ax.set_xticklabels( degree )
 
         ax.set_xscale( 'log' )
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
         plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
-        log.info( 'Done plotting degree distribution' )
+        log.info( 'done plotting degree distribution' )
 
         lock.release()
 
@@ -443,27 +443,27 @@ def fs_digraph_using_indegree( D, stats, sem ):
         stats['h_index(D)']=h
         log.info( 'done h_index_d' )
         
+        # plot degree distribution
+        degree_counted = collections.Counter( degree_list )
+        degree, counted = zip( *degree_counted.items() )
+
         lock.acquire()
 
-        # plot degree distribution
-        degreeCount = collections.Counter( degree_list )
-        deg, cnt = zip( *degreeCount.items() )
-
         fig, ax = plt.subplots()
-        plt.plot( deg, cnt )
+        plt.plot( degree, counted )
 
         plt.title( 'In-Degree Histogram' )
         plt.ylabel( 'Frequency' )
         plt.xlabel( 'In-Degree' )
 
-        ax.set_xticklabels( deg )
+        ax.set_xticklabels( degree )
 
         ax.set_xscale( 'log' )
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
         plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
-        log.info( 'Done plotting in-degree distribution' )
+        log.info( 'done plotting in-degree distribution' )
 
         lock.release()
 
