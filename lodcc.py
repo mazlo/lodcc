@@ -482,6 +482,23 @@ def fs_digraph_using_outdegree( D, stats, sem ):
         stats['avg_out_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
         log.info( 'done avg_out_degree_centrality' )
 
+def fs_digraph_connected_components_statistics( D, stats, sem ):
+    # can I?
+    with sem:
+        sccs = nx.strongly_connected_components(D)
+        stats['n(scc)'] = sum( 1 for scc in sccs )
+
+        if len(sccs) > 0:
+            stats['n(scc_largest)'] = max( sccs, key=len )
+
+        wccs = nx.weakly_connected_components(D)
+        stats['n(wcc)'] = sum( 1 for wcc in wccs )
+
+        if len(wccs) > 0:
+            stats['n(wcc_largest)'] = max( wccs, key=len )
+
+        log.info( 'done strongly/weakly connected component statistics' )
+
 def f_reciprocity( D, stats, sem ):
     # can I?
     with sem:
@@ -555,6 +572,7 @@ def fs_digraph_start_job( dataset, D, stats ):
         # fs = feature set
         fs_digraph_using_basic_properties,
         fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
+        fs_digraph_connected_components_statistics,
         f_reciprocity,
         f_pagerank, f_eigenvector_centrality,
     ]
