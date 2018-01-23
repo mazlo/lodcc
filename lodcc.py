@@ -491,14 +491,62 @@ def f_reciprocity( D, stats, sem ):
 def f_eigenvector_centrality( D, stats, sem ):
     # can I?
     with sem:
-        stats['eigenvector_centrality(D)']=nx.eigenvector_centrality(D)
-        log.info( 'done eigenvector_centerality' )
+        eigenvector_list = nx.eigenvector_centrality(D).values()
+        eigenvector_list.sort( reverse=True )
         
-def avg_pagerank( D, stats, sem ):
+        # plot degree distribution
+        values_counted = collections.Counter( eigenvector_list )
+        values, counted = zip( *values_counted.items() )
+        
+        lock.acquire()
+
+        fig, ax = plt.subplots()
+        plt.plot( values, counted )
+
+        plt.title( 'Eigenvector-Centrality Histogram' )
+        plt.ylabel( 'Frequency' )
+        plt.xlabel( 'Eigenvector-Centrality Value' )
+
+        ax.set_xticklabels( values )
+
+        ax.set_xscale( 'log' )
+        ax.set_yscale( 'log' )
+
+        plt.tight_layout()
+        plt.savefig( stats['files_path'] +'/'+ 'distribution_eigenvector-centrality.pdf' )
+        log.info( 'done plotting eigenvector_centrality' )
+
+        lock.release()
+        
+def f_pagerank( D, stats, sem ):
     # can I?
     with sem:
-        stats['avg_pagerank(D)']=n.mean( nx.pagerank(D).values() )
-        log.info( 'done avg_pagerank' )
+        pagerank_list = nx.pagerank(D).values()
+        pagerank_list.sort( reverse=True )
+
+        # plot degree distribution
+        values_counted = collections.Counter( pagerank_list )
+        values, counted = zip( *values_counted.items() )
+        
+        lock.acquire()
+
+        fig, ax = plt.subplots()
+        plt.plot( values, counted )
+
+        plt.title( 'PageRank Histogram' )
+        plt.ylabel( 'Frequency' )
+        plt.xlabel( 'PageRank Value' )
+
+        ax.set_xticklabels( values )
+
+        ax.set_xscale( 'log' )
+        ax.set_yscale( 'log' )
+
+        plt.tight_layout()
+        plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
+        log.info( 'done plotting pagerank distribution' )
+
+        lock.release()
 
 def fs_digraph_start_job( dataset, D, stats ):
     """"""
@@ -508,8 +556,7 @@ def fs_digraph_start_job( dataset, D, stats ):
         fs_digraph_using_basic_properties,
         fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
         f_reciprocity,
-        # f_pagerank,
-        # f_eigenvector_centrality,
+        f_pagerank, f_eigenvector_centrality,
     ]
 
     sem = threading.Semaphore( 5 ) 
