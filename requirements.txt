@@ -2,4 +2,5 @@ argparse
 logging
 networkx
 numpy
+matplotlib
 psycopg2
