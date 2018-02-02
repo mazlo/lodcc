@@ -531,35 +531,35 @@ def f_eigenvector_centrality( D, stats, sem ):
 
         lock.release()
         
-def f_pagerank( D, stats, sem ):
-    # can I?
-    with sem:
-        pagerank_list = nx.pagerank(D).values()
-        pagerank_list.sort( reverse=True )
+def f_pagerank( D, stats ):
+    """"""
 
-        # plot degree distribution
-        values_counted = collections.Counter( pagerank_list )
-        values, counted = zip( *values_counted.items() )
-        
-        lock.acquire()
+    pagerank_list = pagerank(D).get_array().tolist()
+    pagerank_list.sort( reverse=True )
 
-        fig, ax = plt.subplots()
-        plt.plot( values, counted )
+    # plot degree distribution
+    values_counted = collections.Counter( pagerank_list )
+    values, counted = zip( *values_counted.items() )
+    
+    lock.acquire()
 
-        plt.title( 'PageRank Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'PageRank Value' )
+    fig, ax = plt.subplots()
+    plt.plot( values, counted )
 
-        ax.set_xticklabels( values )
+    plt.title( 'PageRank Histogram' )
+    plt.ylabel( 'Frequency' )
+    plt.xlabel( 'PageRank Value' )
 
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
+    ax.set_xticklabels( values )
 
-        plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
-        log.info( 'done plotting pagerank distribution' )
+    ax.set_xscale( 'log' )
+    ax.set_yscale( 'log' )
 
-        lock.release()
+    plt.tight_layout()
+    plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
+    log.info( 'done plotting pagerank distribution' )
+
+    lock.release()
 
 def fs_digraph_start_job( dataset, D, stats ):
     """"""
@@ -569,7 +569,8 @@ def fs_digraph_start_job( dataset, D, stats ):
         fs_digraph_using_basic_properties,
         fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
         f_reciprocity,
-        #f_pagerank, f_eigenvector_centrality,
+        f_pagerank, 
+        #f_eigenvector_centrality,
     ]
 
     for ftr in features:
