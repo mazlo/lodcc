@@ -581,11 +581,17 @@ def f_avg_shortest_path( U, stats, sem ):
         stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
         log.info( 'done avg_shortest_path' )
 
-def f_avg_clustering( U, stats, sem ):
-    # can I?
-    with sem:
-        stats['avg_clustering(U)']=nx.average_clustering(U)
-        log.info( 'done avg_clustering' )
+def f_global_clustering( U, stats ):
+    """"""
+
+    stats['global_clustering(U)']=global_clustering(U)[0]
+    log.info( 'done global_clustering' )
+
+def f_avg_clustering( U, stats ):
+    """"""
+
+    stats['avg_clustering(U)']=n.mean( local_clustering(U, undirected=True).get_array().tolist() )
+    log.info( 'done avg_clustering' )
 
 def f_diameter( U, stats, sem ):
     # can I?
@@ -598,25 +604,13 @@ def fs_ugraph_start_job( dataset, U, stats ):
 
     features = [ 
         # fs = feature set
-        f_avg_clustering, 
+        f_global_clustering, f_avg_clustering, 
         # f_avg_shortest_path, 
         # f_diameter,
     ]
 
-    sem = threading.Semaphore( 4 ) 
-    threads = []
-
     for ftr in features:
-                           
-        # create a thread for each feature. work load is limited by the semaphore
-        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( U, stats, sem ) )
-        t.start()
-
-        threads.append( t )
-
-    # wait for all threads to finish
-    for t in threads:
-        t.join()
+        ftr( U, stats )
 
 def graph_analyze( dataset, edgelists_path, stats ):
     """"""
@@ -647,13 +641,8 @@ def graph_analyze( dataset, edgelists_path, stats ):
     log.info( 'Computing feature set DiGraph' )
     fs_digraph_start_job( dataset, D, stats )
     
-    return stats
-
-    log.info( 'Converting to undirected graph' )
-    U=D.to_undirected()
-
     log.info( 'Computing feature set UGraph' )
-    fs_ugraph_start_job( dataset, U, stats )
+    fs_ugraph_start_job( dataset, D, stats )
     
     # slow
     #stats['k_core(U)']=nx.k_core(U)
