@@ -335,27 +335,37 @@ def job_cleanup_intermediate( dataset, file ):
 
     # TODO remove 1. decompressed and transformed 2. .nt file
 
-import networkx as nx
+from graph_tool.all import *
 import numpy as n
 import collections
 import matplotlib.pyplot as plt
 
+# limit the number of threads a graph_tool job may acquire
+graph_tool.openmp_set_num_threads(8)
+
 lock = threading.Lock()
 
-def fs_digraph_using_basic_properties( D, stats, sem ):
-    # can I?
-    with sem:
-        # feature: order
-        stats['n']=D.order()
-        log.info( 'done order' )
+def fs_digraph_using_basic_properties( D, stats ):
+    """"""
 
-        # feature: size
-        stats['m']=D.size()
-        log.info( 'done size' )
+    # feature: order
+    num_vertices = D.num_vertices()
+    log.info( 'done order' )
 
-        # feature: avg_degree
-        stats['avg_degree(D)']=float( 2*D.size() ) / D.order()
-        log.info( 'done avg_degree' )
+    # feature: size
+    num_edges = D.num_edges()
+    log.info( 'done size' )
+
+    stats['n']=num_vertices
+    stats['m']=num_edges
+
+    # feature: avg_degree
+    stats['avg_degree(D)']=float( 2*num_edges ) / num_vertices
+    log.info( 'done avg_degree' )
+    
+    # feature: fill
+    stats['fill(D)']=float( num_edges ) / ( num_vertices*num_vertices )
+    log.info( 'done fill' )
 
 def fs_digraph_using_degree( D, stats, sem ):
     # can I?
@@ -554,25 +564,13 @@ def fs_digraph_start_job( dataset, D, stats ):
     features = [ 
         # fs = feature set
         fs_digraph_using_basic_properties,
-        fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
-        f_reciprocity,
-        f_pagerank, f_eigenvector_centrality,
+        #fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
+        #f_reciprocity,
+        #f_pagerank, f_eigenvector_centrality,
     ]
 
-    sem = threading.Semaphore( 5 ) 
-    threads = []
-
     for ftr in features:
-                           
-        # create a thread for each feature. work load is limited by the semaphore
-        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( D, stats, sem ) )
-        t.start()
-
-        threads.append( t )
-
-    # wait for all threads to finish
-    for t in threads:
-        t.join()
+        ftr( D, stats )
 
 def f_avg_shortest_path( U, stats, sem ):
     # can I?
@@ -624,23 +622,30 @@ def graph_analyze( dataset, edgelists_path, stats ):
         log.error( '%s to read edges from does not exist', edgelists_path )
         return
 
-    log.info( 'Constructing DiGraph from edgelist' )
-    D=nx.DiGraph()
-
-    # read all edgelists and add to one graph
+    # find edgelist file
+    edgelist = None
     for filename in os.listdir( edgelists_path ):
-        edgelist = '/'.join( [edgelists_path,filename] )
+        edgelist_file = '/'.join( [edgelists_path,filename] )
     
         if not re.search( 'edgelist.csv$', filename ):
             log.debug( 'Skipping %s', filename )
             continue
 
-        T=nx.read_adjlist( edgelist, create_using=nx.DiGraph(), delimiter=' ' )
-        D.add_edges_from( T.edges )
+        edgelist = edgelist_file
+        break
+
+    if not os.path.isfile( edgelist ):
+        log.error( 'edgelist.csv to read edges from does not exist' )
+        return
+
+    log.info( 'Constructing DiGraph from edgelist' )
+    D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
     
     log.info( 'Computing feature set DiGraph' )
     fs_digraph_start_job( dataset, D, stats )
     
+    return stats
+
     log.info( 'Converting to undirected graph' )
     U=D.to_undirected()
 
