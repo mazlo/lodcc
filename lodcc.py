@@ -367,136 +367,139 @@ def fs_digraph_using_basic_properties( D, stats ):
     stats['fill(D)']=float( num_edges ) / ( num_vertices*num_vertices )
     log.info( 'done fill' )
 
-def fs_digraph_using_degree( D, stats, sem ):
-    # can I?
-    with sem:
-        # compute once
-        degree_list = [d for nd, d in D.degree]
+def fs_digraph_using_degree( D, stats ):
+    """"""
+
+    # compute once
+    degree_list = D.degree_property_map( 'total' ).get_array()
+    degree_list = degree_list.tolist()
+
+    # feature: max_degree
+    stats['max_degree(D)']=n.max( degree_list )
+    log.info( 'done max_degree' )
+
+    # feature: degree_centrality
+    s = 1.0 / ( D.num_vertices()-1.0 )
+    stats['avg_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+    log.info( 'done avg_degree_centrality' )
+
+    # feature: h_index_u
+    degree_list.sort(reverse=True)
     
-        # feature: max_degree
-        stats['max_degree(D)']=n.max( degree_list )
-        log.info( 'done max_degree' )
+    h = 0
+    for x in degree_list:
+        if x >= h + 1:
+            h += 1
+        else:
+            break
 
-        # feature: degree_centrality
-        s = 1.0 / ( len(D)-1.0 )
-        stats['avg_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
-        log.info( 'done avg_degree_centrality' )
+    stats['h_index(U)']=h
+    log.info( 'done h_index_u' )
 
-        # feature: h_index_u
-        degree_list.sort(reverse=True)
-        
-        h = 0
-        for x in degree_list:
-            if x >= h + 1:
-                h += 1
-            else:
-                break
+    # feature: p_law_exponent
+    min_degree = n.min( degree_list )
+    sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degree_list ] )
+    stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degree_list) * sum_of_logs )
+    log.info( 'done p_law_exponent' )
 
-        stats['h_index(U)']=h
-        log.info( 'done h_index_u' )
+    # plot degree distribution
+    degree_counted = collections.Counter( degree_list )
+    degree, counted = zip( *degree_counted.items() )
 
-        # feature: p_law_exponent
-        min_degree = n.min( degree_list )
-        sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degree_list ] )
-        stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degree_list) * sum_of_logs )
-        log.info( 'done p_law_exponent' )
+    lock.acquire()
 
-        # plot degree distribution
-        degree_counted = collections.Counter( degree_list )
-        degree, counted = zip( *degree_counted.items() )
+    fig, ax = plt.subplots()
+    plt.plot( degree, counted )
 
-        lock.acquire()
+    plt.title( 'Degree Histogram' )
+    plt.ylabel( 'Frequency' )
+    plt.xlabel( 'Degree' )
 
-        fig, ax = plt.subplots()
-        plt.plot( degree, counted )
+    ax.set_xticklabels( degree )
 
-        plt.title( 'Degree Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'Degree' )
+    ax.set_xscale( 'log' )
+    ax.set_yscale( 'log' )
 
-        ax.set_xticklabels( degree )
+    plt.tight_layout()
+    plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
+    log.info( 'done plotting degree distribution' )
 
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
+    lock.release()
 
-        plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
-        log.info( 'done plotting degree distribution' )
+def fs_digraph_using_indegree( D, stats ):
+    """"""
 
-        lock.release()
+    # compute once
+    degree_list = D.get_in_degrees( D.get_vertices() )
+    degree_list = degree_list.tolist()
 
-def fs_digraph_using_indegree( D, stats, sem ):
-    # can I?
-    with sem:
-        # compute once
-        degree_list = [d for nd, d in D.in_degree]
+    # feature: max_in_degree
+    stats['max_in_degree(D)']=n.max( degree_list )
+    log.info( 'done max_in_degree' )
 
-        # feature: max_in_degree
-        stats['max_in_degree(D)']=n.max( degree_list )
-        log.info( 'done max_in_degree' )
+    # feature: avg_in_degree_centrality
+    s = 1.0 / ( D.num_vertices()-1.0 )
+    stats['avg_in_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+    log.info( 'done avg_in_degree_centrality' )
 
-        # feature: avg_in_degree_centrality
-        s = 1.0 / ( len(D)-1.0 )
-        stats['avg_in_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
-        log.info( 'done avg_in_degree_centrality' )
+    # feature: h_index_d
+    degree_list.sort(reverse=True)
+    
+    h = 0
+    for x in degree_list:
+        if x >= h + 1:
+            h += 1
+        else:
+            break
+    
+    stats['h_index(D)']=h
+    log.info( 'done h_index_d' )
+    
+    # plot degree distribution
+    degree_counted = collections.Counter( degree_list )
+    degree, counted = zip( *degree_counted.items() )
 
-        # feature: h_index_d
-        degree_list.sort(reverse=True)
-        
-        h = 0
-        for x in degree_list:
-            if x >= h + 1:
-                h += 1
-            else:
-                break
-        
-        stats['h_index(D)']=h
-        log.info( 'done h_index_d' )
-        
-        # plot degree distribution
-        degree_counted = collections.Counter( degree_list )
-        degree, counted = zip( *degree_counted.items() )
+    lock.acquire()
 
-        lock.acquire()
+    fig, ax = plt.subplots()
+    plt.plot( degree, counted )
 
-        fig, ax = plt.subplots()
-        plt.plot( degree, counted )
+    plt.title( 'In-Degree Histogram' )
+    plt.ylabel( 'Frequency' )
+    plt.xlabel( 'In-Degree' )
 
-        plt.title( 'In-Degree Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'In-Degree' )
+    ax.set_xticklabels( degree )
 
-        ax.set_xticklabels( degree )
+    ax.set_xscale( 'log' )
+    ax.set_yscale( 'log' )
 
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
+    plt.tight_layout()
+    plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
+    log.info( 'done plotting in-degree distribution' )
 
-        plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
-        log.info( 'done plotting in-degree distribution' )
+    lock.release()
 
-        lock.release()
+def fs_digraph_using_outdegree( D, stats ):
+    """"""
 
-def fs_digraph_using_outdegree( D, stats, sem ):
-    # can I?
-    with sem:
-        # compute once
-        degree_list = [d for nd, d in D.out_degree]
+    # compute once
+    degree_list = D.get_out_degrees( D.get_vertices() )
+    degree_list = degree_list.tolist()
 
-        # feature: max_out_degree
-        stats['max_out_degree(D)']=n.max( degree_list )
-        log.info( 'done max_out_degree' )
+    # feature: max_out_degree
+    stats['max_out_degree(D)']=n.max( degree_list )
+    log.info( 'done max_out_degree' )
 
-        # feature: avg_out_degree_centrality
-        s = 1.0 / ( len(D)-1.0 )
-        stats['avg_out_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
-        log.info( 'done avg_out_degree_centrality' )
+    # feature: avg_out_degree_centrality
+    s = 1.0 / ( D.num_vertices()-1.0 )
+    stats['avg_out_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+    log.info( 'done avg_out_degree_centrality' )
 
-def f_reciprocity( D, stats, sem ):
-    # can I?
-    with sem:
-        stats['reciprocity(D)']=nx.reciprocity( D )
-        log.info( 'done reciprocity' )
+def f_reciprocity( D, stats ):
+    """"""
+
+    stats['reciprocity(D)']=edge_reciprocity(D)
+    log.info( 'done reciprocity' )
 
 def f_eigenvector_centrality( D, stats, sem ):
     # can I?
@@ -564,8 +567,8 @@ def fs_digraph_start_job( dataset, D, stats ):
     features = [ 
         # fs = feature set
         fs_digraph_using_basic_properties,
-        #fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
-        #f_reciprocity,
+        fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
+        f_reciprocity,
         #f_pagerank, f_eigenvector_centrality,
     ]
 
