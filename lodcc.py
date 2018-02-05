@@ -504,35 +504,46 @@ def f_reciprocity( D, stats ):
     stats['reciprocity(D)']=edge_reciprocity(D)
     log.info( 'done reciprocity' )
 
-def f_eigenvector_centrality( D, stats, sem ):
-    # can I?
-    with sem:
-        eigenvector_list = nx.eigenvector_centrality(D).values()
-        eigenvector_list.sort( reverse=True )
+def f_eigenvector_centrality( D, stats ):
+    """"""
+
+    if not args['do_heavy_analysis']:
+        log.info( 'Skipping computation heavy analysis' )
+        return
+
+    eigenvector_list = eigenvector(D)[1].get_array().tolist()
         
-        # plot degree distribution
-        values_counted = collections.Counter( eigenvector_list )
-        values, counted = zip( *values_counted.items() )
+    # info: vertex with largest eigenvector value
+    ev_list_idx=zip( eigenvector_list, D.vertex_index )
+    largest_ev_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), ev_list_idx )
+    stats['max_eigenvector_vertex']=D.vertex_properties['name'][largest_ev_vertex[1]]
+    log.info( 'done max_eigenvector_vertex' )
+
+    eigenvector_list.sort( reverse=True )
+
+    # plot degree distribution
+    values_counted = collections.Counter( eigenvector_list )
+    values, counted = zip( *values_counted.items() )
         
-        lock.acquire()
+    lock.acquire()
 
-        fig, ax = plt.subplots()
-        plt.plot( values, counted )
+    fig, ax = plt.subplots()
+    plt.plot( values, counted )
 
-        plt.title( 'Eigenvector-Centrality Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'Eigenvector-Centrality Value' )
+    plt.title( 'Eigenvector-Centrality Histogram' )
+    plt.ylabel( 'Frequency' )
+    plt.xlabel( 'Eigenvector-Centrality Value' )
 
-        ax.set_xticklabels( values )
+    ax.set_xticklabels( values )
 
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
+    ax.set_xscale( 'log' )
+    ax.set_yscale( 'log' )
 
-        plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_eigenvector-centrality.pdf' )
-        log.info( 'done plotting eigenvector_centrality' )
+    plt.tight_layout()
+    plt.savefig( stats['files_path'] +'/'+ 'distribution_eigenvector-centrality.pdf' )
+    log.info( 'done plotting eigenvector_centrality' )
 
-        lock.release()
+    lock.release()
         
 def f_pagerank( D, stats ):
     """"""
@@ -580,7 +591,7 @@ def fs_digraph_start_job( dataset, D, stats ):
         fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
         f_reciprocity,
         f_pagerank, 
-        #f_eigenvector_centrality,
+        f_eigenvector_centrality,
     ]
 
     for ftr in features:
