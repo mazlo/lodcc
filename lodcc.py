@@ -380,6 +380,12 @@ def fs_digraph_using_degree( D, stats ):
     stats['avg_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
     log.info( 'done avg_degree_centrality' )
 
+    # info: vertex with largest degree centrality
+    degree_list_idx=zip( degree_list, D.vertex_index )
+    largest_degree_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), degree_list_idx )
+    stats['max_degree_vertex']=D.vertex_properties['name'][largest_degree_vertex[1]]
+    log.info( 'done max_degree_vertex' )
+
     # feature: h_index_u
     degree_list.sort(reverse=True)
     
@@ -532,6 +538,13 @@ def f_pagerank( D, stats ):
     """"""
 
     pagerank_list = pagerank(D).get_array().tolist()
+
+    # info: vertex with largest pagerank value
+    pr_list_idx=zip( pagerank_list, D.vertex_index )
+    largest_pr_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), pr_list_idx )
+    stats['max_pagerank_vertex']=D.vertex_properties['name'][largest_pr_vertex[1]]
+    log.info( 'done max_pagerank_vertex' )
+    
     pagerank_list.sort( reverse=True )
 
     # plot degree distribution
