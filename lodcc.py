@@ -340,9 +340,6 @@ import numpy as n
 import collections
 import matplotlib.pyplot as plt
 
-# limit the number of threads a graph_tool job may acquire
-graph_tool.openmp_set_num_threads(8)
-
 lock = threading.Lock()
 
 def fs_digraph_using_basic_properties( D, stats ):
@@ -653,7 +650,7 @@ def graph_analyze( dataset, edgelists_path, stats ):
 
     return stats
 
-def build_graph_analyse( dataset ):
+def build_graph_analyse( dataset, threads_openmp=7 ):
     """"""
 
     # e.g. dataset[2] = 'dumps/dbpedia-en'
@@ -661,8 +658,11 @@ def build_graph_analyse( dataset ):
         log.error( 'No path given for dataset %s', dataset[1] )
         return 
 
-    edgelists_path = dataset[2]
+    # before starting off: limit the number of threads a graph_tool job may acquire
+    graph_tool.openmp_set_num_threads( threads_openmp )
 
+    edgelists_path = dataset[2]
+ 
     stats = { 'files_path': edgelists_path }
     graph_analyze( dataset, edgelists_path, stats )
 
@@ -673,7 +673,7 @@ def build_graph_analyse( dataset ):
         print stats
 
 # real job
-def job_start_build_graph( dataset, sem ):
+def job_start_build_graph( dataset, sem, threads_openmp=7 ):
     """job_start_build_graph"""
 
     # let's go
@@ -682,7 +682,7 @@ def job_start_build_graph( dataset, sem ):
         log.debug( dataset )
 
         # - build_graph_analyse
-        build_graph_analyse( dataset )
+        build_graph_analyse( dataset, threads_openmp )
 
         # - job_cleanup
 
@@ -735,7 +735,7 @@ def parse_resource_urls( cur, no_of_threads=1 ):
     for t in threads:
         t.join()
 
-def build_graph( cur, no_of_threads=1 ):
+def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
     """"""
 
     datasets = cur.fetchall()
@@ -751,7 +751,7 @@ def build_graph( cur, no_of_threads=1 ):
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_build_graph, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start_build_graph, name = 'Job: '+ dataset[1], args = ( dataset, sem, threads_openmp ) )
         t.start()
 
         threads.append( t )
@@ -775,7 +775,11 @@ if __name__ == '__main__':
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
-    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
+    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 4, help = 'Specify how many threads will be used for downloading and parsing' )
+
+    # RE feature computation
+    parser.add_argument( '--threads-openmp', '-ot', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
+    parser.add_argument( '--do-heavy-analysis', '-ah', action = "store_true", help = '' )
 
     # read all properties in file into args-dict
     if os.path.isfile( 'db.properties' ):
@@ -903,7 +907,7 @@ if __name__ == '__main__':
         
         cur.execute( sql, names )
 
-        build_graph( cur, None if 'threads' not in args else args['threads'] )
+        build_graph( cur, args['threads'], args['threads_openmp'] )
 
     # close communication with the database
     cur.close()
