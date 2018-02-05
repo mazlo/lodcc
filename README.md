@@ -29,8 +29,8 @@ $ sudo apt-get install dtrx raptor2-utils
 - Determine file sizes of all dumps
 
 ```sh
-$ find dumps/ -type f -exec ls -s {} \; > dumps-sizes.txt
-$ cat dumps-sizes.txt | sort -h -r | less
+$ find dumps/ -type f -exec ls -s --block-size=M {} \; > dumps-sizes.txt
+$ cat dumps-sizes.txt | sed -e '/edgelist/! s/^.*$/###/' -e '/^###/D' | sort -h -r | less
 ```
 
 #### dbpedia 
