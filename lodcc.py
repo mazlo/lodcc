@@ -509,7 +509,7 @@ def f_eigenvector_centrality( D, stats ):
     """"""
 
     if not args['do_heavy_analysis']:
-        log.info( 'Skipping computation heavy analysis' )
+        log.info( 'Skipping eigenvector_centrality' )
         return
 
     eigenvector_list = eigenvector(D)[1].get_array().tolist()
@@ -625,11 +625,19 @@ def f_avg_shortest_path( U, stats, sem ):
 def f_global_clustering( U, stats ):
     """"""
 
+    if not args['do_heavy_analysis']:
+        log.info( 'Skipping global_clustering' )
+        return
+
     stats['global_clustering']=global_clustering(U)[0]
     log.info( 'done global_clustering' )
 
 def f_avg_clustering( U, stats ):
     """"""
+    
+    if not args['do_heavy_analysis']:
+        log.info( 'Skipping avg_clustering' )
+        return
 
     stats['avg_clustering']=n.mean( local_clustering(U, undirected=True).get_array().tolist() )
     log.info( 'done avg_clustering' )
@@ -706,10 +714,8 @@ def build_graph_analyse( dataset, threads_openmp=7 ):
     # before starting off: limit the number of threads a graph_tool job may acquire
     graph_tool.openmp_set_num_threads( threads_openmp )
 
-    edgelists_path = dataset[2]
- 
-    stats = { 'files_path': edgelists_path }
-    graph_analyze( dataset, edgelists_path, stats )
+    stats = { 'files_path': dataset[2] }
+    graph_analyze( dataset, dataset[2], stats )
 
     if args['print_stats']:
         print stats
