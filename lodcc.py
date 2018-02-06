@@ -583,6 +583,22 @@ def f_pagerank( D, stats ):
 
     lock.release()
 
+def save_stats( dataset, stats ):
+    """"""
+
+    # e.g. avg_degree=%(avg_degree)s, max_degree=%(max_degree)s, ..
+    cols = ', '.join( map( lambda d: d +'=%('+ d +')s', stats ) )
+
+    sql='UPDATE stats_graph SET '+ cols +' WHERE id=%(id)s'
+    stats['id']=dataset[0]
+
+    cur = conn.cursor()
+    cur.execute( sql, stats )
+    conn.commit()
+    cur.close()
+
+    log.info( 'done saving results' )
+
 def fs_digraph_start_job( dataset, D, stats ):
     """"""
 
@@ -597,6 +613,8 @@ def fs_digraph_start_job( dataset, D, stats ):
 
     for ftr in features:
         ftr( D, stats )
+
+    save_stats( dataset, stats )
 
 def f_avg_shortest_path( U, stats, sem ):
     # can I?
@@ -634,6 +652,8 @@ def fs_ugraph_start_job( dataset, U, stats ):
 
     for ftr in features:
         ftr( U, stats )
+
+    save_stats( dataset, stats )
 
 def graph_analyze( dataset, edgelists_path, stats ):
     """"""
@@ -690,9 +710,6 @@ def build_graph_analyse( dataset, threads_openmp=7 ):
  
     stats = { 'files_path': edgelists_path }
     graph_analyze( dataset, edgelists_path, stats )
-
-    # TODO save values for dataset
-    # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
 
     if args['print_stats']:
         print stats
