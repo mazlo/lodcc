@@ -826,7 +826,7 @@ if __name__ == '__main__':
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
-    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 4, help = 'Specify how many threads will be used for downloading and parsing' )
+    parser.add_argument( '--processes', '-pt', required = False, type = int, default = 1, help = 'Specify how many processes will be used for downloading and parsing' )
 
     # RE feature computation
     parser.add_argument( '--threads-openmp', '-ot', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
@@ -929,7 +929,7 @@ if __name__ == '__main__':
 
         cur.execute( sql, names )
 
-        parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
+        parse_resource_urls( cur, None if 'processes' not in args else args['processes'] )
 
     # option 3
     if args['build_graph']:
@@ -952,13 +952,13 @@ if __name__ == '__main__':
         log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
         if 'names_query' in locals():
-            sql = 'SELECT id,name,files_path FROM stats_graph WHERE '+ names_query +' ORDER BY id'
+            sql = 'SELECT id,name,files_path,filename FROM stats_graph WHERE '+ names_query +' AND filename IS NOT NULL ORDER BY id'
         else:
-            sql = 'SELECT id,name,files_path FROM stats_graph ORDER BY id'
+            sql = 'SELECT id,name,files_path,filename FROM stats_graph WHERE filename IS NOT NULL ORDER BY id'
         
         cur.execute( sql, names )
 
-        build_graph( cur, args['threads'], args['threads_openmp'] )
+        build_graph( cur, args['processes'], args['threads_openmp'] )
 
     # close communication with the database
     cur.close()
