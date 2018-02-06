@@ -642,11 +642,14 @@ def f_avg_clustering( U, stats ):
     stats['avg_clustering']=n.mean( local_clustering(U, undirected=True).get_array().tolist() )
     log.info( 'done avg_clustering' )
 
-def f_diameter( U, stats, sem ):
-    # can I?
-    with sem:
-        stats['diameter']=nx.diameter(U)
-        log.info( 'done diameter' )
+def f_pseudo_diameter( U, stats ):
+    """"""
+
+    dist, ends = pseudo_diameter(U)
+    stats['pseudo_diameter']=dist
+    stats['pseudo_diameter_src_vertex']=U.vertex_properties['name'][ends[0]]
+    stats['pseudo_diameter_trg_vertex']=U.vertex_properties['name'][ends[1]]
+    log.info( 'done pseudo_diameter' )
 
 def fs_ugraph_start_job( dataset, U, stats ):
     """"""
@@ -655,12 +658,12 @@ def fs_ugraph_start_job( dataset, U, stats ):
         # fs = feature set
         f_global_clustering, f_avg_clustering, 
         # f_avg_shortest_path, 
-        # f_diameter,
+        f_pseudo_diameter,
     ]
 
     for ftr in features:
         ftr( U, stats )
-
+    
     save_stats( dataset, stats )
 
 def graph_analyze( dataset, edgelists_path, stats ):
