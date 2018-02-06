@@ -357,11 +357,11 @@ def fs_digraph_using_basic_properties( D, stats ):
     stats['m']=num_edges
 
     # feature: avg_degree
-    stats['avg_degree(D)']=float( 2*num_edges ) / num_vertices
+    stats['avg_degree']=float( 2*num_edges ) / num_vertices
     log.info( 'done avg_degree' )
     
     # feature: fill
-    stats['fill(D)']=float( num_edges ) / ( num_vertices*num_vertices )
+    stats['fill']=float( num_edges ) / ( num_vertices*num_vertices )
     log.info( 'done fill' )
 
 def fs_digraph_using_degree( D, stats ):
@@ -372,12 +372,12 @@ def fs_digraph_using_degree( D, stats ):
     degree_list = degree_list.tolist()
 
     # feature: max_degree
-    stats['max_degree(D)']=n.max( degree_list )
+    stats['max_degree']=n.max( degree_list )
     log.info( 'done max_degree' )
 
     # feature: degree_centrality
     s = 1.0 / ( D.num_vertices()-1.0 )
-    stats['avg_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+    stats['avg_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
     log.info( 'done avg_degree_centrality' )
 
     # info: vertex with largest degree centrality
@@ -396,13 +396,14 @@ def fs_digraph_using_degree( D, stats ):
         else:
             break
 
-    stats['h_index(U)']=h
+    stats['h_index_u']=h
     log.info( 'done h_index_u' )
 
     # feature: p_law_exponent
     min_degree = n.min( degree_list )
     sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degree_list ] )
-    stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degree_list) * sum_of_logs )
+    stats['p_law_exponent'] = 1 + ( len(degree_list) * sum_of_logs )
+    stats['p_law_exponent_dmin'] = min_degree
     log.info( 'done p_law_exponent' )
 
     # plot degree distribution
@@ -437,12 +438,12 @@ def fs_digraph_using_indegree( D, stats ):
     degree_list = degree_list.tolist()
 
     # feature: max_in_degree
-    stats['max_in_degree(D)']=n.max( degree_list )
+    stats['max_in_degree']=n.max( degree_list )
     log.info( 'done max_in_degree' )
 
     # feature: avg_in_degree_centrality
     s = 1.0 / ( D.num_vertices()-1.0 )
-    stats['avg_in_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+    stats['avg_in_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
     log.info( 'done avg_in_degree_centrality' )
 
     # feature: h_index_d
@@ -455,7 +456,7 @@ def fs_digraph_using_indegree( D, stats ):
         else:
             break
     
-    stats['h_index(D)']=h
+    stats['h_index_d']=h
     log.info( 'done h_index_d' )
     
     # plot degree distribution
@@ -490,18 +491,18 @@ def fs_digraph_using_outdegree( D, stats ):
     degree_list = degree_list.tolist()
 
     # feature: max_out_degree
-    stats['max_out_degree(D)']=n.max( degree_list )
+    stats['max_out_degree']=n.max( degree_list )
     log.info( 'done max_out_degree' )
 
     # feature: avg_out_degree_centrality
     s = 1.0 / ( D.num_vertices()-1.0 )
-    stats['avg_out_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
+    stats['avg_out_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
     log.info( 'done avg_out_degree_centrality' )
 
 def f_reciprocity( D, stats ):
     """"""
 
-    stats['reciprocity(D)']=edge_reciprocity(D)
+    stats['reciprocity']=edge_reciprocity(D)
     log.info( 'done reciprocity' )
 
 def f_eigenvector_centrality( D, stats ):
@@ -600,25 +601,25 @@ def fs_digraph_start_job( dataset, D, stats ):
 def f_avg_shortest_path( U, stats, sem ):
     # can I?
     with sem:
-        stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
+        stats['avg_shortest_path']=nx.average_shortest_path_length(U)
         log.info( 'done avg_shortest_path' )
 
 def f_global_clustering( U, stats ):
     """"""
 
-    stats['global_clustering(U)']=global_clustering(U)[0]
+    stats['global_clustering']=global_clustering(U)[0]
     log.info( 'done global_clustering' )
 
 def f_avg_clustering( U, stats ):
     """"""
 
-    stats['avg_clustering(U)']=n.mean( local_clustering(U, undirected=True).get_array().tolist() )
+    stats['avg_clustering']=n.mean( local_clustering(U, undirected=True).get_array().tolist() )
     log.info( 'done avg_clustering' )
 
 def f_diameter( U, stats, sem ):
     # can I?
     with sem:
-        stats['diameter(U)']=nx.diameter(U)
+        stats['diameter']=nx.diameter(U)
         log.info( 'done diameter' )
 
 def fs_ugraph_start_job( dataset, U, stats ):
