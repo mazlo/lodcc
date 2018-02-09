@@ -305,7 +305,8 @@ def build_graph_prepare( dataset, file ):
     format_ = file['format']
     path = file['path']
 
-    no_cache = 'true' if args['no_cache'] else ''
+    no_cache = 'true' if args['no_cache'] else 'false'
+    rm_extracted = 'true' if args['rm_extracted'] else 'false'
 
     # transform into ntriples if necessary
     if not format_ == APPLICATION_N_TRIPLES:
@@ -313,8 +314,8 @@ def build_graph_prepare( dataset, file ):
         # TODO check content of file
         # TODO check if file ends with .nt
         log.info( 'Need to transform to ntriples.. this may take a while' )
-        log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
-        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
+        log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache,rm_extracted) )
+        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache,rm_extracted) )
 
     # TODO check correct mediatype if not compressed
 
@@ -822,6 +823,7 @@ if __name__ == '__main__':
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
     parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
+    parser.add_argument( '--rm-extracted', '-dr', action = "store_true", help = 'Will REMOVE the extracted data file if it is compressed' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
