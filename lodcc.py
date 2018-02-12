@@ -13,12 +13,15 @@ import os
 import argparse
 import json
 import logging as log
-import psycopg2
 import threading
 import sys
 import urlparse
 
 from constants import *
+try:
+    import psycopg2
+except:
+    log.warning( 'psycogp2 could not be found' )
 try:
     from lodcc_xxhash import xxhash_nt
 except:
@@ -336,10 +339,16 @@ def job_cleanup_intermediate( dataset, file ):
 
     # TODO remove 1. decompressed and transformed 2. .nt file
 
-from graph_tool.all import *
+try:
+    from graph_tool.all import *
+except:
+    log.warning( 'graph_tool module could not be imported' )
 import numpy as n
 import collections
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    log.warning( 'matplotlib.pyplot module could not be imported' )
 
 lock = threading.Lock()
 
