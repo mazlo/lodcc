@@ -23,11 +23,10 @@ fi
 FILES=`find "$FOLDER_ROOT" -name "*.edgelist.csv" -type f`
 
 for file in $FILES; do
-    echo "handling $file"
+    
     # ignore data.edgelist, if present
     if [[ "${file%*/data.edgelist.csv}" == "$file" ]]; then
         FOLDER=${file%/*}
-        echo $FOLDER
         cat $file >> "$FOLDER/data.edgelist.csv" &&  
         rm $file
     fi
