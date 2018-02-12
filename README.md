@@ -1,5 +1,13 @@
 [![pipeline status](https://git.gesis.org/matthaeus/lodcc/badges/master/pipeline.svg)](https://git.gesis.org/matthaeus/lodcc/commits/master)
 
+### Install dependencies
+
+```sh
+$ cd lodcc/
+$ pip install -r requirements.txt
+$ sudo apt-get install dtrx raptor2-utils
+```
+
 ### Commands
 
 #### Tests
@@ -21,8 +29,8 @@
 - Determine file sizes of all dumps
 
 ```sh
-$ find dumps/ -type f -exec ls -s {} \; > dumps-sizes.txt
-$ cat dumps-sizes.txt | sort -h -r | less
+$ find dumps/ -type f -exec ls -s --block-size=M {} \; > dumps-sizes.txt
+$ cat dumps-sizes.txt | sed -e '/edgelist/! s/^.*$/###/' -e '/^###/D' | sort -h -r | less
 ```
 
 #### dbpedia 
