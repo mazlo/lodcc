@@ -10,7 +10,7 @@ class LodccTestCase( unittest.TestCase ):
 
     def setUp( self ):
 
-        lodcc.args = { 'no_cache' : False }
+        lodcc.args = { 'no_cache' : False, 'rm_extracted' : False }
         os.popen( 'mkdir -p dumps/foo-lod' )
 
     def tearDown( self ):
