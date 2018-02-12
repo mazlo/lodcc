@@ -13,12 +13,15 @@ import os
 import argparse
 import json
 import logging as log
-import psycopg2
 import threading
 import sys
 import urlparse
 
 from constants import *
+try:
+    import psycopg2
+except:
+    log.warning( 'psycogp2 could not be found' )
 try:
     from lodcc_xxhash import xxhash_nt
 except:
@@ -305,7 +308,8 @@ def build_graph_prepare( dataset, file ):
     format_ = file['format']
     path = file['path']
 
-    no_cache = 'true' if args['no_cache'] else ''
+    no_cache = 'true' if args['no_cache'] else 'false'
+    rm_extracted = 'true' if args['rm_extracted'] else 'false'
 
     # transform into ntriples if necessary
     if not format_ == APPLICATION_N_TRIPLES:
@@ -313,8 +317,8 @@ def build_graph_prepare( dataset, file ):
         # TODO check content of file
         # TODO check if file ends with .nt
         log.info( 'Need to transform to ntriples.. this may take a while' )
-        log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
-        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache) )
+        log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache,rm_extracted) )
+        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,no_cache,rm_extracted) )
 
     # TODO check correct mediatype if not compressed
 
@@ -335,237 +339,275 @@ def job_cleanup_intermediate( dataset, file ):
 
     # TODO remove 1. decompressed and transformed 2. .nt file
 
-import networkx as nx
+try:
+    from graph_tool.all import *
+except:
+    log.warning( 'graph_tool module could not be imported' )
 import numpy as n
 import collections
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    log.warning( 'matplotlib.pyplot module could not be imported' )
 
 lock = threading.Lock()
 
-def fs_digraph_using_basic_properties( D, stats, sem ):
-    # can I?
-    with sem:
-        # feature: order
-        stats['n']=D.order()
-        log.info( 'done order' )
+def fs_digraph_using_basic_properties( D, stats ):
+    """"""
 
-        # feature: size
-        stats['m']=D.size()
-        log.info( 'done size' )
+    # feature: order
+    num_vertices = D.num_vertices()
+    log.info( 'done order' )
 
-        # feature: avg_degree
-        stats['avg_degree(D)']=float( 2*D.size() ) / D.order()
-        log.info( 'done avg_degree' )
+    # feature: size
+    num_edges = D.num_edges()
+    log.info( 'done size' )
 
-def fs_digraph_using_degree( D, stats, sem ):
-    # can I?
-    with sem:
-        # compute once
-        degree_list = [d for nd, d in D.degree]
+    stats['n']=num_vertices
+    stats['m']=num_edges
+
+    # feature: avg_degree
+    stats['avg_degree']=float( 2*num_edges ) / num_vertices
+    log.info( 'done avg_degree' )
     
-        # feature: max_degree
-        stats['max_degree(D)']=n.max( degree_list )
-        log.info( 'done max_degree' )
+    # feature: fill
+    stats['fill']=float( num_edges ) / ( num_vertices*num_vertices )
+    log.info( 'done fill' )
 
-        # feature: degree_centrality
-        s = 1.0 / ( len(D)-1.0 )
-        stats['avg_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
-        log.info( 'done avg_degree_centrality' )
+def fs_digraph_using_degree( D, stats ):
+    """"""
 
-        # feature: h_index_u
-        degree_list.sort(reverse=True)
+    # compute once
+    degree_list = D.degree_property_map( 'total' ).get_array()
+    degree_list = degree_list.tolist()
+
+    # feature: max_degree
+    stats['max_degree']=n.max( degree_list )
+    log.info( 'done max_degree' )
+
+    # feature: degree_centrality
+    s = 1.0 / ( D.num_vertices()-1.0 )
+    stats['avg_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
+    log.info( 'done avg_degree_centrality' )
+
+    # info: vertex with largest degree centrality
+    degree_list_idx=zip( degree_list, D.vertex_index )
+    largest_degree_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), degree_list_idx )
+    stats['max_degree_vertex']=D.vertex_properties['name'][largest_degree_vertex[1]]
+    log.info( 'done max_degree_vertex' )
+
+    # feature: h_index_u
+    degree_list.sort(reverse=True)
+    
+    h = 0
+    for x in degree_list:
+        if x >= h + 1:
+            h += 1
+        else:
+            break
+
+    stats['h_index_u']=h
+    log.info( 'done h_index_u' )
+
+    # feature: p_law_exponent
+    min_degree = n.min( degree_list )
+    sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degree_list ] )
+    stats['p_law_exponent'] = 1 + ( len(degree_list) * sum_of_logs )
+    stats['p_law_exponent_dmin'] = min_degree
+    log.info( 'done p_law_exponent' )
+
+    # plot degree distribution
+    degree_counted = collections.Counter( degree_list )
+    degree, counted = zip( *degree_counted.items() )
+
+    lock.acquire()
+
+    fig, ax = plt.subplots()
+    plt.plot( degree, counted )
+
+    plt.title( 'Degree Histogram' )
+    plt.ylabel( 'Frequency' )
+    plt.xlabel( 'Degree' )
+
+    ax.set_xticklabels( degree )
+
+    ax.set_xscale( 'log' )
+    ax.set_yscale( 'log' )
+
+    plt.tight_layout()
+    plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
+    log.info( 'done plotting degree distribution' )
+
+    lock.release()
+
+def fs_digraph_using_indegree( D, stats ):
+    """"""
+
+    # compute once
+    degree_list = D.get_in_degrees( D.get_vertices() )
+    degree_list = degree_list.tolist()
+
+    # feature: max_in_degree
+    stats['max_in_degree']=n.max( degree_list )
+    log.info( 'done max_in_degree' )
+
+    # feature: avg_in_degree_centrality
+    s = 1.0 / ( D.num_vertices()-1.0 )
+    stats['avg_in_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
+    log.info( 'done avg_in_degree_centrality' )
+
+    # feature: h_index_d
+    degree_list.sort(reverse=True)
+    
+    h = 0
+    for x in degree_list:
+        if x >= h + 1:
+            h += 1
+        else:
+            break
+    
+    stats['h_index_d']=h
+    log.info( 'done h_index_d' )
+    
+    # plot degree distribution
+    degree_counted = collections.Counter( degree_list )
+    degree, counted = zip( *degree_counted.items() )
+
+    lock.acquire()
+
+    fig, ax = plt.subplots()
+    plt.plot( degree, counted )
+
+    plt.title( 'In-Degree Histogram' )
+    plt.ylabel( 'Frequency' )
+    plt.xlabel( 'In-Degree' )
+
+    ax.set_xticklabels( degree )
+
+    ax.set_xscale( 'log' )
+    ax.set_yscale( 'log' )
+
+    plt.tight_layout()
+    plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
+    log.info( 'done plotting in-degree distribution' )
+
+    lock.release()
+
+def fs_digraph_using_outdegree( D, stats ):
+    """"""
+
+    # compute once
+    degree_list = D.get_out_degrees( D.get_vertices() )
+    degree_list = degree_list.tolist()
+
+    # feature: max_out_degree
+    stats['max_out_degree']=n.max( degree_list )
+    log.info( 'done max_out_degree' )
+
+    # feature: avg_out_degree_centrality
+    s = 1.0 / ( D.num_vertices()-1.0 )
+    stats['avg_out_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
+    log.info( 'done avg_out_degree_centrality' )
+
+def f_reciprocity( D, stats ):
+    """"""
+
+    stats['reciprocity']=edge_reciprocity(D)
+    log.info( 'done reciprocity' )
+
+def f_eigenvector_centrality( D, stats ):
+    """"""
+
+    if not args['do_heavy_analysis']:
+        log.info( 'Skipping eigenvector_centrality' )
+        return
+
+    eigenvector_list = eigenvector(D)[1].get_array().tolist()
         
-        h = 0
-        for x in degree_list:
-            if x >= h + 1:
-                h += 1
-            else:
-                break
+    # info: vertex with largest eigenvector value
+    ev_list_idx=zip( eigenvector_list, D.vertex_index )
+    largest_ev_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), ev_list_idx )
+    stats['max_eigenvector_vertex']=D.vertex_properties['name'][largest_ev_vertex[1]]
+    log.info( 'done max_eigenvector_vertex' )
 
-        stats['h_index(U)']=h
-        log.info( 'done h_index_u' )
+    eigenvector_list.sort( reverse=True )
 
-        # feature: p_law_exponent
-        min_degree = n.min( degree_list )
-        sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degree_list ] )
-        stats['p_law_exponent(D_dmin%s)' % min_degree] = 1 + ( len(degree_list) * sum_of_logs )
-        log.info( 'done p_law_exponent' )
-
-        # plot degree distribution
-        degree_counted = collections.Counter( degree_list )
-        degree, counted = zip( *degree_counted.items() )
-
-        lock.acquire()
-
-        fig, ax = plt.subplots()
-        plt.plot( degree, counted )
-
-        plt.title( 'Degree Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'Degree' )
-
-        ax.set_xticklabels( degree )
-
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
-
-        plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
-        log.info( 'done plotting degree distribution' )
-
-        lock.release()
-
-def fs_digraph_using_indegree( D, stats, sem ):
-    # can I?
-    with sem:
-        # compute once
-        degree_list = [d for nd, d in D.in_degree]
-
-        # feature: max_in_degree
-        stats['max_in_degree(D)']=n.max( degree_list )
-        log.info( 'done max_in_degree' )
-
-        # feature: avg_in_degree_centrality
-        s = 1.0 / ( len(D)-1.0 )
-        stats['avg_in_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
-        log.info( 'done avg_in_degree_centrality' )
-
-        # feature: h_index_d
-        degree_list.sort(reverse=True)
+    # plot degree distribution
+    values_counted = collections.Counter( eigenvector_list )
+    values, counted = zip( *values_counted.items() )
         
-        h = 0
-        for x in degree_list:
-            if x >= h + 1:
-                h += 1
-            else:
-                break
+    lock.acquire()
+
+    fig, ax = plt.subplots()
+    plt.plot( values, counted )
+
+    plt.title( 'Eigenvector-Centrality Histogram' )
+    plt.ylabel( 'Frequency' )
+    plt.xlabel( 'Eigenvector-Centrality Value' )
+
+    ax.set_xticklabels( values )
+
+    ax.set_xscale( 'log' )
+    ax.set_yscale( 'log' )
+
+    plt.tight_layout()
+    plt.savefig( stats['files_path'] +'/'+ 'distribution_eigenvector-centrality.pdf' )
+    log.info( 'done plotting eigenvector_centrality' )
+
+    lock.release()
         
-        stats['h_index(D)']=h
-        log.info( 'done h_index_d' )
-        
-        # plot degree distribution
-        degree_counted = collections.Counter( degree_list )
-        degree, counted = zip( *degree_counted.items() )
+def f_pagerank( D, stats ):
+    """"""
 
-        lock.acquire()
+    pagerank_list = pagerank(D).get_array().tolist()
 
-        fig, ax = plt.subplots()
-        plt.plot( degree, counted )
+    # info: vertex with largest pagerank value
+    pr_list_idx=zip( pagerank_list, D.vertex_index )
+    largest_pr_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), pr_list_idx )
+    stats['max_pagerank_vertex']=D.vertex_properties['name'][largest_pr_vertex[1]]
+    log.info( 'done max_pagerank_vertex' )
+    
+    pagerank_list.sort( reverse=True )
 
-        plt.title( 'In-Degree Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'In-Degree' )
+    # plot degree distribution
+    values_counted = collections.Counter( pagerank_list )
+    values, counted = zip( *values_counted.items() )
+    
+    lock.acquire()
 
-        ax.set_xticklabels( degree )
+    fig, ax = plt.subplots()
+    plt.plot( values, counted )
 
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
+    plt.title( 'PageRank Histogram' )
+    plt.ylabel( 'Frequency' )
+    plt.xlabel( 'PageRank Value' )
 
-        plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
-        log.info( 'done plotting in-degree distribution' )
+    ax.set_xticklabels( values )
 
-        lock.release()
+    ax.set_xscale( 'log' )
+    ax.set_yscale( 'log' )
 
-def fs_digraph_using_outdegree( D, stats, sem ):
-    # can I?
-    with sem:
-        # compute once
-        degree_list = [d for nd, d in D.out_degree]
+    plt.tight_layout()
+    plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
+    log.info( 'done plotting pagerank distribution' )
 
-        # feature: max_out_degree
-        stats['max_out_degree(D)']=n.max( degree_list )
-        log.info( 'done max_out_degree' )
+    lock.release()
 
-        # feature: avg_out_degree_centrality
-        s = 1.0 / ( len(D)-1.0 )
-        stats['avg_out_degree_centrality(D)']=n.sum( [ d*s for d in degree_list ] )
-        log.info( 'done avg_out_degree_centrality' )
+def save_stats( dataset, stats ):
+    """"""
 
-def fs_digraph_connected_components_statistics( D, stats, sem ):
-    # can I?
-    with sem:
-        sccs_len = nx.number_strongly_connected_components(D)
-        stats['n(scc)'] = sccs_len
+    # e.g. avg_degree=%(avg_degree)s, max_degree=%(max_degree)s, ..
+    cols = ', '.join( map( lambda d: d +'=%('+ d +')s', stats ) )
 
-        if sccs_len > 0:
-            # unfortunately this has to be invoked the second time, because the api returns a generator
-            stats['n(scc_largest)'] = len( max( nx.strongly_connected_components(D), key=len ) )
+    sql='UPDATE stats_graph SET '+ cols +' WHERE id=%(id)s'
+    stats['id']=dataset[0]
 
-        #wccs_len = nx.number_weakly_connected_components(D)
-        #stats['n(wcc)'] = wccs_len
+    cur = conn.cursor()
+    cur.execute( sql, stats )
+    conn.commit()
+    cur.close()
 
-        #if wccs_len > 0:
-            # unfortunately this has to be invoked the second time, because the api returns a generator
-         #   stats['n(wcc_largest)'] = len( max( nx.weakly_connected_components(D), key=len ) )
-
-        log.info( 'done strongly/weakly connected component statistics' )
-
-def f_reciprocity( D, stats, sem ):
-    # can I?
-    with sem:
-        stats['reciprocity(D)']=nx.reciprocity( D )
-        log.info( 'done reciprocity' )
-
-def f_eigenvector_centrality( D, stats, sem ):
-    # can I?
-    with sem:
-        eigenvector_list = nx.eigenvector_centrality(D).values()
-        eigenvector_list.sort( reverse=True )
-        
-        # plot degree distribution
-        values_counted = collections.Counter( eigenvector_list )
-        values, counted = zip( *values_counted.items() )
-        
-        lock.acquire()
-
-        fig, ax = plt.subplots()
-        plt.plot( values, counted )
-
-        plt.title( 'Eigenvector-Centrality Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'Eigenvector-Centrality Value' )
-
-        ax.set_xticklabels( values )
-
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
-
-        plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_eigenvector-centrality.pdf' )
-        log.info( 'done plotting eigenvector_centrality' )
-
-        lock.release()
-        
-def f_pagerank( D, stats, sem ):
-    # can I?
-    with sem:
-        pagerank_list = nx.pagerank(D).values()
-        pagerank_list.sort( reverse=True )
-
-        # plot degree distribution
-        values_counted = collections.Counter( pagerank_list )
-        values, counted = zip( *values_counted.items() )
-        
-        lock.acquire()
-
-        fig, ax = plt.subplots()
-        plt.plot( values, counted )
-
-        plt.title( 'PageRank Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'PageRank Value' )
-
-        ax.set_xticklabels( values )
-
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
-
-        plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
-        log.info( 'done plotting pagerank distribution' )
-
-        lock.release()
+    log.info( 'done saving results' )
 
 def fs_digraph_start_job( dataset, D, stats ):
     """"""
@@ -576,66 +618,64 @@ def fs_digraph_start_job( dataset, D, stats ):
         fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
         fs_digraph_connected_components_statistics,
         f_reciprocity,
-        f_pagerank, f_eigenvector_centrality,
+        f_pagerank, 
+        f_eigenvector_centrality,
     ]
 
-    sem = threading.Semaphore( 5 ) 
-    threads = []
-
     for ftr in features:
-                           
-        # create a thread for each feature. work load is limited by the semaphore
-        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( D, stats, sem ) )
-        t.start()
+        ftr( D, stats )
 
-        threads.append( t )
-
-    # wait for all threads to finish
-    for t in threads:
-        t.join()
+    save_stats( dataset, stats )
 
 def f_avg_shortest_path( U, stats, sem ):
     # can I?
     with sem:
-        stats['avg_shortest_path(U)']=nx.average_shortest_path_length(U)
+        stats['avg_shortest_path']=nx.average_shortest_path_length(U)
         log.info( 'done avg_shortest_path' )
 
-def f_avg_clustering( U, stats, sem ):
-    # can I?
-    with sem:
-        stats['avg_clustering(U)']=nx.average_clustering(U)
-        log.info( 'done avg_clustering' )
+def f_global_clustering( U, stats ):
+    """"""
 
-def f_diameter( U, stats, sem ):
-    # can I?
-    with sem:
-        stats['diameter(U)']=nx.diameter(U)
-        log.info( 'done diameter' )
+    if not args['do_heavy_analysis']:
+        log.info( 'Skipping global_clustering' )
+        return
+
+    stats['global_clustering']=global_clustering(U)[0]
+    log.info( 'done global_clustering' )
+
+def f_avg_clustering( U, stats ):
+    """"""
+    
+    if not args['do_heavy_analysis']:
+        log.info( 'Skipping avg_clustering' )
+        return
+
+    stats['avg_clustering']=n.mean( local_clustering(U, undirected=True).get_array().tolist() )
+    log.info( 'done avg_clustering' )
+
+def f_pseudo_diameter( U, stats ):
+    """"""
+
+    dist, ends = pseudo_diameter(U)
+    stats['pseudo_diameter']=dist
+    stats['pseudo_diameter_src_vertex']=U.vertex_properties['name'][ends[0]]
+    stats['pseudo_diameter_trg_vertex']=U.vertex_properties['name'][ends[1]]
+    log.info( 'done pseudo_diameter' )
 
 def fs_ugraph_start_job( dataset, U, stats ):
     """"""
 
     features = [ 
         # fs = feature set
-        f_avg_clustering, 
+        f_global_clustering, f_avg_clustering, 
         # f_avg_shortest_path, 
-        # f_diameter,
+        f_pseudo_diameter,
     ]
 
-    sem = threading.Semaphore( 4 ) 
-    threads = []
-
     for ftr in features:
-                           
-        # create a thread for each feature. work load is limited by the semaphore
-        t = threading.Thread( target = ftr, name = 'Job: %s, Feature' % dataset[1], args = ( U, stats, sem ) )
-        t.start()
-
-        threads.append( t )
-
-    # wait for all threads to finish
-    for t in threads:
-        t.join()
+        ftr( U, stats )
+    
+    save_stats( dataset, stats )
 
 def graph_analyze( dataset, edgelists_path, stats ):
     """"""
@@ -644,28 +684,30 @@ def graph_analyze( dataset, edgelists_path, stats ):
         log.error( '%s to read edges from does not exist', edgelists_path )
         return
 
-    log.info( 'Constructing DiGraph from edgelist' )
-    D=nx.DiGraph()
-
-    # read all edgelists and add to one graph
+    # find edgelist file
+    edgelist = None
     for filename in os.listdir( edgelists_path ):
-        edgelist = '/'.join( [edgelists_path,filename] )
+        edgelist_file = '/'.join( [edgelists_path,filename] )
     
         if not re.search( 'edgelist.csv$', filename ):
             log.debug( 'Skipping %s', filename )
             continue
 
-        T=nx.read_adjlist( edgelist, create_using=nx.DiGraph(), delimiter=' ' )
-        D.add_edges_from( T.edges )
+        edgelist = edgelist_file
+        break
+
+    if not os.path.isfile( edgelist ):
+        log.error( 'edgelist.csv to read edges from does not exist' )
+        return
+
+    log.info( 'Constructing DiGraph from edgelist' )
+    D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
     
     log.info( 'Computing feature set DiGraph' )
     fs_digraph_start_job( dataset, D, stats )
     
-    log.info( 'Converting to undirected graph' )
-    U=D.to_undirected()
-
     log.info( 'Computing feature set UGraph' )
-    fs_ugraph_start_job( dataset, U, stats )
+    fs_ugraph_start_job( dataset, D, stats )
     
     # slow
     #stats['k_core(U)']=nx.k_core(U)
@@ -675,7 +717,7 @@ def graph_analyze( dataset, edgelists_path, stats ):
 
     return stats
 
-def build_graph_analyse( dataset ):
+def build_graph_analyse( dataset, threads_openmp=7 ):
     """"""
 
     # e.g. dataset[2] = 'dumps/dbpedia-en'
@@ -683,19 +725,17 @@ def build_graph_analyse( dataset ):
         log.error( 'No path given for dataset %s', dataset[1] )
         return 
 
-    edgelists_path = dataset[2]
+    # before starting off: limit the number of threads a graph_tool job may acquire
+    graph_tool.openmp_set_num_threads( threads_openmp )
 
-    stats = { 'files_path': edgelists_path }
-    graph_analyze( dataset, edgelists_path, stats )
-
-    # TODO save values for dataset
-    # save_value( cur, dataset['id'], dataset['name'], 'stats_results', 'avg_deg_centrality', value, False )
+    stats = { 'files_path': dataset[2] }
+    graph_analyze( dataset, dataset[2], stats )
 
     if args['print_stats']:
         print stats
 
 # real job
-def job_start_build_graph( dataset, sem ):
+def job_start_build_graph( dataset, sem, threads_openmp=7 ):
     """job_start_build_graph"""
 
     # let's go
@@ -704,7 +744,7 @@ def job_start_build_graph( dataset, sem ):
         log.debug( dataset )
 
         # - build_graph_analyse
-        build_graph_analyse( dataset )
+        build_graph_analyse( dataset, threads_openmp )
 
         # - job_cleanup
 
@@ -757,7 +797,7 @@ def parse_resource_urls( cur, no_of_threads=1 ):
     for t in threads:
         t.join()
 
-def build_graph( cur, no_of_threads=1 ):
+def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
     """"""
 
     datasets = cur.fetchall()
@@ -773,7 +813,7 @@ def build_graph( cur, no_of_threads=1 ):
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_build_graph, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start_build_graph, name = 'Job: '+ dataset[1], args = ( dataset, sem, threads_openmp ) )
         t.start()
 
         threads.append( t )
@@ -793,11 +833,16 @@ if __name__ == '__main__':
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
     parser.add_argument( '--no-cache', '-dn', action = "store_true", help = 'Will NOT use data dumps which were already dowloaded, but download them again' )
+    parser.add_argument( '--rm-extracted', '-dr', action = "store_true", help = 'Will REMOVE the extracted data file if it is compressed' )
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
-    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
+    parser.add_argument( '--processes', '-pt', required = False, type = int, default = 1, help = 'Specify how many processes will be used for downloading and parsing' )
+
+    # RE feature computation
+    parser.add_argument( '--threads-openmp', '-ot', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
+    parser.add_argument( '--do-heavy-analysis', '-ah', action = "store_true", help = '' )
 
     # read all properties in file into args-dict
     if os.path.isfile( 'db.properties' ):
@@ -896,7 +941,7 @@ if __name__ == '__main__':
 
         cur.execute( sql, names )
 
-        parse_resource_urls( cur, None if 'threads' not in args else args['threads'] )
+        parse_resource_urls( cur, None if 'processes' not in args else args['processes'] )
 
     # option 3
     if args['build_graph']:
@@ -919,13 +964,13 @@ if __name__ == '__main__':
         log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
         if 'names_query' in locals():
-            sql = 'SELECT id,name,files_path FROM stats_graph WHERE '+ names_query +' ORDER BY id'
+            sql = 'SELECT id,name,files_path,filename FROM stats_graph WHERE '+ names_query +' AND filename IS NOT NULL ORDER BY id'
         else:
-            sql = 'SELECT id,name,files_path FROM stats_graph ORDER BY id'
+            sql = 'SELECT id,name,files_path,filename FROM stats_graph WHERE filename IS NOT NULL ORDER BY id'
         
         cur.execute( sql, names )
 
-        build_graph( cur, None if 'threads' not in args else args['threads'] )
+        build_graph( cur, args['processes'], args['threads_openmp'] )
 
     # close communication with the database
     cur.close()

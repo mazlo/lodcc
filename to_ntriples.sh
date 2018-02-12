@@ -11,6 +11,8 @@
 
 FILE_FORMAT="${1:-rdfxml}"
 FPATH="$2" # e.g. dumps/foo/bar.gz
+NO_CACHE=${3:-false}
+RM_EXTRACTED=${4:-false}
 
 # from PATH
 FILENAME=`echo ${FPATH##*/}`
@@ -108,16 +110,20 @@ do_oneliner()
             && rm -rf "$FPATH_STRIPPED" \
             && mv "$FPATH_STRIPPED.tmp" "$FPATH_OUTPUT"
     fi
+
+    if [[ $RM_EXTRACTED = true ]]; then
+        rm -rf "$FPATH_STRIPPED"
+    fi
 }
 
 # 1. dumps/foo/bar.nt.tgz -> dumps/foo/bar.nt
 # 2. dumps/foo/bar.tar.gz -> dumps/foo/bar
 # this will be the directory or filename
 XMTYPE=`get_xmtype`
+# this is the file with stripped ending if it is a compressed media type
 FPATH_STRIPPED=`echo ${FPATH%*.$XMTYPE}`
+# this is the file that we use as final filename
 FPATH_OUTPUT=`fpath_output`
-
-NO_CACHE=${3:-false}
 
 if do_respect_existing_file; then
     exit 0 # exit success
