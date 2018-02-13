@@ -355,6 +355,10 @@ lock = threading.Lock()
 def fs_digraph_using_basic_properties( D, stats ):
     """"""
 
+    eprop = label_parallel_edges( D, mark_only=True )
+    PE = GraphView( D, efilt=eprop )
+    num_edges_PE = PE.num_edges()
+
     # feature: order
     num_vertices = D.num_vertices()
     log.info( 'done order' )
@@ -365,13 +369,22 @@ def fs_digraph_using_basic_properties( D, stats ):
 
     stats['n']=num_vertices
     stats['m']=num_edges
+    stats['m_unique']=num_edges - num_edges_PE
 
     # feature: avg_degree
     stats['avg_degree']=float( 2*num_edges ) / num_vertices
     log.info( 'done avg_degree' )
     
+    # feature: fill_overall
+    stats['fill_overall']=float( num_edges ) / ( num_vertices*num_vertices )
+    log.info( 'done fill_overall' )
+
+    # feature: parallel_edges
+    stats['parallel_edges']=num_edges_PE
+    log.info( 'done parallel_edges' )
+
     # feature: fill
-    stats['fill']=float( num_edges ) / ( num_vertices*num_vertices )
+    stats['fill']=float( stats['m_unique'] ) / ( num_vertices*num_vertices )
     log.info( 'done fill' )
 
 def fs_digraph_using_degree( D, stats ):
