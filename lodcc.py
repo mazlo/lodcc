@@ -616,7 +616,6 @@ def fs_digraph_start_job( dataset, D, stats ):
         # fs = feature set
         fs_digraph_using_basic_properties,
         fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
-        fs_digraph_connected_components_statistics,
         f_reciprocity,
         f_pagerank, 
         f_eigenvector_centrality,
