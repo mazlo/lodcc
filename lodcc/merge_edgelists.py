@@ -26,6 +26,6 @@ if __name__ == '__main__':
             path = path[0:-1]
 
         log.info( 'handling %s', path )
-        os.popen( './lodcc_merge_edgelists.sh %s %s' % (path,args['rm_edgelists']) )
+        os.popen( './bin/merge_edgelists.sh %s %s' % (path,args['rm_edgelists']) )
 
     log.info( 'done' )
