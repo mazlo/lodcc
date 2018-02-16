@@ -12,7 +12,7 @@
 FILE_FORMAT="${1:-rdfxml}"
 FPATH="$2" # e.g. dumps/foo/bar.gz
 NO_CACHE=${3:-false}
-RM_EXTRACTED=${4:-false}
+RM_ORIGINAL=${4:-false}
 
 # from PATH
 FILENAME=`echo ${FPATH##*/}`
@@ -111,7 +111,7 @@ do_oneliner()
             && mv "$FPATH_STRIPPED.tmp" "$FPATH_OUTPUT"
     fi
 
-    if [[ $RM_EXTRACTED = true ]]; then
+    if [[ $RM_ORIGINAL = true ]]; then
         rm -rf "$FPATH_STRIPPED"
     fi
 }
@@ -126,6 +126,9 @@ FPATH_STRIPPED=`echo ${FPATH%*.$XMTYPE}`
 FPATH_OUTPUT=`fpath_output`
 
 if do_respect_existing_file; then
+    if [[ $RM_ORIGINAL = true ]]; then
+        rm -rf "$FPATH_STRIPPED" &> /dev/null # file may not exit, so ignore this error
+    fi
     exit 0 # exit success
 fi
 
