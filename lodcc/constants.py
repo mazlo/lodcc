@@ -7,23 +7,28 @@ TEXT_N3 = 'text_n3'
 
 MEDIATYPES = { 
     APPLICATION_RDF_XML: { 
-        'cmd_to_ntriples': './to_ntriples.sh rdfxml %s %s %s', 
+        'cmd_to_ntriples': './bin/to_ntriples.sh rdfxml %s %s %s', 
+        'cmd_merge_edgelists': './bin/merge_edgelists.sh %s %s',
         'extension': '.rdf' 
     },
     APPLICATION_N_QUADS: {
-        'cmd_to_ntriples': './to_ntriples.sh nquads %s %s %s',
+        'cmd_to_ntriples': './bin/to_ntriples.sh nquads %s %s %s',
+        'cmd_merge_edgelists': './bin/merge_edgelists.sh %s %s',
         'extension': '.nq'
     },
     APPLICATION_N_TRIPLES: {
         'cmd_to_ntriples': None,    # does not need to be transformed 
+        'cmd_merge_edgelists': './bin/merge_edgelists.sh %s %s',
         'extension': '.nt'
     },
     TEXT_TURTLE: {
-        'cmd_to_ntriples': './to_ntriples.sh turtle %s %s %s', 
+        'cmd_to_ntriples': './bin/to_ntriples.sh turtle %s %s %s', 
+        'cmd_merge_edgelists': './bin/merge_edgelists.sh %s %s',
         'extension': '.ttl'
     },
     TEXT_N3: {
-        'cmd_to_ntriples': './to_ntriples.sh turtle %s %s %s', 
+        'cmd_to_ntriples': './bin/to_ntriples.sh turtle %s %s %s', 
+        'cmd_merge_edgelists': './bin/merge_edgelists.sh %s %s',
         'extension': '.n3'
     }
 }
