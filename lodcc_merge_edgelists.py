@@ -7,6 +7,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc - merge edgelists in directory' )
     parser.add_argument( '--paths', '-p', nargs='*', required = True, help = '' )
+    parser.add_argument( '--rm-edgelists', '-re', action = "store_true", help = 'If given, the programm will remove single edgelist files after they have been appended to data.edgelist.csv' )
 
     log.basicConfig(
             level = log.INFO, 
@@ -25,6 +26,6 @@ if __name__ == '__main__':
             path = path[0:-1]
 
         log.info( 'handling %s', path )
-        os.popen( './lodcc_merge_edgelists.sh %s' % path )
+        os.popen( './lodcc_merge_edgelists.sh %s %s' % (path,args['rm_edgelists']) )
 
     log.info( 'done' )
