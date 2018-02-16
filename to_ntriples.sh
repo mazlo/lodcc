@@ -89,14 +89,14 @@ do_convert()
     if [[ -d "$FPATH_STRIPPED" ]]; then
         #echo "Converting all files in folder $FPATH_STRIPPED"
         for f in `find "$FPATH_STRIPPED" -type f`; do
-            rapper --ignore-errors --guess --output "ntriples" "$f" > "$f.nt"
+            rapper --ignore-errors --input $FILE_FORMAT --output "ntriples" "$f" > "$f.nt"
         done
     fi
 
     # convert file
     if [[ -f "$FPATH_STRIPPED" ]]; then
         #echo "Converting $FPATH_STRIPPED"
-        rapper --ignore-errors --guess --output "ntriples" "$FPATH_STRIPPED" > "$FPATH_OUTPUT"
+        rapper --ignore-errors --input $FILE_FORMAT --output "ntriples" "$FPATH_STRIPPED" > "$FPATH_OUTPUT"
     fi
 }
 
