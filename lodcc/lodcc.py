@@ -233,8 +233,8 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
 
     if not '.' in basename:
         filename = dataset[1] + MEDIATYPES[format_]['extension']
-        log.warn( 'Cannot determine filename from remaining url path: %s', url.path )
-        log.info( 'Using composed valid filename %s', filename )
+        log.debug( 'Cannot determine filename from remaining url path: %s', url.path )
+        log.debug( 'Using composed valid filename %s', filename )
         
         return filename
 
@@ -317,14 +317,14 @@ def build_graph_prepare( dataset, file ):
         # TODO do not transform if file has ntriples format
         # TODO check content of file
         # TODO check if file ends with .nt
-        log.info( 'Need to transform to ntriples.. this may take a while' )
+        log.info( 'Transforming to ntriples..' )
         log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
         os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
 
     # TODO check correct mediatype if not compressed
 
     # transform into hashed edgelist
-    log.info( 'Preparing required graph structure.. this may take a while' )
+    log.info( 'Preparing edgelist graph structure..' )
     log.debug( 'Calling function xxhash_nt( %s )', path )
     
     types = [ type_ for type_ in MEDIATYPES_COMPRESSED if re.search( '.%s$' % type_, path ) ]
