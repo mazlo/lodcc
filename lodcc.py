@@ -172,7 +172,7 @@ def download_prepare( dataset ):
         log.error( 'dataset name is None' )
         return [( None, APPLICATION_UNKNOWN )]
 
-    log.info( 'Download folder will be %s', 'dumps/'+ dataset[1] )
+    log.debug( 'Download folder will be %s', 'dumps/'+ dataset[1] )
     os.popen( 'mkdir -p dumps/'+ dataset[1] )
 
     # id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads
@@ -183,27 +183,27 @@ def download_prepare( dataset ):
 
     # n-triples
     if len( dataset ) >= 3 and dataset[2]:
-        log.info( 'Using format APPLICATION_N_TRIPLES with url %s', dataset[2] )
+        log.debug( 'Using format APPLICATION_N_TRIPLES with url %s', dataset[2] )
         urls.append( ( dataset[2], APPLICATION_N_TRIPLES ) )
 
     # rdf+xml
     if len( dataset ) >= 4 and dataset[3]:
-        log.info( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
+        log.debug( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
         urls.append( ( dataset[3], APPLICATION_RDF_XML ) )
 
     # turtle
     if len( dataset ) >= 5 and dataset[4]:
-        log.info( 'Using format TEXT_TURTLE with url: %s', dataset[4] )
+        log.debug( 'Using format TEXT_TURTLE with url: %s', dataset[4] )
         urls.append( ( dataset[4], TEXT_TURTLE ) )
 
     # notation3
     if len( dataset ) >= 6 and dataset[5]:
-        log.info( 'Using format TEXT_N3 with url: %s', dataset[5] )
+        log.debug( 'Using format TEXT_N3 with url: %s', dataset[5] )
         urls.append( ( dataset[5], TEXT_N3 ) )
 
     # nquads
     if len( dataset ) >= 7 and dataset[6]:
-        log.info( 'Using format APPLICATION_N_QUADS with url: %s', dataset[6] )
+        log.debug( 'Using format APPLICATION_N_QUADS with url: %s', dataset[6] )
         urls.append( ( dataset[6], APPLICATION_N_QUADS ) )
 
     # more to follow?
@@ -238,7 +238,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
         
         return filename
 
-    log.info( 'Found valid filename %s', basename )
+    log.debug( 'Found valid filename %s', basename )
     return basename
 
 def ensure_valid_download_data( path ):
@@ -620,7 +620,7 @@ def save_stats( dataset, stats ):
     conn.commit()
     cur.close()
 
-    log.info( 'done saving results' )
+    log.debug( 'done saving results' )
 
 def fs_digraph_start_job( dataset, D, stats ):
     """"""
