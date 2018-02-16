@@ -1,13 +1,21 @@
 #!/bin/bash
 
 FOLDER=${1:-"dumps/"}
+FILE=$2
 FILES_LIST=`find $FOLDER* -name "*.edgelist.csv" -type f`
 
 for f in $FILES_LIST; do
     echo -n "Analyzing $f.."
 
     ORIG_FILEPATH=$f
-    NT_FILEPATH="${f%*.edgelist.csv}.nt"
+
+    # if $2 is present, respect that. otherwise use corresponding .nt file derived from .edgelist.csv
+    # e.g. xyz.edgelist.csv -> xyz.nt
+    if [ -z $FILE ]; then
+        NT_FILEPATH="${f%*.edgelist.csv}.nt"
+    else
+        NT_FILEPATH="$FOLDER/$FILE"
+    fi
 
     if [ -f $NT_FILEPATH ]; then
         ORIG_LINES=`wc -l $ORIG_FILEPATH | cut -d ' ' -f1 &`  
