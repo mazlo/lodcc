@@ -23,7 +23,7 @@ try:
 except:
     log.warning( 'psycogp2 could not be found' )
 try:
-    from lodcc_xxhash import xxhash_nt
+    from lxxhash import xxhash_nt
 except:
     log.warning( 'xxhash module could not be found' )
 
