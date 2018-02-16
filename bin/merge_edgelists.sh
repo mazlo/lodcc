@@ -1,7 +1,7 @@
 #!/bin/bash
 
 FOLDER_ROOT=${1:-"dumps/"}
-RM_EDGELISTS=${2:-False}
+RM_EDGELISTS=${2:-false}
 
 # remove backslash from FOLDER if present
 if [[ "${FOLDER_ROOT%/}" != "$FOLDER_ROOT" ]]; then
@@ -35,7 +35,7 @@ for file in $FILES; do
         FOLDER=${file%/*}
         cat $file >> "$FOLDER/data.edgelist.csv"
         
-        if [[ $RM_EDGELISTS = "True" ]]; then
+        if [[ ${RM_EDGELISTS,,} = "true" ]]; then
             rm $file
         fi
     fi

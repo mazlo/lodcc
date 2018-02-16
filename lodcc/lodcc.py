@@ -310,6 +310,7 @@ def build_graph_prepare( dataset, file ):
 
     overwrite = 'true' if args['overwrite_nt'] else 'false'
     rm_original  = 'true' if args['rm_original'] else 'false'
+    rm_edgelists = 'false' if args['keep_edgelists'] else 'true'
 
     # transform into ntriples if necessary
     if not format_ == APPLICATION_N_TRIPLES:
@@ -333,6 +334,10 @@ def build_graph_prepare( dataset, file ):
     else:
         # file is compressed, strip the type
         xxhash_nt( re.sub( '.%s' % types[0], '', path ), log )
+
+    log.info( 'Merging edgelists, if necessary..' )
+    log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_merge_edgelists'] % (os.path.dirname(path),rm_edgelists) )
+    os.popen( MEDIATYPES[format_]['cmd_merge_edgelists'] % (os.path.dirname(path),rm_edgelists) )
 
 def job_cleanup_intermediate( dataset, file ):
     """"""
@@ -848,6 +853,7 @@ if __name__ == '__main__':
     parser.add_argument( '--overwrite-dl', '-ddl', action = "store_true", help = 'If this argument is present, the program WILL NOT use data dumps which were already dowloaded, but download them again' )
     parser.add_argument( '--overwrite-nt', '-dnt', action = "store_true", help = 'If this argument is present, the program WILL NOT use ntriple files which were already transformed, but transform them again' )
     parser.add_argument( '--rm-original', '-dro', action = "store_true", help = 'If this argument is present, the program WILL REMOVE the original downloaded data dump file' )
+    parser.add_argument( '--keep-edgelists', '-dke', action = "store_true", help = 'If this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless.' )
     
     parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
