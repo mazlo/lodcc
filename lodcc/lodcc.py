@@ -685,28 +685,11 @@ def fs_ugraph_start_job( dataset, U, stats ):
 
     for ftr in features:
         ftr( U, stats )
-    
-    save_stats( dataset, stats )
+        save_stats( dataset, stats )
 
-def graph_analyze( dataset, edgelists_path, stats ):
+def graph_analyze( dataset, edgelist, stats ):
     """"""
     
-    if not os.path.isdir( edgelists_path ):
-        log.error( '%s to read edges from does not exist', edgelists_path )
-        return
-
-    # find edgelist file
-    edgelist = None
-    for filename in os.listdir( edgelists_path ):
-        edgelist_file = '/'.join( [edgelists_path,filename] )
-    
-        if not re.search( 'edgelist.csv$', filename ):
-            log.debug( 'Skipping %s', filename )
-            continue
-
-        edgelist = edgelist_file
-        break
-
     if not os.path.isfile( edgelist ):
         log.error( 'edgelist.csv to read edges from does not exist' )
         return
@@ -731,16 +714,15 @@ def graph_analyze( dataset, edgelists_path, stats ):
 def build_graph_analyse( dataset, threads_openmp=7 ):
     """"""
 
-    # e.g. dataset[2] = 'dumps/dbpedia-en'
-    if not dataset[2]:
-        log.error( 'No path given for dataset %s', dataset[1] )
+    if not dataset[3]:
+        log.error( 'No filename given for dataset %s', dataset[1] )
         return 
 
     # before starting off: limit the number of threads a graph_tool job may acquire
     graph_tool.openmp_set_num_threads( threads_openmp )
 
     stats = { 'files_path': dataset[2] }
-    graph_analyze( dataset, dataset[2], stats )
+    graph_analyze( dataset, dataset[3], stats )
 
     if args['print_stats']:
         print stats
