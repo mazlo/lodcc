@@ -361,11 +361,11 @@ def fs_digraph_using_basic_properties( D, stats ):
 
     # feature: order
     num_vertices = D.num_vertices()
-    log.info( 'done order' )
+    log.debug( 'done order' )
 
     # feature: size
     num_edges = D.num_edges()
-    log.info( 'done size' )
+    log.debug( 'done size' )
 
     stats['n']=num_vertices
     stats['m']=num_edges
@@ -373,19 +373,19 @@ def fs_digraph_using_basic_properties( D, stats ):
 
     # feature: avg_degree
     stats['avg_degree']=float( 2*num_edges ) / num_vertices
-    log.info( 'done avg_degree' )
+    log.debug( 'done avg_degree' )
     
     # feature: fill_overall
     stats['fill_overall']=float( num_edges ) / ( num_vertices*num_vertices )
-    log.info( 'done fill_overall' )
+    log.debug( 'done fill_overall' )
 
     # feature: parallel_edges
     stats['parallel_edges']=num_edges_PE
-    log.info( 'done parallel_edges' )
+    log.debug( 'done parallel_edges' )
 
     # feature: fill
     stats['fill']=float( stats['m_unique'] ) / ( num_vertices*num_vertices )
-    log.info( 'done fill' )
+    log.debug( 'done fill' )
 
 def fs_digraph_using_degree( D, stats ):
     """"""
@@ -396,18 +396,18 @@ def fs_digraph_using_degree( D, stats ):
 
     # feature: max_degree
     stats['max_degree']=n.max( degree_list )
-    log.info( 'done max_degree' )
+    log.debug( 'done max_degree' )
 
     # feature: degree_centrality
     s = 1.0 / ( D.num_vertices()-1.0 )
     stats['avg_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
-    log.info( 'done avg_degree_centrality' )
+    log.debug( 'done avg_degree_centrality' )
 
     # info: vertex with largest degree centrality
     degree_list_idx=zip( degree_list, D.vertex_index )
     largest_degree_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), degree_list_idx )
     stats['max_degree_vertex']=D.vertex_properties['name'][largest_degree_vertex[1]]
-    log.info( 'done max_degree_vertex' )
+    log.debug( 'done max_degree_vertex' )
 
     # feature: h_index_u
     degree_list.sort(reverse=True)
@@ -420,14 +420,14 @@ def fs_digraph_using_degree( D, stats ):
             break
 
     stats['h_index_u']=h
-    log.info( 'done h_index_u' )
+    log.debug( 'done h_index_u' )
 
     # feature: p_law_exponent
     min_degree = n.min( degree_list )
     sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degree_list ] )
     stats['p_law_exponent'] = 1 + ( len(degree_list) * sum_of_logs )
     stats['p_law_exponent_dmin'] = min_degree
-    log.info( 'done p_law_exponent' )
+    log.debug( 'done p_law_exponent' )
 
     # plot degree distribution
     degree_counted = collections.Counter( degree_list )
@@ -449,7 +449,7 @@ def fs_digraph_using_degree( D, stats ):
 
     plt.tight_layout()
     plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
-    log.info( 'done plotting degree distribution' )
+    log.debug( 'done plotting degree distribution' )
 
     lock.release()
 
@@ -462,12 +462,12 @@ def fs_digraph_using_indegree( D, stats ):
 
     # feature: max_in_degree
     stats['max_in_degree']=n.max( degree_list )
-    log.info( 'done max_in_degree' )
+    log.debug( 'done max_in_degree' )
 
     # feature: avg_in_degree_centrality
     s = 1.0 / ( D.num_vertices()-1.0 )
     stats['avg_in_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
-    log.info( 'done avg_in_degree_centrality' )
+    log.debug( 'done avg_in_degree_centrality' )
 
     # feature: h_index_d
     degree_list.sort(reverse=True)
@@ -480,7 +480,7 @@ def fs_digraph_using_indegree( D, stats ):
             break
     
     stats['h_index_d']=h
-    log.info( 'done h_index_d' )
+    log.debug( 'done h_index_d' )
     
     # plot degree distribution
     degree_counted = collections.Counter( degree_list )
@@ -502,7 +502,7 @@ def fs_digraph_using_indegree( D, stats ):
 
     plt.tight_layout()
     plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
-    log.info( 'done plotting in-degree distribution' )
+    log.debug( 'done plotting in-degree distribution' )
 
     lock.release()
 
@@ -515,24 +515,24 @@ def fs_digraph_using_outdegree( D, stats ):
 
     # feature: max_out_degree
     stats['max_out_degree']=n.max( degree_list )
-    log.info( 'done max_out_degree' )
+    log.debug( 'done max_out_degree' )
 
     # feature: avg_out_degree_centrality
     s = 1.0 / ( D.num_vertices()-1.0 )
     stats['avg_out_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
-    log.info( 'done avg_out_degree_centrality' )
+    log.debug( 'done avg_out_degree_centrality' )
 
 def f_reciprocity( D, stats ):
     """"""
 
     stats['reciprocity']=edge_reciprocity(D)
-    log.info( 'done reciprocity' )
+    log.debug( 'done reciprocity' )
 
 def f_eigenvector_centrality( D, stats ):
     """"""
 
     if not args['do_heavy_analysis']:
-        log.info( 'Skipping eigenvector_centrality' )
+        log.debug( 'Skipping eigenvector_centrality' )
         return
 
     eigenvector_list = eigenvector(D)[1].get_array().tolist()
@@ -541,7 +541,7 @@ def f_eigenvector_centrality( D, stats ):
     ev_list_idx=zip( eigenvector_list, D.vertex_index )
     largest_ev_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), ev_list_idx )
     stats['max_eigenvector_vertex']=D.vertex_properties['name'][largest_ev_vertex[1]]
-    log.info( 'done max_eigenvector_vertex' )
+    log.debug( 'done max_eigenvector_vertex' )
 
     eigenvector_list.sort( reverse=True )
 
@@ -565,7 +565,7 @@ def f_eigenvector_centrality( D, stats ):
 
     plt.tight_layout()
     plt.savefig( stats['files_path'] +'/'+ 'distribution_eigenvector-centrality.pdf' )
-    log.info( 'done plotting eigenvector_centrality' )
+    log.debug( 'done plotting eigenvector_centrality' )
 
     lock.release()
         
@@ -578,7 +578,7 @@ def f_pagerank( D, stats ):
     pr_list_idx=zip( pagerank_list, D.vertex_index )
     largest_pr_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), pr_list_idx )
     stats['max_pagerank_vertex']=D.vertex_properties['name'][largest_pr_vertex[1]]
-    log.info( 'done max_pagerank_vertex' )
+    log.debug( 'done max_pagerank_vertex' )
     
     pagerank_list.sort( reverse=True )
 
@@ -602,7 +602,7 @@ def f_pagerank( D, stats ):
 
     plt.tight_layout()
     plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
-    log.info( 'done plotting pagerank distribution' )
+    log.debug( 'done plotting pagerank distribution' )
 
     lock.release()
 
@@ -636,34 +636,33 @@ def fs_digraph_start_job( dataset, D, stats ):
 
     for ftr in features:
         ftr( D, stats )
-
-    save_stats( dataset, stats )
+        save_stats( dataset, stats )
 
 def f_avg_shortest_path( U, stats, sem ):
     # can I?
     with sem:
         stats['avg_shortest_path']=nx.average_shortest_path_length(U)
-        log.info( 'done avg_shortest_path' )
+        log.debug( 'done avg_shortest_path' )
 
 def f_global_clustering( U, stats ):
     """"""
 
     if not args['do_heavy_analysis']:
-        log.info( 'Skipping global_clustering' )
+        log.debug( 'Skipping global_clustering' )
         return
 
     stats['global_clustering']=global_clustering(U)[0]
-    log.info( 'done global_clustering' )
+    log.debug( 'done global_clustering' )
 
 def f_avg_clustering( U, stats ):
     """"""
     
     if not args['do_heavy_analysis']:
-        log.info( 'Skipping avg_clustering' )
+        log.debug( 'Skipping avg_clustering' )
         return
 
     stats['avg_clustering']=n.mean( local_clustering(U, undirected=True).get_array().tolist() )
-    log.info( 'done avg_clustering' )
+    log.debug( 'done avg_clustering' )
 
 def f_pseudo_diameter( U, stats ):
     """"""
@@ -672,7 +671,7 @@ def f_pseudo_diameter( U, stats ):
     stats['pseudo_diameter']=dist
     stats['pseudo_diameter_src_vertex']=U.vertex_properties['name'][ends[0]]
     stats['pseudo_diameter_trg_vertex']=U.vertex_properties['name'][ends[1]]
-    log.info( 'done pseudo_diameter' )
+    log.debug( 'done pseudo_diameter' )
 
 def fs_ugraph_start_job( dataset, U, stats ):
     """"""
@@ -825,7 +824,7 @@ def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_build_graph, name = 'Job: '+ dataset[1], args = ( dataset, sem, threads_openmp ) )
+        t = threading.Thread( target = job_start_build_graph, name = dataset[1], args = ( dataset, sem, threads_openmp ) )
         t.start()
 
         threads.append( t )
