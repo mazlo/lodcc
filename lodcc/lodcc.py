@@ -282,7 +282,7 @@ def download_data( dataset, urls ):
 
         # download anew otherwise
         # thread waits until this is finished
-        log.info( 'Downloading dump for %s ...', dataset[1] )
+        log.info( 'Downloading dump (from %s) ...', url )
         os.popen( 'wget --quiet --output-document %s %s' % (path,url)  )
 
         valid = ensure_valid_download_data( path )
@@ -310,7 +310,6 @@ def build_graph_prepare( dataset, file ):
 
     overwrite = 'true' if args['overwrite_nt'] else 'false'
     rm_original  = 'true' if args['rm_original'] else 'false'
-    rm_edgelists = 'false' if args['keep_edgelists'] else 'true'
 
     # transform into ntriples if necessary
     if not format_ == APPLICATION_N_TRIPLES:
@@ -334,10 +333,6 @@ def build_graph_prepare( dataset, file ):
     else:
         # file is compressed, strip the type
         xxhash_nt( re.sub( '.%s' % types[0], '', path ), log )
-
-    log.info( 'Merging edgelists, if necessary..' )
-    log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_merge_edgelists'] % (os.path.dirname(path),rm_edgelists) )
-    os.popen( MEDIATYPES[format_]['cmd_merge_edgelists'] % (os.path.dirname(path),rm_edgelists) )
 
 def job_cleanup_intermediate( dataset, file ):
     """"""
@@ -805,7 +800,7 @@ def parse_resource_urls( cur, no_of_threads=1 ):
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_download_and_prepare, name = 'Job: '+ dataset[1], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[1],dataset[0]), args = ( dataset, sem ) )
         t.start()
 
         threads.append( t )
@@ -813,7 +808,7 @@ def parse_resource_urls( cur, no_of_threads=1 ):
     # wait for all threads to finish
     for t in threads:
         t.join()
-
+    
 def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
     """"""
 
