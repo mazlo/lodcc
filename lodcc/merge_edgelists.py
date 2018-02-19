@@ -18,6 +18,7 @@ if __name__ == '__main__':
 
     for path in paths:
 
+        path = 'dumps/'+ path
         if not os.path.isdir( path ):
             log.error( '%s is not a directory', path )
             continue
