@@ -344,6 +344,9 @@ try:
 except:
     log.warning( 'graph_tool module could not be imported' )
 import numpy as n
+import powerlaw
+n.warnings.filterwarnings('ignore')
+
 import collections
 try:
     import matplotlib.pyplot as plt
@@ -376,7 +379,7 @@ def fs_digraph_using_basic_properties( D, stats ):
     log.debug( 'done avg_degree' )
     
     # feature: fill_overall
-    stats['fill_overall']=float( num_edges ) / ( num_vertices*num_vertices )
+    stats['fill_overall']=float( num_edges ) / ( num_vertices * num_vertices )
     log.debug( 'done fill_overall' )
 
     # feature: parallel_edges
@@ -384,23 +387,23 @@ def fs_digraph_using_basic_properties( D, stats ):
     log.debug( 'done parallel_edges' )
 
     # feature: fill
-    stats['fill']=float( stats['m_unique'] ) / ( num_vertices*num_vertices )
+    stats['fill']=float( num_edges - num_edges_PE ) / ( num_vertices * num_vertices )
     log.debug( 'done fill' )
 
 def fs_digraph_using_degree( D, stats ):
     """"""
 
     # compute once
-    degree_list = D.degree_property_map( 'total' ).get_array()
-    degree_list = degree_list.tolist()
+    degree_list = D.degree_property_map( 'total' ).a
 
     # feature: max_degree
-    stats['max_degree']=n.max( degree_list )
+    stats['max_degree']=int( degree_list.max() )
     log.debug( 'done max_degree' )
 
     # feature: degree_centrality
-    s = 1.0 / ( D.num_vertices()-1.0 )
-    stats['avg_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
+    s = 1.0 / ( degree_list.size - 1 )
+    stats['avg_degree_centrality']=float( ( degree_list*s ).mean() )
+    stats['max_degree_centrality']=float( ( degree_list*s ).max() )
     log.debug( 'done avg_degree_centrality' )
 
     # info: vertex with largest degree centrality
@@ -410,7 +413,7 @@ def fs_digraph_using_degree( D, stats ):
     log.debug( 'done max_degree_vertex' )
 
     # feature: h_index_u
-    degree_list.sort(reverse=True)
+    degree_list[::-1].sort()
     
     h = 0
     for x in degree_list:
@@ -458,19 +461,19 @@ def fs_digraph_using_indegree( D, stats ):
 
     # compute once
     degree_list = D.get_in_degrees( D.get_vertices() )
-    degree_list = degree_list.tolist()
 
     # feature: max_in_degree
-    stats['max_in_degree']=n.max( degree_list )
+    stats['max_in_degree']=int( degree_list.max() )
     log.debug( 'done max_in_degree' )
 
     # feature: avg_in_degree_centrality
-    s = 1.0 / ( D.num_vertices()-1.0 )
-    stats['avg_in_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
+    s = 1.0 / ( degree_list.size - 1.0 )
+    stats['avg_in_degree_centrality']=float( ( degree_list*s ).mean() )
+    stats['max_in_degree_centrality']=float( ( degree_list*s ).max() )
     log.debug( 'done avg_in_degree_centrality' )
 
     # feature: h_index_d
-    degree_list.sort(reverse=True)
+    degree_list[::-1].sort()
     
     h = 0
     for x in degree_list:
@@ -511,15 +514,15 @@ def fs_digraph_using_outdegree( D, stats ):
 
     # compute once
     degree_list = D.get_out_degrees( D.get_vertices() )
-    degree_list = degree_list.tolist()
 
     # feature: max_out_degree
-    stats['max_out_degree']=n.max( degree_list )
+    stats['max_out_degree']=int( degree_list.max() )
     log.debug( 'done max_out_degree' )
 
     # feature: avg_out_degree_centrality
-    s = 1.0 / ( D.num_vertices()-1.0 )
-    stats['avg_out_degree_centrality']=n.sum( [ d*s for d in degree_list ] )
+    s = 1.0 / ( degree_list.size - 1.0 )
+    stats['avg_out_degree_centrality']=float( ( degree_list*s ).mean() )
+    stats['max_out_degree_centrality']=float( ( degree_list*s ).max() )
     log.debug( 'done avg_out_degree_centrality' )
 
 def f_reciprocity( D, stats ):
@@ -535,7 +538,7 @@ def f_eigenvector_centrality( D, stats ):
         log.debug( 'Skipping eigenvector_centrality' )
         return
 
-    eigenvector_list = eigenvector(D)[1].get_array().tolist()
+    eigenvector_list = eigenvector(D)[1].get_array()
         
     # info: vertex with largest eigenvector value
     ev_list_idx=zip( eigenvector_list, D.vertex_index )
@@ -543,7 +546,7 @@ def f_eigenvector_centrality( D, stats ):
     stats['max_eigenvector_vertex']=D.vertex_properties['name'][largest_ev_vertex[1]]
     log.debug( 'done max_eigenvector_vertex' )
 
-    eigenvector_list.sort( reverse=True )
+    eigenvector_list[::-1].sort()
 
     # plot degree distribution
     values_counted = collections.Counter( eigenvector_list )
@@ -572,7 +575,9 @@ def f_eigenvector_centrality( D, stats ):
 def f_pagerank( D, stats ):
     """"""
 
-    pagerank_list = pagerank(D).get_array().tolist()
+    pagerank_list = pagerank(D).get_array()
+
+    stats['max_pagerank'] = int( pagerank_list.max() )
 
     # info: vertex with largest pagerank value
     pr_list_idx=zip( pagerank_list, D.vertex_index )
@@ -580,7 +585,7 @@ def f_pagerank( D, stats ):
     stats['max_pagerank_vertex']=D.vertex_properties['name'][largest_pr_vertex[1]]
     log.debug( 'done max_pagerank_vertex' )
     
-    pagerank_list.sort( reverse=True )
+    pagerank_list[::-1].sort()
 
     # plot degree distribution
     values_counted = collections.Counter( pagerank_list )
