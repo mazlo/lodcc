@@ -426,10 +426,9 @@ def fs_digraph_using_degree( D, stats ):
     log.debug( 'done h_index_u' )
 
     # feature: p_law_exponent
-    min_degree = n.min( degree_list )
-    sum_of_logs = 1 / n.sum( [ n.log( (float(d)/min_degree) ) for d in degree_list ] )
-    stats['p_law_exponent'] = 1 + ( len(degree_list) * sum_of_logs )
-    stats['p_law_exponent_dmin'] = min_degree
+    fit = powerlaw.Fit( degree_list )
+    stats['p_law_exponent'] = float( fit.power_law.alpha )
+    stats['p_law_exponent_dmin'] = float( fit.power_law.xmin )
     log.debug( 'done p_law_exponent' )
 
     # plot degree distribution
