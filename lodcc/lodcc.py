@@ -906,6 +906,8 @@ if __name__ == '__main__':
 
     # connect to an existing database
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
+    conn.set_session( autocommit=True )
+
     cur = conn.cursor()
 
     try:
