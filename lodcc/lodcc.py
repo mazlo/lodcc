@@ -375,20 +375,24 @@ def fs_digraph_using_basic_properties( D, stats ):
     stats['m_unique']=num_edges - num_edges_PE
 
     # feature: avg_degree
-    stats['avg_degree']=float( 2*num_edges ) / num_vertices
-    log.debug( 'done avg_degree' )
+    if 'degree' in args['features']:
+        stats['avg_degree']=float( 2*num_edges ) / num_vertices
+        log.debug( 'done avg_degree' )
     
     # feature: fill_overall
-    stats['fill_overall']=float( num_edges ) / ( num_vertices * num_vertices )
-    log.debug( 'done fill_overall' )
+    if 'fill' in args['features']:
+        stats['fill_overall']=float( num_edges ) / ( num_vertices * num_vertices )
+        log.debug( 'done fill_overall' )
 
     # feature: parallel_edges
-    stats['parallel_edges']=num_edges_PE
-    log.debug( 'done parallel_edges' )
+    if 'parallel_edges' in args['features']:
+        stats['parallel_edges']=num_edges_PE
+        log.debug( 'done parallel_edges' )
 
     # feature: fill
-    stats['fill']=float( num_edges - num_edges_PE ) / ( num_vertices * num_vertices )
-    log.debug( 'done fill' )
+    if 'fill' in args['features']:
+        stats['fill']=float( num_edges - num_edges_PE ) / ( num_vertices * num_vertices )
+        log.debug( 'done fill' )
 
 def fs_digraph_using_degree( D, stats ):
     """"""
@@ -397,63 +401,71 @@ def fs_digraph_using_degree( D, stats ):
     degree_list = D.degree_property_map( 'total' ).a
 
     # feature: max_degree
-    stats['max_degree']=int( degree_list.max() )
-    log.debug( 'done max_degree' )
+    if 'degree' in args['features']:
+        stats['max_degree']=int( degree_list.max() )
+        log.debug( 'done max_degree' )
 
     # feature: degree_centrality
-    s = 1.0 / ( degree_list.size - 1 )
-    stats['avg_degree_centrality']=float( ( degree_list*s ).mean() )
-    stats['max_degree_centrality']=float( ( degree_list*s ).max() )
-    log.debug( 'done avg_degree_centrality' )
+    if 'degree' in args['features']:
+        s = 1.0 / ( degree_list.size - 1 )
+        stats['avg_degree_centrality']=float( ( degree_list*s ).mean() )
+        stats['max_degree_centrality']=float( ( degree_list*s ).max() )
+        log.debug( 'done avg_degree_centrality' )
 
     # info: vertex with largest degree centrality
-    degree_list_idx=zip( degree_list, D.vertex_index )
-    largest_degree_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), degree_list_idx )
-    stats['max_degree_vertex']=D.vertex_properties['name'][largest_degree_vertex[1]]
-    log.debug( 'done max_degree_vertex' )
+    if 'degree' in args['features']:
+        degree_list_idx=zip( degree_list, D.vertex_index )
+        largest_degree_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), degree_list_idx )
+        stats['max_degree_vertex']=D.vertex_properties['name'][largest_degree_vertex[1]]
+        log.debug( 'done max_degree_vertex' )
 
     # feature: h_index_u
-    degree_list[::-1].sort()
+    if 'h_index' in args['features']:
+        degree_list[::-1].sort()
     
-    h = 0
-    for x in degree_list:
-        if x >= h + 1:
-            h += 1
-        else:
-            break
+        h = 0
+        for x in degree_list:
+            if x >= h + 1:
+                h += 1
+            else:
+                break
 
-    stats['h_index_u']=h
-    log.debug( 'done h_index_u' )
+        stats['h_index_u']=h
+        log.debug( 'done h_index_u' )
 
     # feature: p_law_exponent
-    fit = powerlaw.Fit( degree_list )
-    stats['p_law_exponent'] = float( fit.power_law.alpha )
-    stats['p_law_exponent_dmin'] = float( fit.power_law.xmin )
-    log.debug( 'done p_law_exponent' )
+    if 'powerlaw' in args['features']:
+        fit = powerlaw.Fit( degree_list )
+        
+        stats['p_law_exponent'] = float( fit.power_law.alpha )
+        stats['p_law_exponent_dmin'] = float( fit.power_law.xmin )
+        log.debug( 'done p_law_exponent' )
+
 
     # plot degree distribution
-    degree_counted = collections.Counter( degree_list )
-    degree, counted = zip( *degree_counted.items() )
+    if 'degree' in args['features']:
+        degree_counted = collections.Counter( degree_list )
+        degree, counted = zip( *degree_counted.items() )
 
-    lock.acquire()
+        lock.acquire()
 
-    fig, ax = plt.subplots()
-    plt.plot( degree, counted )
+        fig, ax = plt.subplots()
+        plt.plot( degree, counted )
 
-    plt.title( 'Degree Histogram' )
-    plt.ylabel( 'Frequency' )
-    plt.xlabel( 'Degree' )
+        plt.title( 'Degree Histogram' )
+        plt.ylabel( 'Frequency' )
+        plt.xlabel( 'Degree' )
 
-    ax.set_xticklabels( degree )
+        ax.set_xticklabels( degree )
 
-    ax.set_xscale( 'log' )
-    ax.set_yscale( 'log' )
+        ax.set_xscale( 'log' )
+        ax.set_yscale( 'log' )
 
-    plt.tight_layout()
-    plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
-    log.debug( 'done plotting degree distribution' )
+        plt.tight_layout()
+        plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
+        log.debug( 'done plotting degree distribution' )
 
-    lock.release()
+        lock.release()
 
 def fs_digraph_using_indegree( D, stats ):
     """"""
@@ -462,51 +474,55 @@ def fs_digraph_using_indegree( D, stats ):
     degree_list = D.get_in_degrees( D.get_vertices() )
 
     # feature: max_in_degree
-    stats['max_in_degree']=int( degree_list.max() )
-    log.debug( 'done max_in_degree' )
+    if 'degree' in args['features']:
+        stats['max_in_degree']=int( degree_list.max() )
+        log.debug( 'done max_in_degree' )
 
     # feature: avg_in_degree_centrality
-    s = 1.0 / ( degree_list.size - 1.0 )
-    stats['avg_in_degree_centrality']=float( ( degree_list*s ).mean() )
-    stats['max_in_degree_centrality']=float( ( degree_list*s ).max() )
-    log.debug( 'done avg_in_degree_centrality' )
+    if 'degree' in args['features']:
+        s = 1.0 / ( degree_list.size - 1.0 )
+        stats['avg_in_degree_centrality']=float( ( degree_list*s ).mean() )
+        stats['max_in_degree_centrality']=float( ( degree_list*s ).max() )
+        log.debug( 'done avg_in_degree_centrality' )
 
     # feature: h_index_d
-    degree_list[::-1].sort()
+    if 'h_index' in args['features']:
+        degree_list[::-1].sort()
     
-    h = 0
-    for x in degree_list:
-        if x >= h + 1:
-            h += 1
-        else:
-            break
+        h = 0
+        for x in degree_list:
+            if x >= h + 1:
+                h += 1
+            else:
+                break
     
-    stats['h_index_d']=h
-    log.debug( 'done h_index_d' )
+        stats['h_index_d']=h
+        log.debug( 'done h_index_d' )
     
     # plot degree distribution
-    degree_counted = collections.Counter( degree_list )
-    degree, counted = zip( *degree_counted.items() )
+    if 'degree' in args['features']:
+        degree_counted = collections.Counter( degree_list )
+        degree, counted = zip( *degree_counted.items() )
 
-    lock.acquire()
+        lock.acquire()
 
-    fig, ax = plt.subplots()
-    plt.plot( degree, counted )
+        fig, ax = plt.subplots()
+        plt.plot( degree, counted )
 
-    plt.title( 'In-Degree Histogram' )
-    plt.ylabel( 'Frequency' )
-    plt.xlabel( 'In-Degree' )
+        plt.title( 'In-Degree Histogram' )
+        plt.ylabel( 'Frequency' )
+        plt.xlabel( 'In-Degree' )
 
-    ax.set_xticklabels( degree )
+        ax.set_xticklabels( degree )
 
-    ax.set_xscale( 'log' )
-    ax.set_yscale( 'log' )
+        ax.set_xscale( 'log' )
+        ax.set_yscale( 'log' )
 
-    plt.tight_layout()
-    plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
-    log.debug( 'done plotting in-degree distribution' )
+        plt.tight_layout()
+        plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
+        log.debug( 'done plotting in-degree distribution' )
 
-    lock.release()
+        lock.release()
 
 def fs_digraph_using_outdegree( D, stats ):
     """"""
@@ -515,25 +531,28 @@ def fs_digraph_using_outdegree( D, stats ):
     degree_list = D.get_out_degrees( D.get_vertices() )
 
     # feature: max_out_degree
-    stats['max_out_degree']=int( degree_list.max() )
-    log.debug( 'done max_out_degree' )
+    if 'degree' in args['features']:
+        stats['max_out_degree']=int( degree_list.max() )
+        log.debug( 'done max_out_degree' )
 
     # feature: avg_out_degree_centrality
-    s = 1.0 / ( degree_list.size - 1.0 )
-    stats['avg_out_degree_centrality']=float( ( degree_list*s ).mean() )
-    stats['max_out_degree_centrality']=float( ( degree_list*s ).max() )
-    log.debug( 'done avg_out_degree_centrality' )
+    if 'degree' in args['features']:
+        s = 1.0 / ( degree_list.size - 1.0 )
+        stats['avg_out_degree_centrality']=float( ( degree_list*s ).mean() )
+        stats['max_out_degree_centrality']=float( ( degree_list*s ).max() )
+        log.debug( 'done avg_out_degree_centrality' )
 
 def f_reciprocity( D, stats ):
     """"""
 
-    stats['reciprocity']=edge_reciprocity(D)
-    log.debug( 'done reciprocity' )
+    if 'reciprocity' in args['features']:
+        stats['reciprocity']=edge_reciprocity(D)
+        log.debug( 'done reciprocity' )
 
 def f_eigenvector_centrality( D, stats ):
     """"""
 
-    if not args['do_heavy_analysis']:
+    if 'eigenvector_centrality' not in args['features']:
         log.debug( 'Skipping eigenvector_centrality' )
         return
 
@@ -573,6 +592,10 @@ def f_eigenvector_centrality( D, stats ):
         
 def f_pagerank( D, stats ):
     """"""
+
+    if 'pagerank' not in args['features']:
+        log.debug( 'Skipping pagerank' )
+        return
 
     pagerank_list = pagerank(D).get_array()
 
@@ -651,7 +674,7 @@ def f_avg_shortest_path( U, stats, sem ):
 def f_global_clustering( U, stats ):
     """"""
 
-    if not args['do_heavy_analysis']:
+    if 'global_clustering' not in args['features']:
         log.debug( 'Skipping global_clustering' )
         return
 
@@ -661,7 +684,7 @@ def f_global_clustering( U, stats ):
 def f_avg_clustering( U, stats ):
     """"""
     
-    if not args['do_heavy_analysis']:
+    if 'local_clustering' not in args['features']:
         log.debug( 'Skipping avg_clustering' )
         return
 
@@ -671,11 +694,12 @@ def f_avg_clustering( U, stats ):
 def f_pseudo_diameter( U, stats ):
     """"""
 
-    dist, ends = pseudo_diameter(U)
-    stats['pseudo_diameter']=dist
-    stats['pseudo_diameter_src_vertex']=U.vertex_properties['name'][ends[0]]
-    stats['pseudo_diameter_trg_vertex']=U.vertex_properties['name'][ends[1]]
-    log.debug( 'done pseudo_diameter' )
+    if 'diameter' in args['features']:
+        dist, ends = pseudo_diameter(U)
+        stats['pseudo_diameter']=dist
+        stats['pseudo_diameter_src_vertex']=U.vertex_properties['name'][ends[0]]
+        stats['pseudo_diameter_trg_vertex']=U.vertex_properties['name'][ends[1]]
+        log.debug( 'done pseudo_diameter' )
 
 def fs_ugraph_start_job( dataset, U, stats ):
     """"""
@@ -844,6 +868,7 @@ if __name__ == '__main__':
     # RE feature computation
     parser.add_argument( '--threads-openmp', '-ot', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--do-heavy-analysis', '-ah', action = "store_true", help = '' )
+    parser.add_argument( '--features', '-fe', nargs='*', required = False, default = list(), help = '' )
 
     # read all properties in file into args-dict
     if os.path.isfile( 'db.properties' ):
@@ -970,6 +995,11 @@ if __name__ == '__main__':
             sql = 'SELECT id,name,files_path,filename FROM stats_graph WHERE filename IS NOT NULL ORDER BY id'
         
         cur.execute( sql, names )
+
+        # init feature list
+        if len( args['features'] ) == 0:
+            # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
+            args['features'] = ['degree', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
         build_graph( cur, args['processes'], args['threads_openmp'] )
 
