@@ -102,11 +102,61 @@ def iedgelist_csv( path, offset=1 ):
             print 'dumping reverse dict..'
             pickle.dump( rev_spo_dict, pkl )
 
+def iedgelist_edgelist( path, ending ):
+    """"""
+
+    dirname = os.path.dirname( path )
+    filename = os.path.basename( path )
+    prefix = re.sub( ending, '', filename )
+
+    with open( path, 'r' ) as file:
+
+        iedgelist = open( '%s/%s.%s' % (dirname,prefix,'iedgelist.csv'), 'w' )
+        log.info( 'handling %s', iedgelist.name )
+
+        idx = 1
+        spo_dict = {}
+
+        for line in file:
+            if re.search( '^# ', line ):
+                continue
+
+            sop=re.split( ' ', line )
+
+            s = sop[0]
+            o = sop[1]
+            p = sop[2]
+
+            if s not in spo_dict:
+                spo_dict[s] = idx
+                idx += 1
+            if p not in spo_dict:
+                spo_dict[p] = idx
+                idx += 1
+            if o not in spo_dict:
+                spo_dict[o] = idx
+                idx += 1
+
+            s = spo_dict[s]
+            p = spo_dict[p]
+            o = spo_dict[o]
+
+            iedgelist.write( '%s %s %s\n' % (s,p,o) )
+
+        iedgelist.close()
+
+        rev_spo_dict = { v: k for k, v in spo_dict.items() }
+
+        pkl_filename = '%s/%s.%s' % (dirname,prefix,'iedgelist.pkl')
+        with open( pkl_filename, 'w' ) as pkl:
+            log.info( 'dumping pickle %s', pkl_filename )
+            pickle.dump( rev_spo_dict, pkl )
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc iedgelist' )
     parser.add_argument( '--paths', '-p', nargs='*', required = True, help = '' )
-    parser.add_argument( '--csv', '-c', action='store_true', help = '' )
+    parser.add_argument( '--type', '-t', required = False, type = str, default = 'nt', help = '' )
  
     log.basicConfig( level = log.INFO, 
                      format = '[%(asctime)s] - %(levelname)-8s : %(message)s', )
@@ -114,7 +164,10 @@ if __name__ == '__main__':
     args = vars( parser.parse_args() )
     paths = args['paths']
 
-    if args['csv']:
+    if args['type'] == 'edgelist':
+        ending = '.edgelist.csv$'
+        func = iedgelist_edgelist
+    elif args['type'] == 'csv':
         ending = '.csv$'
         func = iedgelist_csv
     else:
@@ -129,13 +182,12 @@ if __name__ == '__main__':
             if not re.search( '/$', path ):
                 path = path+'/'
 
-            idx_offset = 1
             for filename in os.listdir( path ):
 
                 if not re.search( ending, filename ):
                     continue
 
-                idx_offset = func( path + filename, idx_offset )
+                func( path + filename, ending )
         else:
             # if given path is a file, use it
-            func( path )
+            func( path, ending )
