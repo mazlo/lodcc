@@ -863,8 +863,8 @@ if __name__ == '__main__':
     parser.add_argument( '--rm-original', '-dro', action = "store_true", help = 'If this argument is present, the program WILL REMOVE the original downloaded data dump file' )
     parser.add_argument( '--keep-edgelists', '-dke', action = "store_true", help = 'If this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless.' )
     
-    parser.add_argument( '--log-level-debug', '-ld', action = "store_true", help = '' )
-    parser.add_argument( '--log-level-info', '-li', action = "store_true", help = '' )
+    parser.add_argument( '--log-debug', '-ld', action = "store_true", help = '' )
+    parser.add_argument( '--log-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
     parser.add_argument( '--processes', '-pt', required = False, type = int, default = 1, help = 'Specify how many processes will be used for downloading and parsing' )
@@ -886,7 +886,7 @@ if __name__ == '__main__':
     z.update( args )
     args = z
     
-    if args['log_level_debug']:
+    if args['log_debug']:
         level = log.DEBUG
     else:
         level = log.INFO
