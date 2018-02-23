@@ -3,104 +3,29 @@ import logging as log
 import os
 import pickle
 import re
+import sys
 
-def iedgelist_nt( path, offset=1 ):
+ENDING_EDGELIST = '.edgelist.csv$'
+ENDING_CSV = '.csv$'
+ENDING_NT = '.nt$'
+
+ENDINGS = { 'edgelist' : ENDING_EDGELIST, 'csv' : ENDING_CSV, 'nt' : ENDING_NT }
+
+def parse_spo( line, ending ):
     """"""
 
-    dirname = os.path.dirname( path )
-    filename = os.path.basename( path )
-    prefix = re.sub( '.nt$', '', filename )
+    if ending == ENDING_EDGELIST:
+        sop=re.split( ' ', line )
+        return sop[0], sop[2], sop[1]
 
-    with open( path, 'r' ) as file:
-            
-        iedgelist = open( '%s/%s.%s' % (dirname,prefix,'iedgelist.csv'), 'w' )
-        log.info( 'handling %s', iedgelist.name )
+    if ending == ENDING_CSV:
+        sp=re.split( '{\'edge\':\'', line )
+        so=re.split( ' ', sp[0] )
+        return so[0], sp[1][0:-3], ' '.join( so[1:-1] )
 
-        idx = offset + 1
-        spo_dict = {}
-
-        for line in file:
-            if re.search( '^# ', line ):
-                continue
-
-            spo = re.split( ' ', line )
-
-            s = spo[0]
-            p = spo[1]
-            o = ' '.join( spo[2:-1] )
-
-            if s not in spo_dict:
-                spo_dict[s] = idx
-                idx += 1
-            if p not in spo_dict:
-                spo_dict[p] = idx
-                idx += 1
-            if o not in spo_dict:
-                spo_dict[o] = idx
-                idx += 1
-
-            s = spo_dict[s]
-            p = spo_dict[p]
-            o = spo_dict[o]
-
-            iedgelist.write( '%s %s %s\n' % (s,p,o) )
-
-        iedgelist.close()
-
-        rev_spo_dict = { v: k for k, v in spo_dict.items() }
-
-        pkl_filename = '%s/%s.%s' % (dirname,prefix,'iedgelist.pkl')
-        with open( pkl_filename, 'w' ) as pkl:
-            log.info( 'dumping pickle %s', pkl_filename )
-            pickle.dump( rev_spo_dict, pkl )
-
-        return idx
-
-def iedgelist_csv( path, offset=1 ):
-    """"""
-
-    with open( path, 'r' ) as file:
-            
-        iedgelist = open( 'data.iedgelist.csv', 'w' )
-
-        idx = 1
-        spo_dict = {}
-
-        print 'start'
-        for line in file:
-            if re.search( '^# ', line ):
-                continue
-
-            sp=re.split( '{\'edge\':\'', line )
-            so=re.split( ' ', sp[0] )
-
-            s = so[0]
-            p = sp[1][0:-3]
-            o = ' '.join( so[1:-1] )
-
-            if s not in spo_dict:
-                spo_dict[s] = idx
-                idx += 1
-            if p not in spo_dict:
-                spo_dict[p] = idx
-                idx += 1
-            if o not in spo_dict:
-                spo_dict[o] = idx
-                idx += 1
-
-            s = spo_dict[s]
-            p = spo_dict[p]
-            o = spo_dict[o]
-
-            iedgelist.write( '%s %s %s\n' % (s,p,o) )
-
-        iedgelist.close()
-
-        rev_spo_dict = { v: k for k, v in spo_dict.items() }
-           
-        with open( 'data.iedgelist_dict.pkl', 'w' ) as pkl:
-            print 'dumping reverse dict..'
-            pickle.dump( rev_spo_dict, pkl )
+    if ending == ENDING_NT:
+        spo = re.split( ' ', line )
+        return spo[0], spo[1], ' '.join( spo[2:-1] )
 
 def iedgelist_edgelist( path, ending ):
     """"""
@@ -121,11 +46,7 @@ def iedgelist_edgelist( path, ending ):
             if re.search( '^# ', line ):
                 continue
 
-            sop=re.split( ' ', line )
-
-            s = sop[0]
-            o = sop[1]
-            p = sop[2]
+            s, p, o = parse_spo( line, ending )
 
             if s not in spo_dict:
                 spo_dict[s] = idx
@@ -163,16 +84,12 @@ if __name__ == '__main__':
 
     args = vars( parser.parse_args() )
     paths = args['paths']
+    type_ = args['type']
 
-    if args['type'] == 'edgelist':
-        ending = '.edgelist.csv$'
-        func = iedgelist_edgelist
-    elif args['type'] == 'csv':
-        ending = '.csv$'
-        func = iedgelist_csv
+    if type_ in ENDINGS:
+        ending = ENDINGS[type_]
     else:
-        ending = '.nt$'
-        func = iedgelist_nt
+        sys.exit()
 
     for path in paths:
 
@@ -187,7 +104,7 @@ if __name__ == '__main__':
                 if not re.search( ending, filename ):
                     continue
 
-                func( path + filename, ending )
+                iedgelist_edgelist( path + filename, ending )
         else:
             # if given path is a file, use it
-            func( path, ending )
+            iedgelist_edgelist( path, ending )
