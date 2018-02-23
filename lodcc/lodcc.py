@@ -663,7 +663,9 @@ def fs_digraph_start_job( dataset, D, stats ):
 
     for ftr in features:
         ftr( D, stats )
-        save_stats( dataset, stats )
+
+        if not args['print_stats']:
+            save_stats( dataset, stats )
 
 def f_avg_shortest_path( U, stats, sem ):
     # can I?
@@ -713,7 +715,9 @@ def fs_ugraph_start_job( dataset, U, stats ):
 
     for ftr in features:
         ftr( U, stats )
-        save_stats( dataset, stats )
+
+        if not args['print_stats']:
+            save_stats( dataset, stats )
 
 def graph_analyze( dataset, edgelist, stats ):
     """"""
