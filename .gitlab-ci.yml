@@ -9,3 +9,5 @@ unittests:
     - apk add --no-cache build-base curl python-dev freetype-dev libjpeg-turbo-dev libpng-dev postgresql-dev
     - pip install -r requirements.txt
     - python -m unittest discover tests
+  only:
+    - master
