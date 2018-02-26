@@ -16,16 +16,19 @@ def parse_spo( line, ending ):
 
     if ending == ENDING_EDGELIST:
         sop=re.split( ' ', line )
-        return sop[0], sop[2], sop[1]
+        #return sop[0], sop[2], sop[1]
+        return sop[0], sop[1]
 
     if ending == ENDING_CSV:
         sp=re.split( '{\'edge\':\'', line )
         so=re.split( ' ', sp[0] )
-        return so[0], sp[1][0:-3], ' '.join( so[1:-1] )
+        #return so[0], sp[1][0:-3], ' '.join( so[1:-1] )
+        return so[0], ' '.join( so[1:-1] )
 
     if ending == ENDING_NT:
         spo = re.split( ' ', line )
-        return spo[0], spo[1], ' '.join( spo[2:-1] )
+        #return spo[0], spo[1], ' '.join( spo[2:-1] )
+        return spo[0], ' '.join( spo[2:-1] )
 
 def iedgelist_edgelist( path, ending ):
     """"""
@@ -34,50 +37,46 @@ def iedgelist_edgelist( path, ending ):
     filename = os.path.basename( path )
     prefix = re.sub( ending, '', filename )
 
-    with open( path, 'r' ) as file:
-
-        iedgelist = open( '%s/%s.%s' % (dirname,prefix,'iedgelist.csv'), 'w' )
-        log.info( 'handling %s', iedgelist.name )
-
+    with open( path ) as edgelist:
         idx = 1
         spo_dict = {}
+        
 
-        for line in file:
-            if re.search( '^# ', line ):
-                continue
+        with open( '%s/%s.%s' % (dirname,prefix,'iedgelist.csv'), 'w' ) as iedgelist:
+            log.info( 'handling %s', iedgelist.name )
 
-            s, p, o = parse_spo( line, ending )
+            for line in edgelist:
+                s, o = parse_spo( line, ending )
 
-            if s not in spo_dict:
-                spo_dict[s] = idx
-                idx += 1
-            if p not in spo_dict:
-                spo_dict[p] = idx
-                idx += 1
-            if o not in spo_dict:
-                spo_dict[o] = idx
-                idx += 1
+                if s not in spo_dict:
+                    spo_dict[s] = idx
+                    idx += 1
+                if o not in spo_dict:
+                    spo_dict[o] = idx
+                    idx += 1
 
-            s = spo_dict[s]
-            p = spo_dict[p]
-            o = spo_dict[o]
+                if idx % 10000000 == 0:
+                    log.info( idx )
 
-            iedgelist.write( '%s %s %s\n' % (s,p,o) )
+                s = spo_dict[s]
+                o = spo_dict[o]
 
-        iedgelist.close()
+                iedgelist.write( '%s %s\n' % (s,o) )
 
-        rev_spo_dict = { v: k for k, v in spo_dict.items() }
+        if args['pickle']:
+            rev_spo_dict = { v: k for k, v in spo_dict.items() }
 
-        pkl_filename = '%s/%s.%s' % (dirname,prefix,'iedgelist.pkl')
-        with open( pkl_filename, 'w' ) as pkl:
-            log.info( 'dumping pickle %s', pkl_filename )
-            pickle.dump( rev_spo_dict, pkl )
+            pkl_filename = '%s/%s.%s' % (dirname,prefix,'iedgelist.pkl')
+            with open( pkl_filename, 'w' ) as pkl:
+                log.info( 'dumping pickle %s', pkl_filename )
+                pickle.dump( rev_spo_dict, pkl )
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc iedgelist' )
     parser.add_argument( '--paths', '-p', nargs='*', required = True, help = '' )
     parser.add_argument( '--type', '-t', required = False, type = str, default = 'nt', help = '' )
+    parser.add_argument( '--pickle', '-d', action = 'store_true', help = '' )
  
     log.basicConfig( level = log.INFO, 
                      format = '[%(asctime)s] - %(levelname)-8s : %(message)s', )
