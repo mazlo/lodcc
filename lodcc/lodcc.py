@@ -727,7 +727,11 @@ def graph_analyze( dataset, edgelist, stats ):
         return
 
     log.info( 'Constructing DiGraph from edgelist' )
-    D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+
+    if args['hashed']:
+        D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+    else:
+        D=load_graph_from_csv( edgelist, directed=True, string_vals=False, hashed=False, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
     
     log.info( 'Computing feature set DiGraph' )
     fs_digraph_start_job( dataset, D, stats )
@@ -870,6 +874,7 @@ if __name__ == '__main__':
     parser.add_argument( '--processes', '-pt', required = False, type = int, default = 1, help = 'Specify how many processes will be used for downloading and parsing' )
 
     # RE feature computation
+    parser.add_argument( '--hashed', '-ha', action = "store_true", help = '' )
     parser.add_argument( '--threads-openmp', '-ot', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--do-heavy-analysis', '-ah', action = "store_true", help = '' )
     parser.add_argument( '--features', '-fe', nargs='*', required = False, default = list(), help = '' )
