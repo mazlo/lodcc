@@ -400,24 +400,64 @@ def fs_digraph_using_degree( D, stats ):
     # compute once
     degree_list = D.degree_property_map( 'total' ).a
 
-    # feature: max_degree
+    # feature: max_(in|out)degree
+    # feature: (in|out)_degree_centrality
     if 'degree' in args['features']:
-        stats['max_degree']=int( degree_list.max() )
-        log.debug( 'done max_degree' )
 
-    # feature: degree_centrality
-    if 'degree' in args['features']:
-        s = 1.0 / ( degree_list.size - 1 )
-        stats['avg_degree_centrality']=float( ( degree_list*s ).mean() )
-        stats['max_degree_centrality']=float( ( degree_list*s ).max() )
-        log.debug( 'done avg_degree_centrality' )
+        v_max = (0, None)
+        v_max_in = (0, None)
+        v_max_out = (0, None)
 
-    # info: vertex with largest degree centrality
-    if 'degree' in args['features']:
-        degree_list_idx=zip( degree_list, D.vertex_index )
-        largest_degree_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), degree_list_idx )
-        stats['max_degree_vertex']=D.vertex_properties['name'][largest_degree_vertex[1]]
-        log.debug( 'done max_degree_vertex' )
+        sum_degrees = 0
+        sum_in_degrees = 0
+        sum_out_degrees = 0
+
+        # max_(in|out)degree are computed that way because we want also the node's name
+        for v in D.vertices():
+            v_in_degree = v.in_degree()
+            v_out_degree = v.out_degree()
+
+            v_degree = v_in_degree + v_out_degree
+            # for max_degree, max_degree_vertex
+            v_max = ( v_degree,v ) if v_degree >= v_max[0] else v_max
+            # for max_in_degree, max_in_degree_vertex
+            v_max_in = ( v_in_degree,v ) if v_in_degree >= v_max_in[0] else v_max_in
+            # for max_out_degree, max_out_degree_vertex
+            v_max_out = ( v_out_degree,v ) if v_out_degree >= v_max_out[0] else v_max_out
+
+            sum_degrees += v_degree
+            sum_in_degrees += v_in_degree
+            sum_out_degrees += v_out_degree
+
+        stats['max_degree'], stats['max_degree_vertex'] = v_max[0], str( D.vertex_properties['name'][v_max[1]] )
+        stats['max_in_degree'], stats['max_in_degree_vertex'] = v_max_in[0], str( D.vertex_properties['name'][v_max_in[1]] )
+        stats['max_out_degree'], stats['max_out_degree_vertex'] = v_max_out[0], str( D.vertex_properties['name'][v_max_out[1]] )
+
+        log.debug( 'done degree' )
+
+        # feature: degree_centrality
+        num_vertices = stats['n']
+        s = 1.0 / ( num_vertices - 1 )
+
+        stats['avg_degree_centrality']=(sum_degrees*s) / num_vertices
+        stats['avg_in_degree_centrality']=(sum_in_degrees*s) / num_vertices
+        stats['avg_out_degree_centrality']=(sum_out_degrees*s) / num_vertices
+
+        stats['max_degree_centrality']=float( v_max[0]*s )
+        stats['max_in_degree_centrality']=float( v_max_in[0]*s )
+        stats['max_out_degree_centrality']=float( v_max_out[0]*s )
+
+        log.debug( 'done degree_centrality' )
+
+        # feature: standard deviation
+        stddev_in_degree = D.get_in_degrees( D.get_vertices() ).std()
+        stats['stddev_in_degree'] = stddev_in_degree
+        stats['coefficient_variation_in_degree'] = ( stddev_in_degree / ( sum_in_degrees / num_vertices ) ) * 100
+        stddev_out_degree = D.get_out_degrees( D.get_vertices() ).std()
+        stats['stddev_out_degree'] = stddev_out_degree
+        stats['coefficient_variation_out_degree'] = ( stddev_out_degree / ( sum_out_degrees / num_vertices ) ) * 100
+
+        log.debug( 'done standard_deviation' )
 
     # feature: h_index_u
     if 'h_index' in args['features']:
@@ -473,18 +513,6 @@ def fs_digraph_using_indegree( D, stats ):
     # compute once
     degree_list = D.get_in_degrees( D.get_vertices() )
 
-    # feature: max_in_degree
-    if 'degree' in args['features']:
-        stats['max_in_degree']=int( degree_list.max() )
-        log.debug( 'done max_in_degree' )
-
-    # feature: avg_in_degree_centrality
-    if 'degree' in args['features']:
-        s = 1.0 / ( degree_list.size - 1.0 )
-        stats['avg_in_degree_centrality']=float( ( degree_list*s ).mean() )
-        stats['max_in_degree_centrality']=float( ( degree_list*s ).max() )
-        log.debug( 'done avg_in_degree_centrality' )
-
     # feature: h_index_d
     if 'h_index' in args['features']:
         degree_list[::-1].sort()
@@ -523,24 +551,6 @@ def fs_digraph_using_indegree( D, stats ):
         log.debug( 'done plotting in-degree distribution' )
 
         lock.release()
-
-def fs_digraph_using_outdegree( D, stats ):
-    """"""
-
-    # compute once
-    degree_list = D.get_out_degrees( D.get_vertices() )
-
-    # feature: max_out_degree
-    if 'degree' in args['features']:
-        stats['max_out_degree']=int( degree_list.max() )
-        log.debug( 'done max_out_degree' )
-
-    # feature: avg_out_degree_centrality
-    if 'degree' in args['features']:
-        s = 1.0 / ( degree_list.size - 1.0 )
-        stats['avg_out_degree_centrality']=float( ( degree_list*s ).mean() )
-        stats['max_out_degree_centrality']=float( ( degree_list*s ).max() )
-        log.debug( 'done avg_out_degree_centrality' )
 
 def f_reciprocity( D, stats ):
     """"""
@@ -655,7 +665,7 @@ def fs_digraph_start_job( dataset, D, stats ):
     features = [ 
         # fs = feature set
         fs_digraph_using_basic_properties,
-        fs_digraph_using_degree, fs_digraph_using_indegree, fs_digraph_using_outdegree,
+        fs_digraph_using_degree, fs_digraph_using_indegree,
         f_reciprocity,
         f_pagerank, 
         f_eigenvector_centrality,
