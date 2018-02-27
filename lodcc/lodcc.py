@@ -526,7 +526,15 @@ def fs_digraph_using_indegree( D, stats ):
     
         stats['h_index_d']=h
         log.debug( 'done h_index_d' )
-    
+
+    # feature: p_law_exponent
+    if 'powerlaw' in args['features']:
+        fit = powerlaw.Fit( degree_list )
+        
+        stats['powerlaw_exponent_in_degree'] = float( fit.power_law.alpha )
+        stats['powerlaw_exponent_in_degree_dmin'] = float( fit.power_law.xmin )
+        log.debug( 'done powerlaw_exponent' )
+
     # plot degree distribution
     if 'degree' in args['features']:
         degree_counted = collections.Counter( degree_list )
