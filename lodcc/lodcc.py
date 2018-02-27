@@ -437,9 +437,9 @@ def fs_digraph_using_degree( D, stats ):
     if 'powerlaw' in args['features']:
         fit = powerlaw.Fit( degree_list )
         
-        stats['p_law_exponent'] = float( fit.power_law.alpha )
-        stats['p_law_exponent_dmin'] = float( fit.power_law.xmin )
-        log.debug( 'done p_law_exponent' )
+        stats['powerlaw_exponent_degree'] = float( fit.power_law.alpha )
+        stats['powerlaw_exponent_degree_dmin'] = float( fit.power_law.xmin )
+        log.debug( 'done powerlaw_exponent' )
 
 
     # plot degree distribution
