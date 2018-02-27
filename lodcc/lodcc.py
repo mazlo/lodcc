@@ -617,14 +617,16 @@ def f_pagerank( D, stats ):
 
     pagerank_list = pagerank(D).get_array()
 
-    stats['max_pagerank'] = int( pagerank_list.max() )
+    pr_max = (0.0, 0)
+    idx = 0
 
-    # info: vertex with largest pagerank value
-    pr_list_idx=zip( pagerank_list, D.vertex_index )
-    largest_pr_vertex=reduce( (lambda new_tpl, last_tpl: new_tpl if new_tpl[0] >= last_tpl[0] else last_tpl), pr_list_idx )
-    stats['max_pagerank_vertex']=D.vertex_properties['name'][largest_pr_vertex[1]]
-    log.debug( 'done max_pagerank_vertex' )
-    
+    # iterate and collect max value and idx
+    for pr_val in pagerank_list:
+        pr_max = ( pr_val, idx ) if pr_val >= pr_max[0] else pr_max
+        idx += 1
+
+    stats['max_pagerank'], stats['max_pagerank_vertex'] = pr_max[0], str( D.vertex_properties['name'][pr_max[1]] )
+
     pagerank_list[::-1].sort()
 
     # plot degree distribution
