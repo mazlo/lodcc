@@ -483,7 +483,7 @@ def fs_digraph_using_degree( D, stats ):
 
 
     # plot degree distribution
-    if 'degree' in args['features']:
+    if not 'plots' in args['skip_features'] and 'plots' in args['features']:
         degree_counted = collections.Counter( degree_list )
         degree, counted = zip( *degree_counted.items() )
 
@@ -536,7 +536,7 @@ def fs_digraph_using_indegree( D, stats ):
         log.debug( 'done powerlaw_exponent' )
 
     # plot degree distribution
-    if 'degree' in args['features']:
+    if not 'plots' in args['skip_features'] and 'plots' in args['features']:
         degree_counted = collections.Counter( degree_list )
         degree, counted = zip( *degree_counted.items() )
 
@@ -763,8 +763,6 @@ def graph_analyze( dataset, edgelist, stats ):
     #stats['k_core(U)']=nx.k_core(U)
     #stats['radius(U)']=nx.radius(U)
     
-    # plot distributions
-
     return stats
 
 def build_graph_analyse( dataset, threads_openmp=7 ):
@@ -898,6 +896,7 @@ if __name__ == '__main__':
     parser.add_argument( '--threads-openmp', '-ot', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--do-heavy-analysis', '-ah', action = "store_true", help = '' )
     parser.add_argument( '--features', '-fe', nargs='*', required = False, default = list(), help = '' )
+    parser.add_argument( '--skip-features', '-sfe', nargs='*', required = False, default = list(), help = '' )
 
     # read all properties in file into args-dict
     if os.path.isfile( 'db.properties' ):
@@ -1030,7 +1029,7 @@ if __name__ == '__main__':
         # init feature list
         if len( args['features'] ) == 0:
             # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
-            args['features'] = ['degree', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
+            args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
         build_graph( cur, args['processes'], args['threads_openmp'] )
 
