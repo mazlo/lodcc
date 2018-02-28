@@ -627,31 +627,32 @@ def f_pagerank( D, stats ):
 
     stats['max_pagerank'], stats['max_pagerank_vertex'] = pr_max[0], str( D.vertex_properties['name'][pr_max[1]] )
 
-    pagerank_list[::-1].sort()
+    if not 'plots' in args['skip_features'] and 'plots' in args['features']:
+        pagerank_list[::-1].sort()
 
-    # plot degree distribution
-    values_counted = collections.Counter( pagerank_list )
-    values, counted = zip( *values_counted.items() )
+        # plot degree distribution
+        values_counted = collections.Counter( pagerank_list )
+        values, counted = zip( *values_counted.items() )
     
-    lock.acquire()
+        lock.acquire()
 
-    fig, ax = plt.subplots()
-    plt.plot( values, counted )
+        fig, ax = plt.subplots()
+        plt.plot( values, counted )
 
-    plt.title( 'PageRank Histogram' )
-    plt.ylabel( 'Frequency' )
-    plt.xlabel( 'PageRank Value' )
+        plt.title( 'PageRank Histogram' )
+        plt.ylabel( 'Frequency' )
+        plt.xlabel( 'PageRank Value' )
 
-    ax.set_xticklabels( values )
+        ax.set_xticklabels( values )
 
-    ax.set_xscale( 'log' )
-    ax.set_yscale( 'log' )
+        ax.set_xscale( 'log' )
+        ax.set_yscale( 'log' )
 
-    plt.tight_layout()
-    plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
-    log.debug( 'done plotting pagerank distribution' )
+        plt.tight_layout()
+        plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
+        log.debug( 'done plotting pagerank distribution' )
 
-    lock.release()
+        lock.release()
 
 def save_stats( dataset, stats ):
     """"""
