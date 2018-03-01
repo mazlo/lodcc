@@ -20,6 +20,7 @@ import urlparse
 from constants import *
 try:
     import psycopg2
+    import psycopg2.extras
 except:
     log.warning( 'psycogp2 could not be found' )
 try:
@@ -855,13 +856,12 @@ def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
         return None
 
     sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
-
     threads = []
 
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_build_graph, name = dataset[1], args = ( dataset, sem, threads_openmp ) )
+        t = threading.Thread( target = job_start_build_graph, name = dataset['name'], args = ( dataset, sem, threads_openmp ) )
         t.start()
 
         threads.append( t )
@@ -933,11 +933,11 @@ if __name__ == '__main__':
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
     conn.set_session( autocommit=True )
 
-    cur = conn.cursor()
-
     try:
+        cur = conn.cursor()
         cur.execute( "SELECT 1;" )
         result = cur.fetchall()
+        cur.close()
 
         log.debug( 'Database ready to query execution' )
     except:
@@ -950,6 +950,7 @@ if __name__ == '__main__':
             log.info( 'Running in dry-run mode' )
             log.info( 'Using example dataset "Museums in Italy"' )
     
+            cur = conn.cursor()
             cur.execute( 'SELECT id, url, name FROM stats WHERE url = %s LIMIT 1', ('https://old.datahub.io/dataset/museums-in-italy') )
             
             if cur.rowcount == 0:
@@ -962,7 +963,9 @@ if __name__ == '__main__':
             parse_datapackages( ds[0], ds[1], ds[2], True )
 
             conn.commit()
+            cur.close()
         else:
+            cur = conn.cursor()
             cur.execute( 'SELECT id, url, name FROM stats' )
             datasets_to_fetch = cur.fetchall()
             
@@ -970,6 +973,8 @@ if __name__ == '__main__':
                 log.info( 'Preparing %s ', ds[2] )
                 parse_datapackages( ds[0], ds[1], ds[2] )
                 conn.commit()
+
+            cur.close()
 
     # option 2
     if args['parse_resource_urls']:
@@ -996,9 +1001,11 @@ if __name__ == '__main__':
         else:
             sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
 
+        cur = conn.cursor()
         cur.execute( sql, names )
 
         parse_resource_urls( cur, None if 'processes' not in args else args['processes'] )
+        cur.close()
 
     # option 3
     if args['build_graph']:
@@ -1021,10 +1028,11 @@ if __name__ == '__main__':
         log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
         if 'names_query' in locals():
-            sql = 'SELECT id,name,files_path,filename FROM stats_graph WHERE '+ names_query +' AND filename IS NOT NULL ORDER BY id'
+            sql = 'SELECT id,name,path_edgelist,path_graph_gt_xz FROM stats_graph WHERE '+ names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt_xz IS NOT NULL) ORDER BY id'
         else:
-            sql = 'SELECT id,name,files_path,filename FROM stats_graph WHERE filename IS NOT NULL ORDER BY id'
+            sql = 'SELECT id,name,path_edgelist,path_graph_gt_xz FROM stats_graph WHERE (path_edgelist IS NOT NULL OR path_graph_gt_xz IS NOT NULL) ORDER BY id'
         
+        cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
         cur.execute( sql, names )
 
         # init feature list
@@ -1033,9 +1041,9 @@ if __name__ == '__main__':
             args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
         build_graph( cur, args['processes'], args['threads_openmp'] )
+        cur.close()
 
     # close communication with the database
-    cur.close()
     conn.close()
 
 # -----------------
