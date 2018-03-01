@@ -14,10 +14,10 @@ corresponding_uri()
         if [[ $VERTICE == $m ]]; then
             echo $RES | while read -r s p o; do
                 if [[ $idx == 1 ]]; then 
-                    echo $s
+                    echo $s | cut -d ' ' -f1
                     return
                 elif [[ $idx == 2 ]]; then
-                    echo $o
+                    echo $o | cut -d ' ' -f1
                     return
                 fi
             done
