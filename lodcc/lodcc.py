@@ -409,9 +409,9 @@ def fs_digraph_using_degree( D, stats ):
         v_max_in = (0, None)
         v_max_out = (0, None)
 
-        sum_degrees = 0
-        sum_in_degrees = 0
-        sum_out_degrees = 0
+        sum_degrees = 0.0
+        sum_in_degrees = 0.0
+        sum_out_degrees = 0.0
 
         # max_(in|out)degree are computed that way because we want also the node's name
         for v in D.vertices():
@@ -444,9 +444,9 @@ def fs_digraph_using_degree( D, stats ):
         stats['avg_in_degree_centrality']=(sum_in_degrees*s) / num_vertices
         stats['avg_out_degree_centrality']=(sum_out_degrees*s) / num_vertices
 
-        stats['max_degree_centrality']=float( v_max[0]*s )
-        stats['max_in_degree_centrality']=float( v_max_in[0]*s )
-        stats['max_out_degree_centrality']=float( v_max_out[0]*s )
+        stats['max_degree_centrality']=v_max[0]*s
+        stats['max_in_degree_centrality']=v_max_in[0]*s
+        stats['max_out_degree_centrality']=v_max_out[0]*s
 
         log.debug( 'done degree_centrality' )
 
@@ -458,7 +458,10 @@ def fs_digraph_using_degree( D, stats ):
         stats['stddev_out_degree'] = stddev_out_degree
         stats['coefficient_variation_out_degree'] = ( stddev_out_degree / ( sum_out_degrees / num_vertices ) ) * 100
 
-        log.debug( 'done standard_deviation' )
+        stats['var_in_degree'] = D.get_in_degrees( D.get_vertices() ).var()
+        stats['var_out_degree'] = D.get_out_degrees( D.get_vertices() ).var()
+
+        log.debug( 'done standard_deviation and variance' )
 
     # feature: h_index_u
     if 'h_index' in args['features']:
