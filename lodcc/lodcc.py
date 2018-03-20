@@ -771,6 +771,16 @@ def load_graph_from_edgelist( dataset, stats ):
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
         return None
     
+    # dump graph after reading if required
+    if D and args['dump_graph']:
+        log.info( 'Dumping graph..' )
+        graph_gt = '/'.join( [os.path.dirname( edgelist ), 'data.graph.gt.gz'] )
+        D.save( graph_gt )
+        stats['path_graph_gt'] = graph_gt
+
+        # thats it here
+        save_stats( dataset, stats )
+
     return D
 
 def graph_analyze( dataset, stats ):
