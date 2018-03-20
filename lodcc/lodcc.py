@@ -509,7 +509,8 @@ def fs_digraph_using_degree( D, stats ):
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
+        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_degree.pdf'] ) )
+        degree_counted = collections.Counter( degree_list )
         log.debug( 'done plotting degree distribution' )
 
         lock.release()
@@ -562,7 +563,7 @@ def fs_digraph_using_indegree( D, stats ):
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
+        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_in-degree.pdf'] ) )
         log.debug( 'done plotting in-degree distribution' )
 
         lock.release()
@@ -610,7 +611,7 @@ def f_eigenvector_centrality( D, stats ):
     ax.set_yscale( 'log' )
 
     plt.tight_layout()
-    plt.savefig( stats['files_path'] +'/'+ 'distribution_eigenvector-centrality.pdf' )
+    plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_eigenvector-centrality.pdf'] ) )
     log.debug( 'done plotting eigenvector_centrality' )
 
     lock.release()
@@ -656,7 +657,7 @@ def f_pagerank( D, stats ):
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
+        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_pagerank.pdf'] ) )
         log.debug( 'done plotting pagerank distribution' )
 
         lock.release()
