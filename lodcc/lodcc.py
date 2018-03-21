@@ -774,7 +774,14 @@ def load_graph_from_edgelist( dataset, stats ):
     # dump graph after reading if required
     if D and args['dump_graph']:
         log.info( 'Dumping graph..' )
-        graph_gt = '/'.join( [os.path.dirname( edgelist ), 'data.graph.gt.gz'] )
+
+        prefix = re.split( '.edgelist.csv', os.path.basename( edgelist ) )
+        if prefix[0] != 'data':
+            prefix = prefix[0]
+        else:
+            prefix = 'data'
+
+        graph_gt = '/'.join( [os.path.dirname( edgelist ), '%s.graph.gt.gz' % prefix] )
         D.save( graph_gt )
         stats['path_graph_gt'] = graph_gt
 
