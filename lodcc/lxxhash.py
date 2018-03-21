@@ -11,7 +11,7 @@ def xxhash_nt( path, log ):
     filename=os.path.basename( path )
 
     # expect file with .nt ending
-    if not re.search( '.nt$', path ):
+    if not re.search( '\.nt$', path ):
         path += '.nt'
 
     # read first line and check the format first

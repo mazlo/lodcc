@@ -82,6 +82,7 @@ do_convert()
 {
     # ignore ntriple INPUT format
     if [[ $FILE_FORMAT == 'ntriples' ]]; then
+        mv $FPATH_STRIPPED "$FPATH_STRIPPED.nt"
         return 0 # return success
     fi
 

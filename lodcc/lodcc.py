@@ -20,6 +20,7 @@ import urlparse
 from constants import *
 try:
     import psycopg2
+    import psycopg2.extras
 except:
     log.warning( 'psycogp2 could not be found' )
 try:
@@ -312,13 +313,12 @@ def build_graph_prepare( dataset, file ):
     rm_original  = 'true' if args['rm_original'] else 'false'
 
     # transform into ntriples if necessary
-    if not format_ == APPLICATION_N_TRIPLES:
-        # TODO do not transform if file has ntriples format
-        # TODO check content of file
-        # TODO check if file ends with .nt
-        log.info( 'Transforming to ntriples..' )
-        log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
-        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
+    # TODO do not transform if file has ntriples format
+    # TODO check content of file
+    # TODO check if file ends with .nt
+    log.info( 'Transforming to ntriples..' )
+    log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
+    os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
 
     # TODO check correct mediatype if not compressed
 
@@ -408,9 +408,9 @@ def fs_digraph_using_degree( D, stats ):
         v_max_in = (0, None)
         v_max_out = (0, None)
 
-        sum_degrees = 0
-        sum_in_degrees = 0
-        sum_out_degrees = 0
+        sum_degrees = 0.0
+        sum_in_degrees = 0.0
+        sum_out_degrees = 0.0
 
         # max_(in|out)degree are computed that way because we want also the node's name
         for v in D.vertices():
@@ -443,11 +443,14 @@ def fs_digraph_using_degree( D, stats ):
         stats['avg_in_degree_centrality']=(sum_in_degrees*s) / num_vertices
         stats['avg_out_degree_centrality']=(sum_out_degrees*s) / num_vertices
 
-        stats['max_degree_centrality']=float( v_max[0]*s )
-        stats['max_in_degree_centrality']=float( v_max_in[0]*s )
-        stats['max_out_degree_centrality']=float( v_max_out[0]*s )
+        stats['max_degree_centrality']=v_max[0]*s
+        stats['max_in_degree_centrality']=v_max_in[0]*s
+        stats['max_out_degree_centrality']=v_max_out[0]*s
 
-        log.debug( 'done degree_centrality' )
+        stats['centralization_in_degree'] = (v_max_in[0]-(D.get_in_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
+        stats['centralization_out_degree'] = (v_max_out[0]-(D.get_out_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
+
+        log.debug( 'done centrality measures' )
 
         # feature: standard deviation
         stddev_in_degree = D.get_in_degrees( D.get_vertices() ).std()
@@ -457,7 +460,10 @@ def fs_digraph_using_degree( D, stats ):
         stats['stddev_out_degree'] = stddev_out_degree
         stats['coefficient_variation_out_degree'] = ( stddev_out_degree / ( sum_out_degrees / num_vertices ) ) * 100
 
-        log.debug( 'done standard_deviation' )
+        stats['var_in_degree'] = D.get_in_degrees( D.get_vertices() ).var()
+        stats['var_out_degree'] = D.get_out_degrees( D.get_vertices() ).var()
+
+        log.debug( 'done standard deviation and variance' )
 
     # feature: h_index_u
     if 'h_index' in args['features']:
@@ -483,7 +489,7 @@ def fs_digraph_using_degree( D, stats ):
 
 
     # plot degree distribution
-    if 'degree' in args['features']:
+    if not 'plots' in args['skip_features'] and 'plots' in args['features']:
         degree_counted = collections.Counter( degree_list )
         degree, counted = zip( *degree_counted.items() )
 
@@ -502,7 +508,8 @@ def fs_digraph_using_degree( D, stats ):
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
+        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_degree.pdf'] ) )
+        degree_counted = collections.Counter( degree_list )
         log.debug( 'done plotting degree distribution' )
 
         lock.release()
@@ -536,7 +543,7 @@ def fs_digraph_using_indegree( D, stats ):
         log.debug( 'done powerlaw_exponent' )
 
     # plot degree distribution
-    if 'degree' in args['features']:
+    if not 'plots' in args['skip_features'] and 'plots' in args['features']:
         degree_counted = collections.Counter( degree_list )
         degree, counted = zip( *degree_counted.items() )
 
@@ -555,7 +562,7 @@ def fs_digraph_using_indegree( D, stats ):
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
+        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_in-degree.pdf'] ) )
         log.debug( 'done plotting in-degree distribution' )
 
         lock.release()
@@ -603,7 +610,7 @@ def f_eigenvector_centrality( D, stats ):
     ax.set_yscale( 'log' )
 
     plt.tight_layout()
-    plt.savefig( stats['files_path'] +'/'+ 'distribution_eigenvector-centrality.pdf' )
+    plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_eigenvector-centrality.pdf'] ) )
     log.debug( 'done plotting eigenvector_centrality' )
 
     lock.release()
@@ -627,31 +634,32 @@ def f_pagerank( D, stats ):
 
     stats['max_pagerank'], stats['max_pagerank_vertex'] = pr_max[0], str( D.vertex_properties['name'][pr_max[1]] )
 
-    pagerank_list[::-1].sort()
+    if not 'plots' in args['skip_features'] and 'plots' in args['features']:
+        pagerank_list[::-1].sort()
 
-    # plot degree distribution
-    values_counted = collections.Counter( pagerank_list )
-    values, counted = zip( *values_counted.items() )
+        # plot degree distribution
+        values_counted = collections.Counter( pagerank_list )
+        values, counted = zip( *values_counted.items() )
     
-    lock.acquire()
+        lock.acquire()
 
-    fig, ax = plt.subplots()
-    plt.plot( values, counted )
+        fig, ax = plt.subplots()
+        plt.plot( values, counted )
 
-    plt.title( 'PageRank Histogram' )
-    plt.ylabel( 'Frequency' )
-    plt.xlabel( 'PageRank Value' )
+        plt.title( 'PageRank Histogram' )
+        plt.ylabel( 'Frequency' )
+        plt.xlabel( 'PageRank Value' )
 
-    ax.set_xticklabels( values )
+        ax.set_xticklabels( values )
 
-    ax.set_xscale( 'log' )
-    ax.set_yscale( 'log' )
+        ax.set_xscale( 'log' )
+        ax.set_yscale( 'log' )
 
-    plt.tight_layout()
-    plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
-    log.debug( 'done plotting pagerank distribution' )
+        plt.tight_layout()
+        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_pagerank.pdf'] ) )
+        log.debug( 'done plotting pagerank distribution' )
 
-    lock.release()
+        lock.release()
 
 def save_stats( dataset, stats ):
     """"""
@@ -739,20 +747,58 @@ def fs_ugraph_start_job( dataset, U, stats ):
         if not args['print_stats']:
             save_stats( dataset, stats )
 
-def graph_analyze( dataset, edgelist, stats ):
+def load_graph_from_edgelist( dataset, stats ):
     """"""
+
+    edgelist, graph_gt = dataset['path_edgelist'], dataset['path_graph_gt']
+
+    D=None
+
+    # prefer graph_gt file
+    if graph_gt and os.path.isfile( graph_gt ):
+        log.info( 'Constructing DiGraph from gt.xz' )
+        D=load_graph( graph_gt )
     
-    if not os.path.isfile( edgelist ):
-        log.error( 'edgelist.csv to read edges from does not exist' )
+    elif edgelist and os.path.isfile( edgelist ):
+        log.info( 'Constructing DiGraph from edgelist' )
+
+        if args['hashed']:
+            D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+        else:
+            D=load_graph_from_csv( edgelist, directed=True, string_vals=False, hashed=False, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+    
+    else:
+        log.error( 'edgelist or graph_gt file to read graph from does not exist' )
+        return None
+    
+    # dump graph after reading if required
+    if D and args['dump_graph']:
+        log.info( 'Dumping graph..' )
+
+        prefix = re.split( '.edgelist.csv', os.path.basename( edgelist ) )
+        if prefix[0] != 'data':
+            prefix = prefix[0]
+        else:
+            prefix = 'data'
+
+        graph_gt = '/'.join( [os.path.dirname( edgelist ), '%s.graph.gt.gz' % prefix] )
+        D.save( graph_gt )
+        stats['path_graph_gt'] = graph_gt
+
+        # thats it here
+        save_stats( dataset, stats )
+
+    return D
+
+def graph_analyze( dataset, stats ):
+    """"""
+   
+    D=load_graph_from_edgelist( dataset, stats )
+
+    if not D:
+        log.error( 'Could not instantiate graph, None' )
         return
 
-    log.info( 'Constructing DiGraph from edgelist' )
-
-    if args['hashed']:
-        D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
-    else:
-        D=load_graph_from_csv( edgelist, directed=True, string_vals=False, hashed=False, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
-    
     log.info( 'Computing feature set DiGraph' )
     fs_digraph_start_job( dataset, D, stats )
     
@@ -763,22 +809,17 @@ def graph_analyze( dataset, edgelist, stats ):
     #stats['k_core(U)']=nx.k_core(U)
     #stats['radius(U)']=nx.radius(U)
     
-    # plot distributions
-
     return stats
 
 def build_graph_analyse( dataset, threads_openmp=7 ):
     """"""
 
-    if not dataset[3]:
-        log.error( 'No filename given for dataset %s', dataset[1] )
-        return 
-
     # before starting off: limit the number of threads a graph_tool job may acquire
     graph_tool.openmp_set_num_threads( threads_openmp )
 
-    stats = { 'files_path': dataset[2] }
-    graph_analyze( dataset, dataset[3], stats )
+    # init stats
+    stats = dict( (attr, dataset[attr]) for attr in ['path_edgelist','path_graph_gt'] )
+    graph_analyze( dataset, stats )
 
     if args['print_stats']:
         print stats
@@ -856,13 +897,12 @@ def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
         return None
 
     sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
-
     threads = []
 
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_build_graph, name = dataset[1], args = ( dataset, sem, threads_openmp ) )
+        t = threading.Thread( target = job_start_build_graph, name = dataset['name'], args = ( dataset, sem, threads_openmp ) )
         t.start()
 
         threads.append( t )
@@ -893,11 +933,13 @@ if __name__ == '__main__':
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
     parser.add_argument( '--processes', '-pt', required = False, type = int, default = 1, help = 'Specify how many processes will be used for downloading and parsing' )
 
-    # RE feature computation
-    parser.add_argument( '--hashed', '-ha', action = "store_true", help = '' )
-    parser.add_argument( '--threads-openmp', '-ot', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
-    parser.add_argument( '--do-heavy-analysis', '-ah', action = "store_true", help = '' )
-    parser.add_argument( '--features', '-fe', nargs='*', required = False, default = list(), help = '' )
+    # RE graph or feature computation
+    parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
+    parser.add_argument( '--hashed', '-gh', action = "store_true", help = '' )
+    parser.add_argument( '--threads-openmp', '-gth', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
+    parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
+    parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
+    parser.add_argument( '--skip-features', '-gsfs', nargs='*', required = False, default = list(), help = '' )
 
     # read all properties in file into args-dict
     if os.path.isfile( 'db.properties' ):
@@ -933,11 +975,11 @@ if __name__ == '__main__':
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
     conn.set_session( autocommit=True )
 
-    cur = conn.cursor()
-
     try:
+        cur = conn.cursor()
         cur.execute( "SELECT 1;" )
         result = cur.fetchall()
+        cur.close()
 
         log.debug( 'Database ready to query execution' )
     except:
@@ -950,6 +992,7 @@ if __name__ == '__main__':
             log.info( 'Running in dry-run mode' )
             log.info( 'Using example dataset "Museums in Italy"' )
     
+            cur = conn.cursor()
             cur.execute( 'SELECT id, url, name FROM stats WHERE url = %s LIMIT 1', ('https://old.datahub.io/dataset/museums-in-italy') )
             
             if cur.rowcount == 0:
@@ -962,7 +1005,9 @@ if __name__ == '__main__':
             parse_datapackages( ds[0], ds[1], ds[2], True )
 
             conn.commit()
+            cur.close()
         else:
+            cur = conn.cursor()
             cur.execute( 'SELECT id, url, name FROM stats' )
             datasets_to_fetch = cur.fetchall()
             
@@ -970,6 +1015,8 @@ if __name__ == '__main__':
                 log.info( 'Preparing %s ', ds[2] )
                 parse_datapackages( ds[0], ds[1], ds[2] )
                 conn.commit()
+
+            cur.close()
 
     # option 2
     if args['parse_resource_urls']:
@@ -996,12 +1043,14 @@ if __name__ == '__main__':
         else:
             sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
 
+        cur = conn.cursor()
         cur.execute( sql, names )
 
         parse_resource_urls( cur, None if 'processes' not in args else args['processes'] )
+        cur.close()
 
     # option 3
-    if args['build_graph']:
+    if args['build_graph'] or args['dump_graph']:
 
         # respect --use-datasets argument
         if args['use_datasets']:
@@ -1021,21 +1070,46 @@ if __name__ == '__main__':
         log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
         if 'names_query' in locals():
-            sql = 'SELECT id,name,files_path,filename FROM stats_graph WHERE '+ names_query +' AND filename IS NOT NULL ORDER BY id'
+            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE '+ names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
         else:
-            sql = 'SELECT id,name,files_path,filename FROM stats_graph WHERE filename IS NOT NULL ORDER BY id'
+            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
         
+        cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
         cur.execute( sql, names )
 
-        # init feature list
-        if len( args['features'] ) == 0:
-            # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
-            args['features'] = ['degree', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
+        if args['build_graph']:
 
-        build_graph( cur, args['processes'], args['threads_openmp'] )
+            # init feature list
+            if len( args['features'] ) == 0:
+                # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
+                args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
+
+            build_graph( cur, args['processes'], args['threads_openmp'] )
+
+        elif args['dump_graph']:
+            
+            datasets = cur.fetchall()
+
+            for ds in datasets:
+                stats = {}
+                g = load_graph_from_edgelist( ds, stats )
+
+                if not g:
+                    log.error( 'Could not instantiate graph for dataset %s', ds['name'] )
+                    continue
+
+                log.info( 'Dumping graph..' )
+                graph_gt = '/'.join( [os.path.dirname( ds['path_edgelist'] ),'data.graph.gt.gz'] )
+                g.save( graph_gt )
+                stats['path_graph_gt'] = graph_gt
+
+                # thats it here
+                save_stats( ds, stats )
+                continue
+
+        cur.close()
 
     # close communication with the database
-    cur.close()
     conn.close()
 
 # -----------------
