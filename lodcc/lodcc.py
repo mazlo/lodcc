@@ -313,13 +313,12 @@ def build_graph_prepare( dataset, file ):
     rm_original  = 'true' if args['rm_original'] else 'false'
 
     # transform into ntriples if necessary
-    if not format_ == APPLICATION_N_TRIPLES:
-        # TODO do not transform if file has ntriples format
-        # TODO check content of file
-        # TODO check if file ends with .nt
-        log.info( 'Transforming to ntriples..' )
-        log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
-        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
+    # TODO do not transform if file has ntriples format
+    # TODO check content of file
+    # TODO check if file ends with .nt
+    log.info( 'Transforming to ntriples..' )
+    log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
+    os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
 
     # TODO check correct mediatype if not compressed
 
