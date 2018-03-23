@@ -14,9 +14,15 @@ def xxhash_nt( path, log ):
     if not re.search( '\.nt$', path ):
         path += '.nt'
 
+    if os.path.getsize( path ) == 0:
+        return
+
     # read first line and check the format first
     with open( path, 'r' ) as file:
         first_line = file.readline()
+
+        while first_line.strip() == '':
+            first_line = file.readline()
 
         spo = re.split( ' ', first_line )
 
@@ -31,8 +37,9 @@ def xxhash_nt( path, log ):
         fh = open( dirname + '/'+ re.sub('.nt$', '', filename) + '.edgelist.csv', 'w' )
 
         for line in file:
-            # ignore comments
-            if re.search( '^# ', line ):
+
+            # ignore empty lines and comments
+            if line.strip() == '' or re.search( '^# ', line ):
                 continue
 
             spo = re.split( ' ', line )
