@@ -70,7 +70,9 @@ do_extract()
         [[ $XMTYPE == 'bz2' ]] || 
         [[ $XMTYPE == 'tar' ]]; then
 
-        #echo "Extracting $FILENAME to $FOLDER_DEST"
+        # ensure to remove existing before
+        rm -rf "$FPATH_STRIPPED" &> /dev/null # file may not exit, so ignore this error
+
         FOLDER_SRC=`pwd`
         cd $FOLDER_DEST
         dtrx --one rename --overwrite $FILENAME
@@ -119,7 +121,11 @@ do_oneliner()
             && mv "$FPATH_STRIPPED.tmp" "$FPATH_OUTPUT"
     fi
 
-    if [[ $RM_ORIGINAL = true ]]; then
+    # if the given format is ntriples and the file DOES end with .nt -> do nothing
+    if [[ $FILE_FORMAT == 'ntriples' && "${FPATH_STRIPPED%*.nt}" != "$FPATH_STRIPPED" ]]; then
+        return 0 # exit success
+    # otherwise respect RM_ORIGINAL paramter
+    elif [[ $RM_ORIGINAL = true ]]; then
         rm -rf "$FPATH_STRIPPED"
     fi
 }
