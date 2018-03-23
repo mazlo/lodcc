@@ -234,7 +234,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = dataset[1] + MEDIATYPES[format_]['extension']
+        filename = '%s_%s%s' % (dataset[1], dataset[0], MEDIATYPES[format_]['extension'])
         log.debug( 'Cannot determine filename from remaining url path: %s', url.path )
         log.debug( 'Using composed valid filename %s', filename )
         
