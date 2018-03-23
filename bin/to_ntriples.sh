@@ -80,24 +80,32 @@ do_extract()
 
 do_convert()
 {
-    # ignore ntriple INPUT format
-    if [[ $FILE_FORMAT == 'ntriples' ]]; then
-        mv $FPATH_STRIPPED "$FPATH_STRIPPED.nt"
-        return 0 # return success
-    fi
-
     # convert all files in directory
     if [[ -d "$FPATH_STRIPPED" ]]; then
         #echo "Converting all files in folder $FPATH_STRIPPED"
-        for f in `find "$FPATH_STRIPPED" -type f`; do
-            rapper --ignore-errors --input $FILE_FORMAT --output "ntriples" "$f" > "$f.nt"
+        for f in `find "$FPATH_STRIPPED" -type f \( ! -name "*.bib" ! -name ".csv" ! -name "*.log" ! -name "*.py" ! -name "*.pl" ! -name "*.sh" ! -name "*.tsv" ! -name "*.txt" ! -name "*.md" ! -name "*.tab" ! -name "LICENSE" ! -name "log" ! -name "README" ! -name "Readme" ! -name "readme" \) `; do
+            # if the given format is ntriples and the file DOES NOT end with .nt
+            if [[ $FILE_FORMAT == 'ntriples' && "${FPATH_STRIPPED%*.nt}" == "$FPATH_STRIPPED" ]]; then
+                mv "$f" "$f.nt"
+            # if the given format is ntriples and the file DOES end with .nt -> do nothing
+            elif [[ $FILE_FORMAT == 'ntriples' && "${FPATH_STRIPPED%*.nt}" != "$FPATH_STRIPPED" ]]; then
+                continue
+            # else convert the file and leave with .nt ending
+            else
+                rapper --ignore-errors --input $FILE_FORMAT --output "ntriples" "$f" > "$f.nt"
+            fi
         done
     fi
 
     # convert file
     if [[ -f "$FPATH_STRIPPED" ]]; then
-        #echo "Converting $FPATH_STRIPPED"
-        rapper --ignore-errors --input $FILE_FORMAT --output "ntriples" "$FPATH_STRIPPED" > "$FPATH_OUTPUT"
+        # if the given format is ntriples and the file DOES end with .nt -> do nothing
+        if [[ $FILE_FORMAT == 'ntriples' && "${FPATH_STRIPPED%*.nt}" != "$FPATH_STRIPPED" ]]; then
+            return 0 # return success
+        else
+            #echo "Converting $FPATH_STRIPPED"
+            rapper --ignore-errors --input $FILE_FORMAT --output "ntriples" "$FPATH_STRIPPED" > "$FPATH_OUTPUT"
+        fi
     fi
 }
 
@@ -106,7 +114,6 @@ do_oneliner()
     # check if extracted file is directory
     # if so, create one file from all the files there
     if [ -d "$FPATH_STRIPPED" ]; then
-        #echo "Make oneliner"
         find "$FPATH_STRIPPED" -name "*.nt" -type f -exec cat {} >> "$FPATH_STRIPPED.tmp"  \; \
             && rm -rf "$FPATH_STRIPPED" \
             && mv "$FPATH_STRIPPED.tmp" "$FPATH_OUTPUT"
