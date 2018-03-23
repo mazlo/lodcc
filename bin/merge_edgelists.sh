@@ -1,7 +1,7 @@
 #!/bin/bash
 
 FOLDER_ROOT=${1:-"dumps/"}
-RM_EDGELISTS=${2:-false}
+RM_EDGELISTS=${2:-true}
 
 # remove backslash from FOLDER if present
 if [[ "${FOLDER_ROOT%/}" != "$FOLDER_ROOT" ]]; then
