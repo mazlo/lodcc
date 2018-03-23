@@ -25,8 +25,9 @@ except:
     log.warning( 'psycogp2 could not be found' )
 try:
     from lxxhash import xxhash_nt
+    from merge_edgelists import merge_edgelists
 except:
-    log.warning( 'xxhash module could not be found' )
+    log.warning( 'one of other lodcc modules could not be found' )
 
 mediatype_mappings = {}
 
@@ -233,7 +234,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = dataset[1] + MEDIATYPES[format_]['extension']
+        filename = '%s_%s%s' % (dataset[1], dataset[0], MEDIATYPES[format_]['extension'])
         log.debug( 'Cannot determine filename from remaining url path: %s', url.path )
         log.debug( 'Using composed valid filename %s', filename )
         
@@ -334,11 +335,13 @@ def build_graph_prepare( dataset, file ):
         # file is compressed, strip the type
         xxhash_nt( re.sub( '.%s' % types[0], '', path ), log )
 
-def job_cleanup_intermediate( dataset, file ):
+def job_cleanup_intermediate( dataset, rm_edgelists, sem ):
     """"""
 
-    # TODO remove 1. decompressed and transformed 2. .nt file
-
+    # can I?
+    with sem:
+        merge_edgelists( dataset, rm_edgelists, log )
+    
 try:
     from graph_tool.all import *
 except:
@@ -857,9 +860,6 @@ def job_start_download_and_prepare( dataset, sem ):
         # - build_graph_prepare
         build_graph_prepare( dataset, file )
 
-        # - job_cleanup_intermediate
-        job_cleanup_intermediate( dataset, file )
-
         log.info( 'Done' ) 
 
 def parse_resource_urls( cur, no_of_threads=1 ):
@@ -872,7 +872,6 @@ def parse_resource_urls( cur, no_of_threads=1 ):
         return None
 
     sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
-
     threads = []
 
     for dataset in datasets:
@@ -883,6 +882,22 @@ def parse_resource_urls( cur, no_of_threads=1 ):
 
         threads.append( t )
 
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
+
+    # after all processing, merge edgelists
+    datasets = set( [ ds[1] for ds in datasets] )
+    rm_edgelists = 'false' if args['keep_edgelists'] else 'true'
+    threads = []
+
+    for dataset in datasets:
+        
+        t = threading.Thread( target = job_cleanup_intermediate, name = '%s' % dataset, args = ( dataset, rm_edgelists, sem ) )
+        t.start()
+
+        threads.append(t)
+    
     # wait for all threads to finish
     for t in threads:
         t.join()
