@@ -85,7 +85,7 @@ do_convert()
     # convert all files in directory
     if [[ -d "$FPATH_STRIPPED" ]]; then
         #echo "Converting all files in folder $FPATH_STRIPPED"
-        for f in `find "$FPATH_STRIPPED" -type f \( ! -name "*.bib" ! -name ".csv" ! -name "*.log" ! -name "*.py" ! -name "*.pl" ! -name "*.sh" ! -name "*.tsv" ! -name "*.txt" ! -name "*.md" ! -name "*.tab" ! -name "LICENSE" ! -name "log" ! -name "README" ! -name "Readme" ! -name "readme" \) `; do
+        for f in `find "$FPATH_STRIPPED" -type f \( ! -name "*.bib" ! -name "*.csv" ! -name "*.log" ! -name "*.py" ! -name "*.pl" ! -name "*.sh" ! -name "*.tsv" ! -name "*.txt" ! -name "*.md" ! -name "*.tab" ! -name "LICENSE" ! -name "log" ! -name "README" ! -name "Readme" ! -name "readme" \) `; do
             # if the given format is ntriples and the file DOES NOT end with .nt
             if [[ $FILE_FORMAT == 'ntriples' && "${FPATH_STRIPPED%*.nt}" == "$FPATH_STRIPPED" ]]; then
                 mv "$f" "$f.nt"
