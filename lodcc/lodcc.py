@@ -758,7 +758,7 @@ def load_graph_from_edgelist( dataset, stats ):
     D=None
 
     # prefer graph_gt file
-    if graph_gt and os.path.isfile( graph_gt ):
+    if not args['reconstruct_graph'] and graph_gt and os.path.isfile( graph_gt ):
         log.info( 'Constructing DiGraph from gt.xz' )
         D=load_graph( graph_gt )
     
@@ -950,6 +950,7 @@ if __name__ == '__main__':
 
     # RE graph or feature computation
     parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
+    parser.add_argument( '--reconstruct-graph', '-gr', action = "store_true", help = '' )
     parser.add_argument( '--hashed', '-gh', action = "store_true", help = '' )
     parser.add_argument( '--threads-openmp', '-gth', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
