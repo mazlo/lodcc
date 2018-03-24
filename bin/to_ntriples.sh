@@ -11,7 +11,7 @@
 
 FILE_FORMAT="${1:-rdfxml}"
 FPATH="$2" # e.g. dumps/foo/bar.gz
-NO_CACHE=${3:-false}
+USE_CACHE=${3:-true}
 RM_ORIGINAL=${4:-false}
 
 # from PATH
@@ -32,7 +32,7 @@ do_respect_existing_file()
 {
     # returns false, 
     #   if FPATH_OUTPUT does not exist or
-    #   if NO_CACHE is true
+    #   if USE_CACHE is true
     # returns false otherwise
     
     if [ ! -f "$FPATH_OUTPUT" ]; then
@@ -40,7 +40,7 @@ do_respect_existing_file()
     fi
 
     SIZE=`ls -s "$FPATH_OUTPUT" | cut -d ' ' -f1`
-    if [[ $NO_CACHE = false && $SIZE > 1000 ]]; then
+    if [[ $USE_CACHE = true && $SIZE > 1000 ]]; then
         return 0 # exit success
     fi
     

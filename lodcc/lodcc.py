@@ -310,7 +310,7 @@ def build_graph_prepare( dataset, file ):
     format_ = file['format']
     path = file['path']
 
-    overwrite = 'true' if args['overwrite_nt'] else 'false'
+    overwrite_nt = 'false' if args['overwrite_nt'] else 'true'
     rm_original  = 'true' if args['rm_original'] else 'false'
 
     # transform into ntriples if necessary
@@ -318,8 +318,8 @@ def build_graph_prepare( dataset, file ):
     # TODO check content of file
     # TODO check if file ends with .nt
     log.info( 'Transforming to ntriples..' )
-    log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
-    os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
+    log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
+    os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
 
     # TODO check correct mediatype if not compressed
 
