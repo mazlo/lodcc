@@ -1,3 +1,11 @@
+#!/bin/bash
+#
+# this script finds a matching uri to a given hashed vertice value
+#
+# ATTENTION
+# Be sure that your files have the exact same number of lines 
+# with the exact same ordering and corresponding values.
+# 
 
 VERTICE=$1
 EDGELIST=$2
