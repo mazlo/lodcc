@@ -17,7 +17,7 @@ MEDIATYPES = {
         'extension': '.nq'
     },
     APPLICATION_N_TRIPLES: {
-        'cmd_to_ntriples': None,    # does not need to be transformed 
+        'cmd_to_ntriples': './bin/to_ntriples.sh ntriples %s %s %s',
         'cmd_merge_edgelists': './bin/merge_edgelists.sh %s %s',
         'extension': '.nt'
     },

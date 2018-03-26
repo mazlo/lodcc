@@ -25,8 +25,9 @@ except:
     log.warning( 'psycogp2 could not be found' )
 try:
     from lxxhash import xxhash_nt
+    from merge_edgelists import merge_edgelists
 except:
-    log.warning( 'xxhash module could not be found' )
+    log.warning( 'one of other lodcc modules could not be found' )
 
 mediatype_mappings = {}
 
@@ -233,7 +234,7 @@ def ensure_valid_filename_from_url( dataset, url, format_ ):
     basename = os.path.basename( url.path )
 
     if not '.' in basename:
-        filename = dataset[1] + MEDIATYPES[format_]['extension']
+        filename = '%s_%s%s' % (dataset[1], dataset[0], MEDIATYPES[format_]['extension'])
         log.debug( 'Cannot determine filename from remaining url path: %s', url.path )
         log.debug( 'Using composed valid filename %s', filename )
         
@@ -309,17 +310,16 @@ def build_graph_prepare( dataset, file ):
     format_ = file['format']
     path = file['path']
 
-    overwrite = 'true' if args['overwrite_nt'] else 'false'
+    overwrite_nt = 'false' if args['overwrite_nt'] else 'true'
     rm_original  = 'true' if args['rm_original'] else 'false'
 
     # transform into ntriples if necessary
-    if not format_ == APPLICATION_N_TRIPLES:
-        # TODO do not transform if file has ntriples format
-        # TODO check content of file
-        # TODO check if file ends with .nt
-        log.info( 'Transforming to ntriples..' )
-        log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
-        os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite,rm_original) )
+    # TODO do not transform if file has ntriples format
+    # TODO check content of file
+    # TODO check if file ends with .nt
+    log.info( 'Transforming to ntriples..' )
+    log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
+    os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
 
     # TODO check correct mediatype if not compressed
 
@@ -335,11 +335,13 @@ def build_graph_prepare( dataset, file ):
         # file is compressed, strip the type
         xxhash_nt( re.sub( '.%s' % types[0], '', path ), log )
 
-def job_cleanup_intermediate( dataset, file ):
+def job_cleanup_intermediate( dataset, rm_edgelists, sem ):
     """"""
 
-    # TODO remove 1. decompressed and transformed 2. .nt file
-
+    # can I?
+    with sem:
+        merge_edgelists( dataset, rm_edgelists, log )
+    
 try:
     from graph_tool.all import *
 except:
@@ -509,7 +511,8 @@ def fs_digraph_using_degree( D, stats ):
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_degree.pdf' )
+        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_degree.pdf'] ) )
+        degree_counted = collections.Counter( degree_list )
         log.debug( 'done plotting degree distribution' )
 
         lock.release()
@@ -562,7 +565,7 @@ def fs_digraph_using_indegree( D, stats ):
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_in-degree.pdf' )
+        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_in-degree.pdf'] ) )
         log.debug( 'done plotting in-degree distribution' )
 
         lock.release()
@@ -610,7 +613,7 @@ def f_eigenvector_centrality( D, stats ):
     ax.set_yscale( 'log' )
 
     plt.tight_layout()
-    plt.savefig( stats['files_path'] +'/'+ 'distribution_eigenvector-centrality.pdf' )
+    plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_eigenvector-centrality.pdf'] ) )
     log.debug( 'done plotting eigenvector_centrality' )
 
     lock.release()
@@ -656,7 +659,7 @@ def f_pagerank( D, stats ):
         ax.set_yscale( 'log' )
 
         plt.tight_layout()
-        plt.savefig( stats['files_path'] +'/'+ 'distribution_pagerank.pdf' )
+        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_pagerank.pdf'] ) )
         log.debug( 'done plotting pagerank distribution' )
 
         lock.release()
@@ -755,7 +758,7 @@ def load_graph_from_edgelist( dataset, stats ):
     D=None
 
     # prefer graph_gt file
-    if graph_gt and os.path.isfile( graph_gt ):
+    if not args['reconstruct_graph'] and graph_gt and os.path.isfile( graph_gt ):
         log.info( 'Constructing DiGraph from gt.xz' )
         D=load_graph( graph_gt )
     
@@ -771,6 +774,23 @@ def load_graph_from_edgelist( dataset, stats ):
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
         return None
     
+    # dump graph after reading if required
+    if D and args['dump_graph']:
+        log.info( 'Dumping graph..' )
+
+        prefix = re.split( '.edgelist.csv', os.path.basename( edgelist ) )
+        if prefix[0] != 'data':
+            prefix = prefix[0]
+        else:
+            prefix = 'data'
+
+        graph_gt = '/'.join( [os.path.dirname( edgelist ), '%s.graph.gt.gz' % prefix] )
+        D.save( graph_gt )
+        stats['path_graph_gt'] = graph_gt
+
+        # thats it here
+        save_stats( dataset, stats )
+
     return D
 
 def graph_analyze( dataset, stats ):
@@ -840,9 +860,6 @@ def job_start_download_and_prepare( dataset, sem ):
         # - build_graph_prepare
         build_graph_prepare( dataset, file )
 
-        # - job_cleanup_intermediate
-        job_cleanup_intermediate( dataset, file )
-
         log.info( 'Done' ) 
 
 def parse_resource_urls( cur, no_of_threads=1 ):
@@ -855,7 +872,6 @@ def parse_resource_urls( cur, no_of_threads=1 ):
         return None
 
     sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
-
     threads = []
 
     for dataset in datasets:
@@ -866,6 +882,22 @@ def parse_resource_urls( cur, no_of_threads=1 ):
 
         threads.append( t )
 
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
+
+    # after all processing, merge edgelists
+    datasets = set( [ ds[1] for ds in datasets] )
+    rm_edgelists = 'false' if args['keep_edgelists'] else 'true'
+    threads = []
+
+    for dataset in datasets:
+        
+        t = threading.Thread( target = job_cleanup_intermediate, name = '%s' % dataset, args = ( dataset, rm_edgelists, sem ) )
+        t.start()
+
+        threads.append(t)
+    
     # wait for all threads to finish
     for t in threads:
         t.join()
@@ -918,6 +950,7 @@ if __name__ == '__main__':
 
     # RE graph or feature computation
     parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
+    parser.add_argument( '--reconstruct-graph', '-gr', action = "store_true", help = '' )
     parser.add_argument( '--hashed', '-gh', action = "store_true", help = '' )
     parser.add_argument( '--threads-openmp', '-gth', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
