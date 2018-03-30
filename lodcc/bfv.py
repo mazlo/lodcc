@@ -23,7 +23,7 @@ def find_path( dataset ):
 def find_nt_files( path ):
     """"""
 
-    return [ nt for nt in listdir( path ) if re.search( '\.nt$', nt ) ]
+    return [ nt for nt in os.listdir( path ) if re.search( '\.nt$', nt ) ]
 
 def save_hash( dataset, column, uri ):
     """"""
@@ -37,7 +37,7 @@ def save_hash( dataset, column, uri ):
     log.debug( sql % val_dict )
     cur.close()
 
-def find_vertices( in_file, dataset, global_dict, sem=threading.Semaphore(1) ):
+def find_vertices( in_file, dataset, sem=threading.Semaphore(1) ):
     """"""
 
     # can I?
@@ -48,37 +48,28 @@ def find_vertices( in_file, dataset, global_dict, sem=threading.Semaphore(1) ):
 
         col_names = ['max_degree_vertex', 'max_pagerank_vertex']
         hashes_to_find = [ dataset[i] for i in col_names ]
-        hashes_to_save = {}
-
-        # check if already found
-        for idx,h in enumerate(hashes_to_find):
-            if h and h in global_dict:
-                # e.g. save_hash( 'max_degree_vertex', 'http://mydomain.com/class#' )
-                save_hash( dataset, col_names[idx], global_dict[h] )
-                hashes_to_find.remove( h )
-
-        if len( hashes_to_find ) == 0:
-            return  # done
 
         with open( in_file, 'r' ) as openedfile:
+            
+            found_hashes=[] 
             for line in openedfile:
 
-                s,p,o = parse_spo( line, '.nt$' )
+                s,o = parse_spo( line, '.nt$' )
 
                 uris = [s,o]
                 sh = xh.xxh64( s ).hexdigest()
                 oh = xh.xxh64( o ).hexdigest()
                 
-                for current_hash in hashes_to_find:
-                    for idx,e in enumerate( [sh,oh] ):
+                for idx,current_hash in enumerate(hashes_to_find):
+                    for idx_uri,e in enumerate([sh,oh]):
                         if e == current_hash:
                             # found one, save it
-                            save_hash( dataset, col_names[idx], uris[idx] )
-                            hashes_to_find.remove( current_hash )
+                            found_hashes.append(current_hash)
+                            save_hash( dataset, col_names[idx], uris[idx_uri] )
                             break
 
                 # checked once, over?
-                if len( hashes_to_find ) == 0:
+                if len( found_hashes ) == len( col_names ):
                     break   # done
 
 if __name__ == '__main__':
@@ -152,9 +143,9 @@ if __name__ == '__main__':
     if os.path.isfile( 'found_hashes.pkl' ):
         # load already found hashes
         pkl_file = open( 'found_hashes.pkl', 'rb')
-        found_hashes = pickle.load( pkl_file )
+        global_hashes = pickle.load( pkl_file )
     else:
-        found_hashes = {}
+        global_hashes = {}
 
     # setup threading
     sem = threading.Semaphore( args['processes'] )
@@ -166,8 +157,12 @@ if __name__ == '__main__':
         files = find_nt_files( path )
 
         for file in files:
-            t = threading.Thread( target = find_vertices, name = dataset['name'], args = ( file, dataset, found_hashes, sem ) )
+            t = threading.Thread( target = find_vertices, name = dataset['name'], args = ( '/'.join( [path,file] ), dataset, sem ) )
             t.start()
-            t.join()
+            threads.append(t)
 
-            threads.append( t )
+    for t in threads:
+        t.join()
+    
+    pkl_file = open( 'found_hashes.pkl', 'wb')
+    pickle.dump( global_hashes, pkl_file )
