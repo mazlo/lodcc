@@ -2,6 +2,8 @@ import argparse
 import logging as log
 import os
 import pickle
+import psycopg2
+import psycopg2.extras
 import re
 import threading
 import xxhash as xh
