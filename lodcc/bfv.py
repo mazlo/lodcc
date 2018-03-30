@@ -43,9 +43,12 @@ def get_hashes_to_find( col_names, dataset ):
     hashes_to_find = {} 
     for name in col_names:
         hashv = dataset[name]
+        if not hashv:
+            continue
+
         if hashv in hashes_to_find:
             hashes_to_find[hashv].append( name )
-        else
+        else:
             hashes_to_find[hashv] = [name]
 
     return hashes_to_find
@@ -59,7 +62,7 @@ def find_vertices( in_file, dataset, sem=threading.Semaphore(1) ):
             log.error( 'Exiting because of previrous errors' )
             return
 
-        col_names = ['max_degree_vertex', 'max_pagerank_vertex']
+        col_names = ['max_degree_vertex', 'max_pagerank_vertex', 'max_in_degree_vertex', 'max_out_degree_vertex', 'pseudo_diameter_src_vertex', 'pseudo_diameter_trg_vertex']
         hashes_to_find = get_hashes_to_find( col_names, dataset )
 
         with open( in_file, 'r' ) as openedfile:
@@ -73,16 +76,16 @@ def find_vertices( in_file, dataset, sem=threading.Semaphore(1) ):
                 if sh in hashes_to_find:
                     cols = hashes_to_find[sh]
                     for col in cols:
-                        save_hash( dataset, col, sh )
+                        save_hash( dataset, col, s )
                     
-                    hashes_to_find.remove( sh )
+                    del hashes_to_find[sh]
 
                 if oh in hashes_to_find:
                     cols = hashes_to_find[oh]
                     for col in cols:
-                        save_hash( dataset, col, oh )
+                        save_hash( dataset, col, o )
                     
-                    hashes_to_find.remove( oh )
+                    del hashes_to_find[oh]
 
                 # checked, over?
                 if len( hashes_to_find ) == 0:
@@ -144,7 +147,7 @@ if __name__ == '__main__':
     names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
     names = tuple( args['use_datasets'] )
 
-    sql = 'SELECT id,name,max_degree_vertex,max_pagerank_vertex,path_edgelist,path_graph_gt FROM stats_graph WHERE '+ names_query +' AND (max_degree_vertex IS NOT NULL OR max_pagerank_vertex IS NOT NULL) ORDER BY id'
+    sql = 'SELECT id,name,max_degree_vertex,max_pagerank_vertex,max_in_degree_vertex,max_out_degree_vertex,pseudo_diameter_src_vertex,pseudo_diameter_trg_vertex,path_edgelist,path_graph_gt FROM stats_graph WHERE '+ names_query +' AND (max_degree_vertex IS NOT NULL OR max_pagerank_vertex IS NOT NULL) ORDER BY id'
 
     # get datasets from database
     cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
