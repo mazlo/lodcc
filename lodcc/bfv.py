@@ -51,7 +51,8 @@ def find_vertices( in_file, dataset, sem=threading.Semaphore(1) ):
 
         with open( in_file, 'r' ) as openedfile:
             
-            found_hashes=[] 
+            found_hashes={}
+            break_loop=0 
             for line in openedfile:
 
                 s,o = parse_spo( line, '.nt$' )
@@ -61,15 +62,21 @@ def find_vertices( in_file, dataset, sem=threading.Semaphore(1) ):
                 oh = xh.xxh64( o ).hexdigest()
                 
                 for idx,current_hash in enumerate(hashes_to_find):
+                    if current_hash in found_hashes:
+                        save_hash( dataset, col_names[idx], found_hashes[current_hash] )
+                        break_loop += 1
+                        continue
+
                     for idx_uri,e in enumerate([sh,oh]):
                         if e == current_hash:
                             # found one, save it
-                            found_hashes.append(current_hash)
+                            found_hashes[current_hash] = uris[idx_uri]
                             save_hash( dataset, col_names[idx], uris[idx_uri] )
+                            break_loop += 1
                             break
 
                 # checked once, over?
-                if len( found_hashes ) == len( col_names ):
+                if len( col_names ) == break_loop:
                     break   # done
 
 if __name__ == '__main__':
