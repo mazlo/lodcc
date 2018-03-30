@@ -8,23 +8,20 @@ import xxhash as xh
 
 from ldicthash import parse_spo
 
-def find_file( dataset ):
+def find_path( dataset ):
     """"""
 
-    path = None
-
     if dataset['path_edgelist']:
-        path = os.path.dirname( dataset['path_edgelist'] )
+        return os.path.dirname( dataset['path_edgelist'] )
     elif dataset['path_graph_gt']:
-        path = os.path.dirname( dataset['path_graph_gt'] )
+        return os.path.dirname( dataset['path_graph_gt'] )
 
-    filename = '/'.join( [ path, dataset['name'] + '.nt' ] )
-
-    if os.path.isfile( filename ):
-        return filename
-
-    log.error( 'Could not find nt-file in path %s', filename )
     return None
+
+def find_nt_files( path ):
+    """"""
+
+    return [ nt for nt in listdir( path ) if re.search( '\.nt$', nt ) ]
 
 def save_hash( dataset, column, uri ):
     """"""
@@ -38,15 +35,12 @@ def save_hash( dataset, column, uri ):
     log.debug( sql % val_dict )
     cur.close()
 
-def find_vertices( dataset, global_dict, sem=threading.Semaphore(1) ):
+def find_vertices( in_file, dataset, global_dict, sem=threading.Semaphore(1) ):
     """"""
 
     # can I?
     with sem:
-        
-        file = find_file( dataset )
-
-        if not file:
+        if not in_file:
             log.error( 'Exiting because of previrous errors' )
             return
 
@@ -64,7 +58,7 @@ def find_vertices( dataset, global_dict, sem=threading.Semaphore(1) ):
         if len( hashes_to_find ) == 0:
             return  # done
 
-        with open( file, 'r' ) as openedfile:
+        with open( in_file, 'r' ) as openedfile:
             for line in openedfile:
 
                 s,p,o = parse_spo( line, '.nt$' )
@@ -144,10 +138,12 @@ if __name__ == '__main__':
 
     for dataset in datasets:
 
-        t = threading.Thread( target = find_vertices, name = dataset['name'], args = ( dataset, found_hashes, sem ) )
-        t.start()
+        path = find_path( dataset )
+        files = find_nt_files( path )
 
-        threads.append( t )
+        for file in files:
+            t = threading.Thread( target = find_vertices, name = dataset['name'], args = ( file, dataset, found_hashes, sem ) )
+            t.start()
+            t.join()
 
-    for t in threads:
-        t.join()
+            threads.append( t )
