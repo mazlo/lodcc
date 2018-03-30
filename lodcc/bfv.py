@@ -2,6 +2,8 @@ import argparse
 import logging as log
 import os
 import pickle
+import psycopg2
+import psycopg2.extras
 import re
 import threading
 import xxhash as xh
@@ -85,12 +87,31 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description = 'lodcc - find xxhash from original data' )
     parser.add_argument( '--use-datasets', '-du', nargs='*', required=True, help = '' )
     parser.add_argument( '--processes', '-dp', type=int, required=False, default=1, help = '' )
-    parser.add_argument( '--vertices', '-n', nargs='*', required = True, help = '' )
+    parser.add_argument( '--vertices', '-n', nargs='*', required=False, help = '' )
+
+    parser.add_argument( '--log-debug', action='store_true', help = '' )
 
     args = vars( parser.parse_args() )
 
+    if args['log_debug']:
+        level = log.DEBUG
+    else:
+        level = log.INFO
+
     # configure log
     log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+
+    # read all properties in file into args-dict
+    if os.path.isfile( 'db.properties' ):
+        with open( 'db.properties', 'rt' ) as f:
+            args = dict( ( key.replace( '.', '-' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) )
+    else:
+        log.error( 'Please verify your settings in db.properties (file exists?)' )
+        sys.exit()
+
+    z = vars( parser.parse_args() ).copy()
+    z.update( args )
+    args = z
 
     # connect to an existing database
     conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
@@ -128,9 +149,12 @@ if __name__ == '__main__':
 
     datasets = cur.fetchall()
 
-    # load already found hashes
-    pkl_file = open( 'found_hashes.pkl', 'rb')
-    found_hashes = pickle.load( pkl_file )
+    if os.path.isfile( 'found_hashes.pkl' ):
+        # load already found hashes
+        pkl_file = open( 'found_hashes.pkl', 'rb')
+        found_hashes = pickle.load( pkl_file )
+    else:
+        found_hashes = {}
 
     # setup threading
     sem = threading.Semaphore( args['processes'] )
