@@ -11,7 +11,7 @@
 
 FILE_FORMAT="${1:-rdfxml}"
 FPATH="$2" # e.g. dumps/foo/bar.gz
-NO_CACHE=${3:-false}
+USE_CACHE=${3:-true}
 RM_ORIGINAL=${4:-false}
 
 # from PATH
@@ -32,7 +32,7 @@ do_respect_existing_file()
 {
     # returns false, 
     #   if FPATH_OUTPUT does not exist or
-    #   if NO_CACHE is true
+    #   if USE_CACHE is true
     # returns false otherwise
     
     if [ ! -f "$FPATH_OUTPUT" ]; then
@@ -40,7 +40,7 @@ do_respect_existing_file()
     fi
 
     SIZE=`ls -s "$FPATH_OUTPUT" | cut -d ' ' -f1`
-    if [[ $NO_CACHE = false && $SIZE > 1000 ]]; then
+    if [[ $USE_CACHE = true && $SIZE > 1000 ]]; then
         return 0 # exit success
     fi
     
@@ -70,7 +70,9 @@ do_extract()
         [[ $XMTYPE == 'bz2' ]] || 
         [[ $XMTYPE == 'tar' ]]; then
 
-        #echo "Extracting $FILENAME to $FOLDER_DEST"
+        # ensure to remove existing before
+        rm -rf "$FPATH_STRIPPED" &> /dev/null # file may not exit, so ignore this error
+
         FOLDER_SRC=`pwd`
         cd $FOLDER_DEST
         dtrx --one rename --overwrite $FILENAME
@@ -83,7 +85,7 @@ do_convert()
     # convert all files in directory
     if [[ -d "$FPATH_STRIPPED" ]]; then
         #echo "Converting all files in folder $FPATH_STRIPPED"
-        for f in `find "$FPATH_STRIPPED" -type f \( ! -name "*.bib" ! -name ".csv" ! -name "*.log" ! -name "*.py" ! -name "*.pl" ! -name "*.sh" ! -name "*.tsv" ! -name "*.txt" ! -name "*.md" ! -name "*.tab" ! -name "LICENSE" ! -name "log" ! -name "README" ! -name "Readme" ! -name "readme" \) `; do
+        for f in `find "$FPATH_STRIPPED" -type f \( ! -name "*.bib" ! -name "*.csv" ! -name "*.log" ! -name "*.py" ! -name "*.pl" ! -name "*.sh" ! -name "*.tsv" ! -name "*.txt" ! -name "*.md" ! -name "*.sparql" ! -name "*.tab" ! -name "*.xls" ! -name "*.xlsx" ! -name "*.xsl" ! -name "LICENSE" ! -name "log" ! -name "README" ! -name "Readme" ! -name "readme" \) `; do
             # if the given format is ntriples and the file DOES NOT end with .nt
             if [[ $FILE_FORMAT == 'ntriples' && "${FPATH_STRIPPED%*.nt}" == "$FPATH_STRIPPED" ]]; then
                 mv "$f" "$f.nt"
@@ -119,7 +121,11 @@ do_oneliner()
             && mv "$FPATH_STRIPPED.tmp" "$FPATH_OUTPUT"
     fi
 
-    if [[ $RM_ORIGINAL = true ]]; then
+    # if the given format is ntriples and the file DOES end with .nt -> do nothing
+    if [[ $FILE_FORMAT == 'ntriples' && "${FPATH_STRIPPED%*.nt}" != "$FPATH_STRIPPED" ]]; then
+        return 0 # exit success
+    # otherwise respect RM_ORIGINAL paramter
+    elif [[ $RM_ORIGINAL = true ]]; then
         rm -rf "$FPATH_STRIPPED"
     fi
 }

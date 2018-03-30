@@ -4,7 +4,7 @@ import os
 import re
 import threading
 
-def xxhash_nt( path, log ):
+def xxhash_nt( path, log=None ):
     """"""
 
     dirname=os.path.dirname( path )
@@ -27,7 +27,11 @@ def xxhash_nt( path, log ):
         spo = re.split( ' ', first_line )
 
         if not len(spo) >= 4:
-            log.error( 'File has wrong format, no n-triples found in \'%s\'. Could not transform into xxhash-ed triples', path )
+            if log:
+                log.error( 'File has wrong format, no n-triples found in \'%s\'. Could not transform into xxhash-ed triples', path )
+            else:
+                print 'File has wrong format, no n-triples found in \'%s\'. Could not transform into xxhash-ed triples' % path
+
             return
 
     # now open and transform all lines
@@ -90,12 +94,18 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc xxhash' )
     parser.add_argument( '--path', '-p', nargs='*', required = True, help = '' )
+    parser.add_argument( '--format', '-f', required=False, type=str, default='nt', help='' )
 
     args = vars( parser.parse_args() )
     paths = args['path']
     sem = threading.Semaphore( 8 )
     threads = []
 
+    if args['format'] == 'nt':
+        method = xxhash_nt
+    else:
+        method = xxhash_csv
+    
     for path in paths:
 
         if os.path.isdir( path ):
@@ -103,12 +113,13 @@ if __name__ == '__main__':
                 path = path+'/'
 
             for filename in os.listdir( path ):
-                if not re.search( '.csv$', filename ):
-                    continue
-                if 'edgelist' in filename:
-                    continue
+                if args['format'] == 'csv':
+                    if not re.search( '.csv$', filename ):
+                        continue
+                    if 'edgelist' in filename:
+                        continue
 
-                t = threading.Thread( target = xxhash_csv, name = filename, args = ( path + filename, sem ) )
+                t = threading.Thread( target = method, name = filename, args = ( path + filename, sem ) )
                 t.start()
 
                 threads.append( t )
@@ -116,4 +127,4 @@ if __name__ == '__main__':
             for t in threads:
                 t.join()
         else:
-            xxhash_csv( path )
+            method( path )
