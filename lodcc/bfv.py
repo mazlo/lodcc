@@ -37,6 +37,19 @@ def save_hash( dataset, column, uri ):
     log.debug( sql % val_dict )
     cur.close()
 
+def get_hashes_to_find( col_names, dataset ):
+    """"""
+
+    hashes_to_find = {} 
+    for name in col_names:
+        hashv = dataset[name]
+        if hashv in hashes_to_find:
+            hashes_to_find[hashv].append( name )
+        else
+            hashes_to_find[hashv] = [name]
+
+    return hashes_to_find
+
 def find_vertices( in_file, dataset, sem=threading.Semaphore(1) ):
     """"""
 
@@ -47,36 +60,32 @@ def find_vertices( in_file, dataset, sem=threading.Semaphore(1) ):
             return
 
         col_names = ['max_degree_vertex', 'max_pagerank_vertex']
-        hashes_to_find = [ dataset[i] for i in col_names ]
+        hashes_to_find = get_hashes_to_find( col_names, dataset )
 
         with open( in_file, 'r' ) as openedfile:
-            
-            found_hashes={}
-            break_loop=0 
             for line in openedfile:
 
                 s,o = parse_spo( line, '.nt$' )
 
-                uris = [s,o]
                 sh = xh.xxh64( s ).hexdigest()
                 oh = xh.xxh64( o ).hexdigest()
                 
-                for idx,current_hash in enumerate(hashes_to_find):
-                    if current_hash in found_hashes:
-                        save_hash( dataset, col_names[idx], found_hashes[current_hash] )
-                        break_loop += 1
-                        continue
+                if sh in hashes_to_find:
+                    cols = hashes_to_find[sh]
+                    for col in cols:
+                        save_hash( dataset, col, sh )
+                    
+                    hashes_to_find.remove( sh )
 
-                    for idx_uri,e in enumerate([sh,oh]):
-                        if e == current_hash:
-                            # found one, save it
-                            found_hashes[current_hash] = uris[idx_uri]
-                            save_hash( dataset, col_names[idx], uris[idx_uri] )
-                            break_loop += 1
-                            break
+                if oh in hashes_to_find:
+                    cols = hashes_to_find[oh]
+                    for col in cols:
+                        save_hash( dataset, col, oh )
+                    
+                    hashes_to_find.remove( oh )
 
-                # checked once, over?
-                if len( col_names ) == break_loop:
+                # checked, over?
+                if len( hashes_to_find ) == 0:
                     break   # done
 
 if __name__ == '__main__':
