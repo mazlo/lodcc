@@ -5,7 +5,7 @@ import pickle
 import psycopg2
 import psycopg2.extras
 import re
-import multiprocessing
+import threading
 import xxhash as xh
 
 from ldicthash import parse_spo
@@ -28,14 +28,15 @@ def find_nt_files( path ):
 def save_hash( dataset, column, uri ):
     """"""
 
-    sql = 'UPDATE stats_graph SET %(column)s=%(uri)s WHERE id=%(id)s'
+    sql = 'UPDATE stats_graph SET '+ column +'_uri=%(uri)s WHERE id=%(id)s'
+    val_dict = { 'uri': uri, 'id': dataset['id'] }
 
     cur = conn.cursor()
-    val_dict = { 'column': column + '_uri', 'uri': uri, 'id': dataset['id'] }
-    #cur.execute( sql, { 'column': column, 'uri': uri, 'id': dataset['id'] } )
-    #conn.commit()
-    log.debug( sql % val_dict )
+    cur.execute( sql, val_dict )
+    conn.commit()
     cur.close()
+    
+    log.debug( sql % val_dict )
 
 def get_hashes_to_find( dataset, col_names ):
     """"""
@@ -94,7 +95,11 @@ def job_find_vertices( dataset, sem ):
         path = find_path( dataset )
         files = find_nt_files( path )
 
-        col_names = ['max_degree_vertex', 'max_pagerank_vertex', 'max_in_degree_vertex', 'max_out_degree_vertex', 'pseudo_diameter_src_vertex', 'pseudo_diameter_trg_vertex']
+        if len( files ) == 0:
+            log.warning( 'No nt-file found for dataset %s', dataset['name']  )
+            return
+
+        col_names = ['max_degree_vertex', 'max_pagerank_vertex', 'max_in_degree_vertex', 'max_out_degree_vertex'] #,'pseudo_diameter_src_vertex', 'pseudo_diameter_trg_vertex']
         hashes_to_find = get_hashes_to_find( dataset, col_names )
 
         for file in files:
@@ -103,6 +108,8 @@ def job_find_vertices( dataset, sem ):
             # checked, over?
             if len( hashes_to_find ) == 0:
                 break   # done
+
+        log.info( 'Done' )
 
 if __name__ == '__main__':
 
@@ -179,13 +186,13 @@ if __name__ == '__main__':
     else:
         global_hashes = {}
 
-    # setup multiprocessing
-    sem = multiprocessing.Semaphore( args['processes'] )
+    # setup threading
+    sem = threading.Semaphore( args['processes'] )
     threads = []
 
     for dataset in datasets:
 
-        t = multiprocessing.Thread( target = job_find_vertices, name = dataset['name'], args = ( dataset, sem ) )
+        t = threading.Thread( target = job_find_vertices, name = dataset['name'], args = ( dataset, sem ) )
         t.start()
         threads.append(t)
 
