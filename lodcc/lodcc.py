@@ -688,6 +688,7 @@ def fs_digraph_start_job( dataset, D, stats ):
         fs_digraph_using_basic_properties,
         fs_digraph_using_degree, fs_digraph_using_indegree,
         f_reciprocity,
+        f_avg_clustering,
         f_pagerank, 
         f_eigenvector_centrality,
     ]
@@ -707,21 +708,21 @@ def f_avg_shortest_path( U, stats, sem ):
 def f_global_clustering( U, stats ):
     """"""
 
-    if 'global_clustering' not in args['features']:
+    if 'global_clustering' in args['skip_features'] or not 'global_clustering' in args['features']:
         log.debug( 'Skipping global_clustering' )
         return
 
     stats['global_clustering']=global_clustering(U)[0]
     log.debug( 'done global_clustering' )
 
-def f_avg_clustering( U, stats ):
+def f_avg_clustering( D, stats ):
     """"""
     
-    if 'local_clustering' not in args['features']:
+    if 'local_clustering' in args['skip_features'] or not 'local_clustering' in args['features']:
         log.debug( 'Skipping avg_clustering' )
         return
 
-    stats['avg_clustering']=n.mean( local_clustering(U, undirected=True).get_array().tolist() )
+    stats['avg_clustering']=vertex_average(D, local_clustering(D))[0]
     log.debug( 'done avg_clustering' )
 
 def f_pseudo_diameter( U, stats ):
@@ -739,7 +740,7 @@ def fs_ugraph_start_job( dataset, U, stats ):
 
     features = [ 
         # fs = feature set
-        f_global_clustering, f_avg_clustering, 
+        f_global_clustering, #f_avg_clustering, 
         # f_avg_shortest_path, 
         f_pseudo_diameter,
     ]
@@ -765,10 +766,10 @@ def load_graph_from_edgelist( dataset, stats ):
     elif edgelist and os.path.isfile( edgelist ):
         log.info( 'Constructing DiGraph from edgelist' )
 
-        if args['hashed']:
-            D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
-        else:
+        if args['dict_hashed']:
             D=load_graph_from_csv( edgelist, directed=True, string_vals=False, hashed=False, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+        else:
+            D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
     
     else:
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
@@ -951,7 +952,7 @@ if __name__ == '__main__':
     # RE graph or feature computation
     parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
     parser.add_argument( '--reconstruct-graph', '-gr', action = "store_true", help = '' )
-    parser.add_argument( '--hashed', '-gh', action = "store_true", help = '' )
+    parser.add_argument( '--dict-hashed', '-gh', action = "store_true", help = '' )
     parser.add_argument( '--threads-openmp', '-gth', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
     parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
