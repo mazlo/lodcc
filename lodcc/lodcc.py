@@ -766,10 +766,10 @@ def load_graph_from_edgelist( dataset, stats ):
     elif edgelist and os.path.isfile( edgelist ):
         log.info( 'Constructing DiGraph from edgelist' )
 
-        if args['hashed']:
-            D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
-        else:
+        if args['dict_hashed']:
             D=load_graph_from_csv( edgelist, directed=True, string_vals=False, hashed=False, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+        else:
+            D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
     
     else:
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
@@ -952,7 +952,7 @@ if __name__ == '__main__':
     # RE graph or feature computation
     parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
     parser.add_argument( '--reconstruct-graph', '-gr', action = "store_true", help = '' )
-    parser.add_argument( '--hashed', '-gh', action = "store_true", help = '' )
+    parser.add_argument( '--dict-hashed', '-gh', action = "store_true", help = '' )
     parser.add_argument( '--threads-openmp', '-gth', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
     parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
