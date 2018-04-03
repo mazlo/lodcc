@@ -688,6 +688,7 @@ def fs_digraph_start_job( dataset, D, stats ):
         fs_digraph_using_basic_properties,
         fs_digraph_using_degree, fs_digraph_using_indegree,
         f_reciprocity,
+        f_avg_clustering,
         f_pagerank, 
         f_eigenvector_centrality,
     ]
@@ -707,21 +708,21 @@ def f_avg_shortest_path( U, stats, sem ):
 def f_global_clustering( U, stats ):
     """"""
 
-    if 'global_clustering' not in args['features']:
+    if 'global_clustering' in args['skip_features'] or not 'global_clustering' in args['features']:
         log.debug( 'Skipping global_clustering' )
         return
 
     stats['global_clustering']=global_clustering(U)[0]
     log.debug( 'done global_clustering' )
 
-def f_avg_clustering( U, stats ):
+def f_avg_clustering( D, stats ):
     """"""
     
-    if 'local_clustering' not in args['features']:
+    if 'local_clustering' in args['skip_features'] or not 'local_clustering' in args['features']:
         log.debug( 'Skipping avg_clustering' )
         return
 
-    stats['avg_clustering']=n.mean( local_clustering(U, undirected=True).get_array().tolist() )
+    stats['avg_clustering']=vertex_average(D, local_clustering(D))[0]
     log.debug( 'done avg_clustering' )
 
 def f_pseudo_diameter( U, stats ):
@@ -739,7 +740,7 @@ def fs_ugraph_start_job( dataset, U, stats ):
 
     features = [ 
         # fs = feature set
-        f_global_clustering, f_avg_clustering, 
+        f_global_clustering, #f_avg_clustering, 
         # f_avg_shortest_path, 
         f_pseudo_diameter,
     ]
