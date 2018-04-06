@@ -450,8 +450,9 @@ def fs_digraph_using_degree( D, stats ):
         stats['max_in_degree_centrality']=v_max_in[0]*s
         stats['max_out_degree_centrality']=v_max_out[0]*s
 
-        stats['centralization_in_degree'] = (v_max_in[0]-(D.get_in_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
-        stats['centralization_out_degree'] = (v_max_out[0]-(D.get_out_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
+        stats['centralization_degree'] = float((v_max[0]-degree_list).sum()) / ( ( num_vertices-1 )*(num_vertices-2))
+        # stats['centralization_in_degree'] = (v_max_in[0]-(D.get_in_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
+        # stats['centralization_out_degree'] = (v_max_out[0]-(D.get_out_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
 
         log.debug( 'done centrality measures' )
 
