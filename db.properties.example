@@ -1,0 +1,4 @@
+db.host=spkosc03
+db.user=zlochms
+db.password=zlochms
+db.dbname=cloudstats
