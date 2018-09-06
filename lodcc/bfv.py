@@ -28,16 +28,17 @@ def find_nt_files( path ):
 def save_hash( dataset, column, uri ):
     """"""
 
-    sql = 'UPDATE stats_graph SET %(column)s=%(uri)s WHERE id=%(id)s'
+    sql = 'UPDATE stats_graph SET '+ column +'_uri=%(uri)s WHERE id=%(id)s'
+    val_dict = { 'uri': uri, 'id': dataset['id'] }
 
     cur = conn.cursor()
-    val_dict = { 'column': column + '_uri', 'uri': uri, 'id': dataset['id'] }
-    #cur.execute( sql, { 'column': column, 'uri': uri, 'id': dataset['id'] } )
-    #conn.commit()
-    log.debug( sql % val_dict )
+    cur.execute( sql, val_dict )
+    conn.commit()
     cur.close()
+    
+    log.debug( sql % val_dict )
 
-def get_hashes_to_find( col_names, dataset ):
+def get_hashes_to_find( dataset, col_names ):
     """"""
 
     hashes_to_find = {} 
@@ -53,43 +54,62 @@ def get_hashes_to_find( col_names, dataset ):
 
     return hashes_to_find
 
-def find_vertices( in_file, dataset, sem=threading.Semaphore(1) ):
+def find_vertices( in_file, dataset, hashes_to_find ):
+    """"""
+
+    if not in_file:
+        log.error( 'Exiting because of previrous errors' )
+        return
+
+    with open( in_file, 'r' ) as openedfile:
+        for line in openedfile:
+
+            s,o = parse_spo( line, '.nt$' )
+
+            sh = xh.xxh64( s ).hexdigest()
+            oh = xh.xxh64( o ).hexdigest()
+            
+            if sh in hashes_to_find:
+                cols = hashes_to_find[sh]
+                for col in cols:
+                    save_hash( dataset, col, s )
+                
+                del hashes_to_find[sh]
+
+            if oh in hashes_to_find:
+                cols = hashes_to_find[oh]
+                for col in cols:
+                    save_hash( dataset, col, o )
+                
+                del hashes_to_find[oh]
+
+            # checked, over?
+            if len( hashes_to_find ) == 0:
+                break   # done
+
+def job_find_vertices( dataset, sem ):
     """"""
 
     # can I?
     with sem:
-        if not in_file:
-            log.error( 'Exiting because of previrous errors' )
+        path = find_path( dataset )
+        files = find_nt_files( path )
+
+        if len( files ) == 0:
+            log.warning( 'No nt-file found for dataset %s', dataset['name']  )
             return
 
-        col_names = ['max_degree_vertex', 'max_pagerank_vertex', 'max_in_degree_vertex', 'max_out_degree_vertex', 'pseudo_diameter_src_vertex', 'pseudo_diameter_trg_vertex']
-        hashes_to_find = get_hashes_to_find( col_names, dataset )
+        col_names = ['max_degree_vertex', 'max_pagerank_vertex', 'max_in_degree_vertex', 'max_out_degree_vertex'] #,'pseudo_diameter_src_vertex', 'pseudo_diameter_trg_vertex']
+        hashes_to_find = get_hashes_to_find( dataset, col_names )
 
-        with open( in_file, 'r' ) as openedfile:
-            for line in openedfile:
+        for file in files:
+            find_vertices( '/'.join( [path,file] ), dataset, hashes_to_find )
 
-                s,o = parse_spo( line, '.nt$' )
+            # checked, over?
+            if len( hashes_to_find ) == 0:
+                break   # done
 
-                sh = xh.xxh64( s ).hexdigest()
-                oh = xh.xxh64( o ).hexdigest()
-                
-                if sh in hashes_to_find:
-                    cols = hashes_to_find[sh]
-                    for col in cols:
-                        save_hash( dataset, col, s )
-                    
-                    del hashes_to_find[sh]
-
-                if oh in hashes_to_find:
-                    cols = hashes_to_find[oh]
-                    for col in cols:
-                        save_hash( dataset, col, o )
-                    
-                    del hashes_to_find[oh]
-
-                # checked, over?
-                if len( hashes_to_find ) == 0:
-                    break   # done
+        log.info( 'Done' )
 
 if __name__ == '__main__':
 
@@ -172,13 +192,9 @@ if __name__ == '__main__':
 
     for dataset in datasets:
 
-        path = find_path( dataset )
-        files = find_nt_files( path )
-
-        for file in files:
-            t = threading.Thread( target = find_vertices, name = dataset['name'], args = ( '/'.join( [path,file] ), dataset, sem ) )
-            t.start()
-            threads.append(t)
+        t = threading.Thread( target = job_find_vertices, name = dataset['name'], args = ( dataset, sem ) )
+        t.start()
+        threads.append(t)
 
     for t in threads:
         t.join()

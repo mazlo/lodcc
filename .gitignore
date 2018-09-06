@@ -1,5 +1,6 @@
 datapackage*
 dataset*
+db.properties.example
 dumps*
 *.pyc
 *.rdf*
