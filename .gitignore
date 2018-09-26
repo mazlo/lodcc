@@ -2,6 +2,9 @@ datapackage*
 dataset*
 db.properties.example
 dumps*
+*.DS_Store
+*.project
+*.pydevproject
 *.pyc
 *.rdf*
 *.log
