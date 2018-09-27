@@ -31,6 +31,8 @@ except:
 
 mediatype_mappings = {}
 
+conn = None
+
 def ensure_db_schema_complete( cur, table_name, attribute ):
     """ensure_db_schema_complete"""
 
@@ -944,6 +946,10 @@ if __name__ == '__main__':
     parser.add_argument( '--rm-original', '-dro', action = "store_true", help = 'If this argument is present, the program WILL REMOVE the original downloaded data dump file' )
     parser.add_argument( '--keep-edgelists', '-dke', action = "store_true", help = 'If this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless.' )
     
+    group = parser.add_mutually_exclusive_group( required = True )
+    group.add_argument( '--from-db', '-fdb', action = "store_true", help = '' )
+    group.add_argument( '--from-file', '-ffl', type = list, help = '', nargs = 3 )
+
     parser.add_argument( '--log-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
@@ -958,19 +964,10 @@ if __name__ == '__main__':
     parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
     parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
     parser.add_argument( '--skip-features', '-gsfs', nargs='*', required = False, default = list(), help = '' )
-
-    # read all properties in file into args-dict
-    if os.path.isfile( 'db.properties' ):
-        with open( 'db.properties', 'rt' ) as f:
-            args = dict( ( key.replace( '.', '-' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) )
-    else:
-        log.error( 'Please verify your settings in db.properties (file exists?)' )
-        sys.exit()
-
-    z = vars( parser.parse_args() ).copy()
-    z.update( args )
-    args = z
     
+    args = vars( parser.parse_args() ).copy()
+
+    # configure logging
     if args['log_debug']:
         level = log.DEBUG
     else:
@@ -980,7 +977,16 @@ if __name__ == '__main__':
         log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
     else:
         log.basicConfig( filename = 'lodcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
-    
+
+    # read all properties in file into args-dict
+    if args['from_db']:
+        if not os.path.isfile( 'db.properties' ):
+            log.error( '--from-db given but no db.properties file found. please specify.' )
+            sys.exit(0)
+        else:
+            with open( 'db.properties', 'rt' ) as f:
+                args.update( dict( ( key.replace( '.', '-' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) ) )
+
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
         with open( 'formats.properties', 'rt' ) as f:
@@ -989,24 +995,26 @@ if __name__ == '__main__':
             # creates a hashmap from each multimappings
             mediatype_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
 
-    # connect to an existing database
-    conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
-    conn.set_session( autocommit=True )
+    if args['from_db']:
+        # connect to an existing database
+        conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
+        conn.set_session( autocommit=True )
 
-    try:
-        cur = conn.cursor()
-        cur.execute( "SELECT 1;" )
-        result = cur.fetchall()
-        cur.close()
+        try:
+            cur = conn.cursor()
+            cur.execute( "SELECT 1;" )
+            result = cur.fetchall()
+            cur.close()
 
-        log.debug( 'Database ready to query execution' )
-    except:
-        log.error( 'Database not ready for query execution. %s', sys.exc_info()[0] )
-        raise 
+            log.debug( 'Database ready to query execution' )
+        except:
+            log.error( 'Database not ready for query execution. Check db.properties. db error:\n %s', sys.exc_info()[0] )
+            raise 
 
     # option 1
     if args['parse_datapackages']:
         if args['dry_run']:
+            # TODO respect --from-db
             log.info( 'Running in dry-run mode' )
             log.info( 'Using example dataset "Museums in Italy"' )
     
@@ -1025,6 +1033,7 @@ if __name__ == '__main__':
             conn.commit()
             cur.close()
         else:
+            # TODO respect --from-db
             cur = conn.cursor()
             cur.execute( 'SELECT id, url, name FROM stats' )
             datasets_to_fetch = cur.fetchall()
@@ -1038,7 +1047,7 @@ if __name__ == '__main__':
 
     # option 2
     if args['parse_resource_urls']:
-
+        # TODO respect --from-db
         # respect --use-datasets argument
         if args['use_datasets']:
             names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
@@ -1069,7 +1078,6 @@ if __name__ == '__main__':
 
     # option 3
     if args['build_graph'] or args['dump_graph']:
-
         # respect --use-datasets argument
         if args['use_datasets']:
             names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
@@ -1128,7 +1136,8 @@ if __name__ == '__main__':
         cur.close()
 
     # close communication with the database
-    conn.close()
+    if args['from_db']:
+        conn.close()
 
 # -----------------
 #
