@@ -935,9 +935,12 @@ def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
-    parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
-    parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
-    parser.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
+    actions = parser.add_mutually_exclusive_group( required = True )
+
+    actions.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
+    actions.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
+    actions.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
+    
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
 
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
