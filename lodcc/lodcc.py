@@ -16,6 +16,7 @@ import logging as log
 import threading
 import sys
 import urlparse
+import xxhash as xh
 
 from constants import *
 try:
@@ -842,6 +843,7 @@ def build_graph_analyse( dataset, threads_openmp=7 ):
     graph_tool.openmp_set_num_threads( threads_openmp )
 
     # init stats
+    
     stats = dict( (attr, dataset[attr]) for attr in ['path_edgelist','path_graph_gt'] )
     graph_analyze( dataset, stats )
 
@@ -893,13 +895,15 @@ def parse_resource_urls( datasets, no_of_threads=1, from_file=False ):
     sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
     threads = []
 
+    idx = 1
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[1],dataset[0]), args = ( dataset, sem, from_file ) )
+        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[0],idx), args = ( dataset, sem, from_file ) )
         t.start()
 
         threads.append( t )
+        idx += 1
 
     # wait for all threads to finish
     for t in threads:
@@ -981,6 +985,7 @@ if __name__ == '__main__':
     parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
     parser.add_argument( '--skip-features', '-gsfs', nargs='*', required = False, default = list(), help = '' )
     
+    # args is available globaly
     args = vars( parser.parse_args() ).copy()
 
     # configure logging
@@ -1098,8 +1103,8 @@ if __name__ == '__main__':
             cur.close()
 
         else:
-            datasets = args['from_file']
-            names = ', '.join( map( lambda d: d[1], datasets ) )
+            datasets = args['from_file']        # argparse returns [[..], [..]]
+            names = ', '.join( map( lambda d: d[0], datasets ) )
             log.debug( 'Configured datasets: %s', names )
 
         parse_resource_urls( datasets, None if 'processes' not in args else args['processes'], args['from_file'] )
@@ -1137,9 +1142,14 @@ if __name__ == '__main__':
             cur.close()
 
         else:
-            # TODO
-            print "from file"
-            datasets = list()
+            datasets = args['from_file']        # argparse returns [[..], [..]]
+            datasets = map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
+                'name': ds[0], 
+                'path_edgelist': 'dumps/%s/data.edgelist.csv' % ds[0], 
+                'path_graph_gt': None }, datasets )
+            
+            names = ', '.join( map( lambda d: d['name'], datasets ) )
+            log.debug( 'Configured datasets: %s', names )
 
         if args['build_graph']:
 
