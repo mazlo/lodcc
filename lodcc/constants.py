@@ -5,6 +5,14 @@ APPLICATION_UNKNOWN = 'unknown'
 TEXT_TURTLE = 'text_turtle'
 TEXT_N3 = 'text_n3'
 
+SHORT_FORMAT_MAP = {
+    'nquads': APPLICATION_N_QUADS,
+    'ntriples': APPLICATION_N_TRIPLES,
+    'rdfxml': APPLICATION_RDF_XML,
+    'turtle': TEXT_TURTLE,
+    'n3': TEXT_N3
+}
+
 MEDIATYPES = { 
     APPLICATION_RDF_XML: { 
         'cmd_to_ntriples': './bin/to_ntriples.sh rdfxml %s %s %s', 

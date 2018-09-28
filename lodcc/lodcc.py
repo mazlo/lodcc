@@ -162,7 +162,7 @@ def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
 
 # -----------------
 
-def download_prepare( dataset ):
+def download_prepare( dataset, from_file ):
     """download_prepare
 
     returns a tuple of url and application media type, if it can be discovered from the given dataset. For instance,
@@ -182,8 +182,23 @@ def download_prepare( dataset ):
     # id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads
 
     urls = list()
+    
+    if from_file:
+        # if --from-file specified the format is given on cli not from db column
+        log.debug( 'Using format passed as fourth parameter with --from-file' )
+        
+        if len( dataset ) != 4:
+            log.error( 'Missing fourth format argument in --from-file. Please specify' )
+            return [( None, APPLICATION_UNKNOWN )]
 
-    # this list of if-else's also respects priority
+        if not dataset[3] in SHORT_FORMAT_MAP:
+            log.error( 'Wrong format. Please specify one of %s', ','.join( SHORT_FORMAT_MAP.keys() ) )
+            return [( None , APPLICATION_UNKNOWN )]
+        
+        urls.append( ( dataset[2], SHORT_FORMAT_MAP[dataset[3]] ) )
+        return urls
+
+    # this list of if-else's also respects db column priority
 
     # n-triples
     if len( dataset ) >= 3 and dataset[2]:
@@ -850,7 +865,7 @@ def job_start_build_graph( dataset, sem, threads_openmp=7 ):
         log.info( 'Done' ) 
 
 # real job
-def job_start_download_and_prepare( dataset, sem ):
+def job_start_download_and_prepare( dataset, sem, from_file ):
     """job_start_download_and_prepare"""
 
     # let's go
@@ -858,7 +873,7 @@ def job_start_download_and_prepare( dataset, sem ):
         log.info( 'Let''s go' )
         
         # - download_prepare
-        urls = download_prepare( dataset )
+        urls = download_prepare( dataset, from_file )
 
         # - download_data
         file = download_data( dataset, urls )
@@ -868,7 +883,7 @@ def job_start_download_and_prepare( dataset, sem ):
 
         log.info( 'Done' ) 
 
-def parse_resource_urls( datasets, no_of_threads=1 ):
+def parse_resource_urls( datasets, no_of_threads=1, from_file=False ):
     """parse_resource_urls"""
 
     if len( datasets ) == 0:
@@ -881,7 +896,7 @@ def parse_resource_urls( datasets, no_of_threads=1 ):
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[1],dataset[0]), args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[1],dataset[0]), args = ( dataset, sem, from_file ) )
         t.start()
 
         threads.append( t )
@@ -1082,7 +1097,7 @@ if __name__ == '__main__':
             names = ', '.join( map( lambda d: d[1], datasets ) )
             log.debug( 'Configured datasets: %s', names )
 
-        parse_resource_urls( datasets, None if 'processes' not in args else args['processes'] )
+        parse_resource_urls( datasets, None if 'processes' not in args else args['processes'], args['from_file'] )
 
     # option 3
     if args['build_graph'] or args['dump_graph']:
