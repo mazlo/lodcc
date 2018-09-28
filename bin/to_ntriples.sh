@@ -11,8 +11,14 @@
 
 FILE_FORMAT="${1:-rdfxml}"
 FPATH="$2" # e.g. dumps/foo/bar.gz
-USE_CACHE=${3:-true}
+OVERWRITE_NT=${3:-false}
 RM_ORIGINAL=${4:-false}
+
+if [[ $OVERWRITE_NT = false ]]; then
+    USE_CACHE=true
+else
+    USE_CACHE=false
+fi
 
 # from PATH
 FILENAME=`echo ${FPATH##*/}`
