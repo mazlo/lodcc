@@ -364,7 +364,8 @@ def job_cleanup_intermediate( dataset, rm_edgelists, sem ):
 try:
     from graph_tool.all import *
 except:
-    log.warning( 'graph_tool module could not be imported' )
+    #log.warning( 'graph_tool module could not be imported' )
+    print 'graph_tool module could not be imported'
 import numpy as n
 import powerlaw
 n.warnings.filterwarnings('ignore')
@@ -373,7 +374,8 @@ import collections
 try:
     import matplotlib.pyplot as plt
 except:
-    log.warning( 'matplotlib.pyplot module could not be imported' )
+    #log.warning( 'matplotlib.pyplot module could not be imported' )
+    print 'matplotlib.pyplot module could not be imported'
 
 lock = threading.Lock()
 
@@ -989,19 +991,24 @@ if __name__ == '__main__':
     else:
         level = log.INFO
 
-    if args['log_stdout']:
-        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
-    else:
+    if args['log_file']:
         log.basicConfig( filename = 'lodcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+    else:
+        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
 
     # read all properties in file into args-dict
     if args['from_db']:
+        log.debug( 'Requested to read data from db' )
+
         if not os.path.isfile( 'db.properties' ):
             log.error( '--from-db given but no db.properties file found. please specify.' )
             sys.exit(0)
         else:
             with open( 'db.properties', 'rt' ) as f:
                 args.update( dict( ( key.replace( '.', '-' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) ) )
+    
+    elif args['from_file']:
+        log.debug( 'Requested to read data from file' )
 
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
