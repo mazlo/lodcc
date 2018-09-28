@@ -186,10 +186,10 @@ def download_prepare( dataset, from_file ):
     
     if from_file:
         # if --from-file specified the format is given on cli not from db column
-        log.debug( 'Using format passed as fourth parameter with --from-file' )
+        log.debug( 'Using format passed as third parameter with --from-file' )
         
         if len( dataset ) != 4:
-            log.error( 'Missing fourth format argument in --from-file. Please specify' )
+            log.error( 'Missing third format argument in --from-file. Please specify' )
             return [( None, APPLICATION_UNKNOWN )]
 
         if not dataset[3] in SHORT_FORMAT_MAP:
@@ -895,15 +895,13 @@ def parse_resource_urls( datasets, no_of_threads=1, from_file=False ):
     sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
     threads = []
 
-    idx = 1
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[0],idx), args = ( dataset, sem, from_file ) )
+        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[1],dataset[0]), args = ( dataset, sem, from_file ) )
         t.start()
 
         threads.append( t )
-        idx += 1
 
     # wait for all threads to finish
     for t in threads:
@@ -1103,8 +1101,10 @@ if __name__ == '__main__':
             cur.close()
 
         else:
-            datasets = args['from_file']        # argparse returns [[..], [..]]
-            names = ', '.join( map( lambda d: d[0], datasets ) )
+            datasets = args['from_file']        # argparse returns [[..], [..],..]
+            # add an artificial id from hash. array now becomes [[id, ..],[id,..],..]
+            datasets = map( lambda d: [xh.xxh64( d[0] ).hexdigest()[0:4]] + d, datasets )
+            names = ', '.join( map( lambda d: d[1], datasets ) )
             log.debug( 'Configured datasets: %s', names )
 
         parse_resource_urls( datasets, None if 'processes' not in args else args['processes'], args['from_file'] )
