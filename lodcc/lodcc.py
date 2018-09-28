@@ -22,12 +22,12 @@ try:
     import psycopg2
     import psycopg2.extras
 except:
-    log.warning( 'psycogp2 could not be found' )
+    print 'psycogp2 could not be found'
 try:
     from lxxhash import xxhash_nt
     from merge_edgelists import merge_edgelists
 except:
-    log.warning( 'one of other lodcc modules could not be found' )
+    print 'One of other lodcc modules could not be found. Make sure you have imported all requirements.'
 
 mediatype_mappings = {}
 
@@ -364,7 +364,6 @@ def job_cleanup_intermediate( dataset, rm_edgelists, sem ):
 try:
     from graph_tool.all import *
 except:
-    #log.warning( 'graph_tool module could not be imported' )
     print 'graph_tool module could not be imported'
 import numpy as n
 import powerlaw
@@ -374,7 +373,6 @@ import collections
 try:
     import matplotlib.pyplot as plt
 except:
-    #log.warning( 'matplotlib.pyplot module could not be imported' )
     print 'matplotlib.pyplot module could not be imported'
 
 lock = threading.Lock()
