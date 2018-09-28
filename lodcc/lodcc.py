@@ -868,12 +868,10 @@ def job_start_download_and_prepare( dataset, sem ):
 
         log.info( 'Done' ) 
 
-def parse_resource_urls( cur, no_of_threads=1 ):
+def parse_resource_urls( datasets, no_of_threads=1 ):
     """parse_resource_urls"""
 
-    datasets = cur.fetchall()
-
-    if cur.rowcount == 0:
+    if len( datasets ) == 0:
         log.error( 'No datasets to parse. exiting' )
         return None
 
@@ -908,12 +906,10 @@ def parse_resource_urls( cur, no_of_threads=1 ):
     for t in threads:
         t.join()
     
-def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
+def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
     """"""
 
-    datasets = cur.fetchall()
-
-    if cur.rowcount == 0:
+    if len( datasets ) == 0:
         log.error( 'No datasets to parse. exiting' )
         return None
 
@@ -953,11 +949,11 @@ if __name__ == '__main__':
     
     group = parser.add_mutually_exclusive_group( required = True )
     group.add_argument( '--from-db', '-fdb', action = "store_true", help = '' )
-    group.add_argument( '--from-file', '-ffl', type = list, help = '', nargs = 3 )
+    group.add_argument( '--from-file', '-ffl', action = "append", help = '', nargs = '*')
 
     parser.add_argument( '--log-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-info', '-li', action = "store_true", help = '' )
-    parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
+    parser.add_argument( '--log-file', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
     parser.add_argument( '--processes', '-pt', required = False, type = int, default = 1, help = 'Specify how many processes will be used for downloading and parsing' )
 
@@ -1052,61 +1048,78 @@ if __name__ == '__main__':
 
     # option 2
     if args['parse_resource_urls']:
-        # TODO respect --from-db
-        # respect --use-datasets argument
-        if args['use_datasets']:
-            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-            names = tuple( args['use_datasets'] )
+        if args['from_db']:
+            # respect --use-datasets argument
+            if args['use_datasets']:
+                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+                names = tuple( args['use_datasets'] )
+            else:
+                names = 'all'
+
+            if args['dry_run']:
+                log.info( 'Running in dry-run mode' )
+
+                # if not given explicitely above, shrink available datasets to one special
+                if not args['use_datasets']:
+                    names_query = 'name = %s'
+                    names = tuple( ['museums-in-italy'] )
+
+            log.debug( 'Configured datasets: '+ ', '.join( names ) )
+
+            if 'names_query' in locals():
+                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
+            else:
+                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
+
+            cur = conn.cursor()
+            cur.execute( sql, names )
+
+            datasets = cur.fetchall()
+            cur.close()
+
         else:
-            names = 'all'
+            datasets = args['from_file']
+            names = ', '.join( map( lambda d: d[1], datasets ) )
+            log.debug( 'Configured datasets: %s', names )
 
-        if args['dry_run']:
-            log.info( 'Running in dry-run mode' )
-
-            # if not given explicitely above, shrink available datasets to one special
-            if not args['use_datasets']:
-                names_query = 'name = %s'
-                names = tuple( ['museums-in-italy'] )
-
-        log.debug( 'Configured datasets: '+ ', '.join( names ) )
-
-        if 'names_query' in locals():
-            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
-        else:
-            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
-
-        cur = conn.cursor()
-        cur.execute( sql, names )
-
-        parse_resource_urls( cur, None if 'processes' not in args else args['processes'] )
-        cur.close()
+        parse_resource_urls( datasets, None if 'processes' not in args else args['processes'] )
 
     # option 3
     if args['build_graph'] or args['dump_graph']:
-        # respect --use-datasets argument
-        if args['use_datasets']:
-            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-            names = tuple( args['use_datasets'] )
+
+        if args['from_db']:
+            # respect --use-datasets argument
+            if args['use_datasets']:
+                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+                names = tuple( args['use_datasets'] )
+            else:
+                names = 'all'
+
+            if args['dry_run']:
+                log.info( 'Running in dry-run mode' )
+
+                # if not given explicitely above, shrink available datasets to one special
+                if not args['use_datasets']:
+                    names_query = 'name = %s'
+                    names = tuple( ['museums-in-italy'] )
+
+            log.debug( 'Configured datasets: '+ ', '.join( names ) )
+
+            if 'names_query' in locals():
+                sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE '+ names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
+            else:
+                sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
+            
+            cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
+            cur.execute( sql, names )
+
+            datasets = cur.fetchall()
+            cur.close()
+
         else:
-            names = 'all'
-
-        if args['dry_run']:
-            log.info( 'Running in dry-run mode' )
-
-            # if not given explicitely above, shrink available datasets to one special
-            if not args['use_datasets']:
-                names_query = 'name = %s'
-                names = tuple( ['museums-in-italy'] )
-
-        log.debug( 'Configured datasets: '+ ', '.join( names ) )
-
-        if 'names_query' in locals():
-            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE '+ names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
-        else:
-            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
-        
-        cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
-        cur.execute( sql, names )
+            # TODO
+            print "from file"
+            datasets = list()
 
         if args['build_graph']:
 
@@ -1115,11 +1128,12 @@ if __name__ == '__main__':
                 # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
                 args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
-            build_graph( cur, args['processes'], args['threads_openmp'] )
+            build_graph( datasets, args['processes'], args['threads_openmp'] )
 
         elif args['dump_graph']:
             
             datasets = cur.fetchall()
+            cur.close()
 
             for ds in datasets:
                 stats = {}
@@ -1137,8 +1151,6 @@ if __name__ == '__main__':
                 # thats it here
                 save_stats( ds, stats )
                 continue
-
-        cur.close()
 
     # close communication with the database
     if args['from_db']:
