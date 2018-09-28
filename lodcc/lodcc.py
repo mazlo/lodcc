@@ -717,7 +717,7 @@ def fs_digraph_start_job( dataset, D, stats ):
     for ftr in features:
         ftr( D, stats )
 
-        if not args['print_stats']:
+        if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
 
 def f_avg_shortest_path( U, stats, sem ):
@@ -769,7 +769,7 @@ def fs_ugraph_start_job( dataset, U, stats ):
     for ftr in features:
         ftr( U, stats )
 
-        if not args['print_stats']:
+        if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
 
 def load_graph_from_edgelist( dataset, stats ):
@@ -811,7 +811,8 @@ def load_graph_from_edgelist( dataset, stats ):
         stats['path_graph_gt'] = graph_gt
 
         # thats it here
-        save_stats( dataset, stats )
+        if not args['print_stats'] and not args['from_file']:
+            save_stats( dataset, stats )
 
     return D
 
