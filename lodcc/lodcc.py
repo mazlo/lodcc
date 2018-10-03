@@ -1166,7 +1166,10 @@ if __name__ == '__main__':
             build_graph( datasets, args['threads'], args['threads_openmp'] )
 
         elif args['dump_graph']:
+            # this is only respected when --dump-graph is specified without --build-graph (that's why the elif)
+            # --dump-graph is respected in the build_graph function, when specified together with --build-graph.
             
+            # TODO ZL respect --file-file
             datasets = cur.fetchall()
             cur.close()
 
