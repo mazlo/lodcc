@@ -849,7 +849,11 @@ def build_graph_analyse( dataset, threads_openmp=7 ):
     graph_analyze( dataset, stats )
 
     if args['print_stats']:
-        print stats
+        if args['from_file']:
+            print ', '.join( [ key for key in stats.keys() ] )
+            print ', '.join( [ str(stats[key]) for key in stats.keys() ] )
+        else:
+            print stats
 
 # real job
 def job_start_build_graph( dataset, sem, threads_openmp=7 ):
