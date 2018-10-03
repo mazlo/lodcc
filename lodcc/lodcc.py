@@ -977,7 +977,7 @@ if __name__ == '__main__':
     parser.add_argument( '--log-info', '-li', action = "store_true", help = '' )
     parser.add_argument( '--log-file', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
-    parser.add_argument( '--processes', '-pt', required = False, type = int, default = 1, help = 'Specify how many processes will be used for downloading and parsing' )
+    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
     # RE graph or feature computation
     parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
@@ -1112,7 +1112,7 @@ if __name__ == '__main__':
             names = ', '.join( map( lambda d: d[1], datasets ) )
             log.debug( 'Configured datasets: %s', names )
 
-        parse_resource_urls( datasets, None if 'processes' not in args else args['processes'], args['from_file'] )
+        parse_resource_urls( datasets, None if 'threads' not in args else args['threads'], args['from_file'] )
 
     # option 3
     if args['build_graph'] or args['dump_graph']:
@@ -1163,7 +1163,7 @@ if __name__ == '__main__':
                 # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
                 args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
-            build_graph( datasets, args['processes'], args['threads_openmp'] )
+            build_graph( datasets, args['threads'], args['threads_openmp'] )
 
         elif args['dump_graph']:
             
