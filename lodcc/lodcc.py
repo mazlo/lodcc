@@ -16,20 +16,23 @@ import logging as log
 import threading
 import sys
 import urlparse
+import xxhash as xh
 
 from constants import *
 try:
     import psycopg2
     import psycopg2.extras
 except:
-    log.warning( 'psycogp2 could not be found' )
+    print 'psycogp2 could not be found'
 try:
     from lxxhash import xxhash_nt
     from merge_edgelists import merge_edgelists
 except:
-    log.warning( 'one of other lodcc modules could not be found' )
+    print 'One of other lodcc modules could not be found. Make sure you have imported all requirements.'
 
 mediatype_mappings = {}
+
+conn = None
 
 def ensure_db_schema_complete( cur, table_name, attribute ):
     """ensure_db_schema_complete"""
@@ -160,7 +163,7 @@ def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
 
 # -----------------
 
-def download_prepare( dataset ):
+def download_prepare( dataset, from_file ):
     """download_prepare
 
     returns a tuple of url and application media type, if it can be discovered from the given dataset. For instance,
@@ -180,8 +183,23 @@ def download_prepare( dataset ):
     # id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads
 
     urls = list()
+    
+    if from_file:
+        # if --from-file specified the format is given on cli not from db column
+        log.debug( 'Using format passed as third parameter with --from-file' )
+        
+        if len( dataset ) != 4:
+            log.error( 'Missing third format argument in --from-file. Please specify' )
+            return [( None, APPLICATION_UNKNOWN )]
 
-    # this list of if-else's also respects priority
+        if not dataset[3] in SHORT_FORMAT_MAP:
+            log.error( 'Wrong format. Please specify one of %s', ','.join( SHORT_FORMAT_MAP.keys() ) )
+            return [( None , APPLICATION_UNKNOWN )]
+        
+        urls.append( ( dataset[2], SHORT_FORMAT_MAP[dataset[3]] ) )
+        return urls
+
+    # this list of if-else's also respects db column priority
 
     # n-triples
     if len( dataset ) >= 3 and dataset[2]:
@@ -310,7 +328,7 @@ def build_graph_prepare( dataset, file ):
     format_ = file['format']
     path = file['path']
 
-    overwrite_nt = 'false' if args['overwrite_nt'] else 'true'
+    overwrite_nt = 'true' if args['overwrite_nt'] else 'false'
     rm_original  = 'true' if args['rm_original'] else 'false'
 
     # transform into ntriples if necessary
@@ -318,6 +336,8 @@ def build_graph_prepare( dataset, file ):
     # TODO check content of file
     # TODO check if file ends with .nt
     log.info( 'Transforming to ntriples..' )
+    log.debug( 'Overwrite nt? %s', overwrite_nt )
+    log.debug( 'Remove original file? %s', rm_original )
     log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
     os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
 
@@ -345,7 +365,7 @@ def job_cleanup_intermediate( dataset, rm_edgelists, sem ):
 try:
     from graph_tool.all import *
 except:
-    log.warning( 'graph_tool module could not be imported' )
+    print 'graph_tool module could not be imported'
 import numpy as n
 import powerlaw
 n.warnings.filterwarnings('ignore')
@@ -354,7 +374,7 @@ import collections
 try:
     import matplotlib.pyplot as plt
 except:
-    log.warning( 'matplotlib.pyplot module could not be imported' )
+    print 'matplotlib.pyplot module could not be imported'
 
 lock = threading.Lock()
 
@@ -697,7 +717,7 @@ def fs_digraph_start_job( dataset, D, stats ):
     for ftr in features:
         ftr( D, stats )
 
-        if not args['print_stats']:
+        if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
 
 def f_avg_shortest_path( U, stats, sem ):
@@ -749,7 +769,7 @@ def fs_ugraph_start_job( dataset, U, stats ):
     for ftr in features:
         ftr( U, stats )
 
-        if not args['print_stats']:
+        if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
 
 def load_graph_from_edgelist( dataset, stats ):
@@ -791,7 +811,8 @@ def load_graph_from_edgelist( dataset, stats ):
         stats['path_graph_gt'] = graph_gt
 
         # thats it here
-        save_stats( dataset, stats )
+        if not args['print_stats'] and not args['from_file']:
+            save_stats( dataset, stats )
 
     return D
 
@@ -823,11 +844,16 @@ def build_graph_analyse( dataset, threads_openmp=7 ):
     graph_tool.openmp_set_num_threads( threads_openmp )
 
     # init stats
+    
     stats = dict( (attr, dataset[attr]) for attr in ['path_edgelist','path_graph_gt'] )
     graph_analyze( dataset, stats )
 
     if args['print_stats']:
-        print stats
+        if args['from_file']:
+            print ', '.join( [ key for key in stats.keys() ] )
+            print ', '.join( [ str(stats[key]) for key in stats.keys() ] )
+        else:
+            print stats
 
 # real job
 def job_start_build_graph( dataset, sem, threads_openmp=7 ):
@@ -846,7 +872,7 @@ def job_start_build_graph( dataset, sem, threads_openmp=7 ):
         log.info( 'Done' ) 
 
 # real job
-def job_start_download_and_prepare( dataset, sem ):
+def job_start_download_and_prepare( dataset, sem, from_file ):
     """job_start_download_and_prepare"""
 
     # let's go
@@ -854,7 +880,7 @@ def job_start_download_and_prepare( dataset, sem ):
         log.info( 'Let''s go' )
         
         # - download_prepare
-        urls = download_prepare( dataset )
+        urls = download_prepare( dataset, from_file )
 
         # - download_data
         file = download_data( dataset, urls )
@@ -864,12 +890,10 @@ def job_start_download_and_prepare( dataset, sem ):
 
         log.info( 'Done' ) 
 
-def parse_resource_urls( cur, no_of_threads=1 ):
+def parse_resource_urls( datasets, no_of_threads=1, from_file=False ):
     """parse_resource_urls"""
 
-    datasets = cur.fetchall()
-
-    if cur.rowcount == 0:
+    if len( datasets ) == 0:
         log.error( 'No datasets to parse. exiting' )
         return None
 
@@ -879,7 +903,7 @@ def parse_resource_urls( cur, no_of_threads=1 ):
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[1],dataset[0]), args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[1],dataset[0]), args = ( dataset, sem, from_file ) )
         t.start()
 
         threads.append( t )
@@ -904,12 +928,10 @@ def parse_resource_urls( cur, no_of_threads=1 ):
     for t in threads:
         t.join()
     
-def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
+def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
     """"""
 
-    datasets = cur.fetchall()
-
-    if cur.rowcount == 0:
+    if len( datasets ) == 0:
         log.error( 'No datasets to parse. exiting' )
         return None
 
@@ -933,9 +955,12 @@ def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
-    parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
-    parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
-    parser.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
+    actions = parser.add_mutually_exclusive_group( required = True )
+
+    actions.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
+    actions.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
+    actions.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
+    
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
 
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
@@ -944,11 +969,15 @@ if __name__ == '__main__':
     parser.add_argument( '--rm-original', '-dro', action = "store_true", help = 'If this argument is present, the program WILL REMOVE the original downloaded data dump file' )
     parser.add_argument( '--keep-edgelists', '-dke', action = "store_true", help = 'If this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless.' )
     
+    group = parser.add_mutually_exclusive_group( required = True )
+    group.add_argument( '--from-db', '-fdb', action = "store_true", help = '' )
+    group.add_argument( '--from-file', '-ffl', action = "append", help = '', nargs = '*')
+
     parser.add_argument( '--log-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-info', '-li', action = "store_true", help = '' )
-    parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
+    parser.add_argument( '--log-file', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
-    parser.add_argument( '--processes', '-pt', required = False, type = int, default = 1, help = 'Specify how many processes will be used for downloading and parsing' )
+    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
     # RE graph or feature computation
     parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
@@ -958,29 +987,35 @@ if __name__ == '__main__':
     parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
     parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
     parser.add_argument( '--skip-features', '-gsfs', nargs='*', required = False, default = list(), help = '' )
-
-    # read all properties in file into args-dict
-    if os.path.isfile( 'db.properties' ):
-        with open( 'db.properties', 'rt' ) as f:
-            args = dict( ( key.replace( '.', '-' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) )
-    else:
-        log.error( 'Please verify your settings in db.properties (file exists?)' )
-        sys.exit()
-
-    z = vars( parser.parse_args() ).copy()
-    z.update( args )
-    args = z
     
+    # args is available globaly
+    args = vars( parser.parse_args() ).copy()
+
+    # configure logging
     if args['log_debug']:
         level = log.DEBUG
     else:
         level = log.INFO
 
-    if args['log_stdout']:
-        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
-    else:
+    if args['log_file']:
         log.basicConfig( filename = 'lodcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+    else:
+        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+
+    # read all properties in file into args-dict
+    if args['from_db']:
+        log.debug( 'Requested to read data from db' )
+
+        if not os.path.isfile( 'db.properties' ):
+            log.error( '--from-db given but no db.properties file found. please specify.' )
+            sys.exit(0)
+        else:
+            with open( 'db.properties', 'rt' ) as f:
+                args.update( dict( ( key.replace( '.', '-' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) ) )
     
+    elif args['from_file']:
+        log.debug( 'Requested to read data from file' )
+
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
         with open( 'formats.properties', 'rt' ) as f:
@@ -989,24 +1024,26 @@ if __name__ == '__main__':
             # creates a hashmap from each multimappings
             mediatype_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
 
-    # connect to an existing database
-    conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
-    conn.set_session( autocommit=True )
+    if args['from_db']:
+        # connect to an existing database
+        conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
+        conn.set_session( autocommit=True )
 
-    try:
-        cur = conn.cursor()
-        cur.execute( "SELECT 1;" )
-        result = cur.fetchall()
-        cur.close()
+        try:
+            cur = conn.cursor()
+            cur.execute( "SELECT 1;" )
+            result = cur.fetchall()
+            cur.close()
 
-        log.debug( 'Database ready to query execution' )
-    except:
-        log.error( 'Database not ready for query execution. %s', sys.exc_info()[0] )
-        raise 
+            log.debug( 'Database ready to query execution' )
+        except:
+            log.error( 'Database not ready for query execution. Check db.properties. db error:\n %s', sys.exc_info()[0] )
+            raise 
 
     # option 1
     if args['parse_datapackages']:
         if args['dry_run']:
+            # TODO respect --from-db
             log.info( 'Running in dry-run mode' )
             log.info( 'Using example dataset "Museums in Italy"' )
     
@@ -1025,6 +1062,7 @@ if __name__ == '__main__':
             conn.commit()
             cur.close()
         else:
+            # TODO respect --from-db
             cur = conn.cursor()
             cur.execute( 'SELECT id, url, name FROM stats' )
             datasets_to_fetch = cur.fetchall()
@@ -1038,62 +1076,85 @@ if __name__ == '__main__':
 
     # option 2
     if args['parse_resource_urls']:
+        if args['from_db']:
+            # respect --use-datasets argument
+            if args['use_datasets']:
+                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+                names = tuple( args['use_datasets'] )
+            else:
+                names = 'all'
 
-        # respect --use-datasets argument
-        if args['use_datasets']:
-            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-            names = tuple( args['use_datasets'] )
+            if args['dry_run']:
+                log.info( 'Running in dry-run mode' )
+
+                # if not given explicitely above, shrink available datasets to one special
+                if not args['use_datasets']:
+                    names_query = 'name = %s'
+                    names = tuple( ['museums-in-italy'] )
+
+            log.debug( 'Configured datasets: '+ ', '.join( names ) )
+
+            if 'names_query' in locals():
+                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
+            else:
+                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
+
+            cur = conn.cursor()
+            cur.execute( sql, names )
+
+            datasets = cur.fetchall()
+            cur.close()
+
         else:
-            names = 'all'
+            datasets = args['from_file']        # argparse returns [[..], [..],..]
+            # add an artificial id from hash. array now becomes [[id, ..],[id,..],..]
+            datasets = map( lambda d: [xh.xxh64( d[0] ).hexdigest()[0:4]] + d, datasets )
+            names = ', '.join( map( lambda d: d[1], datasets ) )
+            log.debug( 'Configured datasets: %s', names )
 
-        if args['dry_run']:
-            log.info( 'Running in dry-run mode' )
-
-            # if not given explicitely above, shrink available datasets to one special
-            if not args['use_datasets']:
-                names_query = 'name = %s'
-                names = tuple( ['museums-in-italy'] )
-
-        log.debug( 'Configured datasets: '+ ', '.join( names ) )
-
-        if 'names_query' in locals():
-            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
-        else:
-            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
-
-        cur = conn.cursor()
-        cur.execute( sql, names )
-
-        parse_resource_urls( cur, None if 'processes' not in args else args['processes'] )
-        cur.close()
+        parse_resource_urls( datasets, None if 'threads' not in args else args['threads'], args['from_file'] )
 
     # option 3
     if args['build_graph'] or args['dump_graph']:
 
-        # respect --use-datasets argument
-        if args['use_datasets']:
-            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-            names = tuple( args['use_datasets'] )
+        if args['from_db']:
+            # respect --use-datasets argument
+            if args['use_datasets']:
+                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+                names = tuple( args['use_datasets'] )
+            else:
+                names = 'all'
+
+            if args['dry_run']:
+                log.info( 'Running in dry-run mode' )
+
+                # if not given explicitely above, shrink available datasets to one special
+                if not args['use_datasets']:
+                    names_query = 'name = %s'
+                    names = tuple( ['museums-in-italy'] )
+
+            log.debug( 'Configured datasets: '+ ', '.join( names ) )
+
+            if 'names_query' in locals():
+                sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE '+ names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
+            else:
+                sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
+            
+            cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
+            cur.execute( sql, names )
+
+            datasets = cur.fetchall()
+            cur.close()
+
         else:
-            names = 'all'
-
-        if args['dry_run']:
-            log.info( 'Running in dry-run mode' )
-
-            # if not given explicitely above, shrink available datasets to one special
-            if not args['use_datasets']:
-                names_query = 'name = %s'
-                names = tuple( ['museums-in-italy'] )
-
-        log.debug( 'Configured datasets: '+ ', '.join( names ) )
-
-        if 'names_query' in locals():
-            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE '+ names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
-        else:
-            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
-        
-        cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
-        cur.execute( sql, names )
+            datasets = args['from_file']        # argparse returns [[..], [..]]
+            datasets = map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
+                'name': ds[0], 
+                'path_edgelist': 'dumps/%s/data.edgelist.csv' % ds[0], 
+                'path_graph_gt': None }, datasets )
+            
+            names = ', '.join( map( lambda d: d['name'], datasets ) )
+            log.debug( 'Configured datasets: %s', names )
 
         if args['build_graph']:
 
@@ -1102,11 +1163,15 @@ if __name__ == '__main__':
                 # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
                 args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
-            build_graph( cur, args['processes'], args['threads_openmp'] )
+            build_graph( datasets, args['threads'], args['threads_openmp'] )
 
         elif args['dump_graph']:
+            # this is only respected when --dump-graph is specified without --build-graph (that's why the elif)
+            # --dump-graph is respected in the build_graph function, when specified together with --build-graph.
             
+            # TODO ZL respect --file-file
             datasets = cur.fetchall()
+            cur.close()
 
             for ds in datasets:
                 stats = {}
@@ -1125,10 +1190,9 @@ if __name__ == '__main__':
                 save_stats( ds, stats )
                 continue
 
-        cur.close()
-
     # close communication with the database
-    conn.close()
+    if args['from_db']:
+        conn.close()
 
 # -----------------
 #

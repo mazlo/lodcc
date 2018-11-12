@@ -10,8 +10,8 @@ fi
 
 FILES_COUNT=`find "$FOLDER_ROOT" -name "*.edgelist.csv" -type f | wc -l`
 
-# removedata.edgelist, if present
-if [[ $FILES_COUNT > 1 ]]; then
+# remove data.edgelist, if present
+if [ $FILES_COUNT -gt 1 ]; then
     rm "$FOLDER_ROOT/data.edgelist.csv" &> /dev/null # ignore errors when file does not exist, for instance
 else
     # if data.edgelist is the only file, we're fine
@@ -35,7 +35,7 @@ for file in $FILES; do
         FOLDER=${file%/*}
         cat $file >> "$FOLDER/data.edgelist.csv"
         
-        if [[ ${RM_EDGELISTS,,} = "true" ]]; then
+        if [[ $RM_EDGELISTS = true ]]; then
             rm $file
         fi
     fi
