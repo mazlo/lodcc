@@ -33,6 +33,20 @@ $ find dumps/ -type f -exec ls -s --block-size=M {} \; > dumps-sizes.txt
 $ cat dumps-sizes.txt | sed -e '/edgelist/! s/^.*$/###/' -e '/^###/D' | sort -h -r | less
 ```
 
+#### Database
+
+- Start postgresql with docker
+ 
+```sh
+$ docker run --name cloudstats-postgres-9.4 -p 5432:5432 -e PGDATA=/home/cloudstats/var/lib/postgresql/data -e POSTGRES_USER=cloudstats -e POSTGRES_PASSWORD=cloudstats -d postgres:9.4
+```
+
+- import data from database dump
+
+```sh
+$ cat pgdumpall.sql | docker exec -i cloudstats-postgres-9.4 psql -U cloudstats
+```
+
 #### dbpedia 
 
 - Download all filenames of all datasets into a file `dbpedia-link.txt`
