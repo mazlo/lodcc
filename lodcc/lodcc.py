@@ -795,7 +795,7 @@ def load_graph_from_edgelist( dataset, stats ):
     else:
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
         return None
-    
+
     # dump graph after reading if required
     if D and args['dump_graph']:
         log.info( 'Dumping graph..' )
@@ -813,6 +813,21 @@ def load_graph_from_edgelist( dataset, stats ):
         # thats it here
         if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
+
+    # check if subgraph is required
+    if D and args['sample_vertices']:
+        k = args['sample_size']
+        
+        vfilt   = D.new_vertex_property( 'bool' )
+        v       = D.get_vertices()
+        v_rand  = np.random.choice( v, size=int( len(v)*k ), replace=False )
+
+        log.info( 'Sampling vertices ...')
+
+        for e in v_rand:
+            vfilt[e] = True
+        
+        return GraphView( D, vfilt=vfilt )
 
     return D
 
@@ -978,6 +993,10 @@ if __name__ == '__main__':
     parser.add_argument( '--log-file', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
+
+    # TODO add --sample-edges
+    parser.add_argument( '--sample-vertices', '-gsv', action = "store_true", help = '' )
+    parser.add_argument( '--sample-size', '-gss', required = True, default = 0.2, help = '' )
 
     # RE graph or feature computation
     parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
