@@ -13,6 +13,7 @@ import os
 import argparse
 import json
 import logging as log
+import numpy as np
 import threading
 import sys
 import urlparse
@@ -759,6 +760,8 @@ def f_avg_clustering( D, stats ):
 def f_pseudo_diameter( U, stats ):
     """"""
 
+    LU = label_largest_component(U)
+    U = GraphView( U, vfilt=LU )
     if 'diameter' in args['features']:
         dist, ends = pseudo_diameter(U)
         stats['pseudo_diameter']=dist
@@ -989,6 +992,10 @@ if __name__ == '__main__':
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
+    # TODO add --sample-edges
+    parser.add_argument( '--sample-vertices', '-gsv', action = "store_true", help = '' )
+    parser.add_argument( '--sample-size', '-gss', required = False, type = float, default = 0.2, help = '' )
+
     # RE graph or feature computation
     parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
     parser.add_argument( '--reconstruct-graph', '-gr', action = "store_true", help = '' )
@@ -1058,7 +1065,7 @@ if __name__ == '__main__':
             log.info( 'Using example dataset "Museums in Italy"' )
     
             cur = conn.cursor()
-            cur.execute( 'SELECT id, url, name FROM stats WHERE url = %s LIMIT 1', ('https://old.datahub.io/dataset/museums-in-italy') )
+            cur.execute( 'SELECT id, url, name FROM stats_2017_08 WHERE url = %s LIMIT 1', ('https://old.datahub.io/dataset/museums-in-italy') )
             
             if cur.rowcount == 0:
                 log.error( 'Example dataset not found. Is the database filled?' )
@@ -1105,9 +1112,9 @@ if __name__ == '__main__':
             log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
             if 'names_query' in locals():
-                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
+                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats_2017_08 WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
             else:
-                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
+                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats_2017_08 WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
 
             cur = conn.cursor()
             cur.execute( sql, names )
@@ -1161,7 +1168,7 @@ if __name__ == '__main__':
             datasets = map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
                 'name': ds[0], 
                 'path_edgelist': 'dumps/%s/data.edgelist.csv' % ds[0], 
-                'path_graph_gt': None }, datasets )
+                'path_graph_gt': 'dumps/%s/data.graph.gt.gz' % ds[0] }, datasets )
             
             names = ', '.join( map( lambda d: d['name'], datasets ) )
             log.debug( 'Configured datasets: %s', names )
