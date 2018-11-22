@@ -1,42 +1,35 @@
 import argparse
+import pandas as pd
 import logging as log
 import numpy as np
 import os
 import re
 import threading
 
-def sample_edgelist_job( dataset, n, k, sem ):
+def sample_edgelist_job( dataset, df, n, k, sem ):
     """"""
 
     with sem:
+        v_filt  = np.array( [False]*n )
+       
         if log:
-            log.info( 'Taking sample ..' )
+            log.info( 'Sampling edges ...' )
 
-        sample  = np.random.choice( n, int( n.size*k ), replace=False )
-        sample.sort()
+        v_rand  = np.random.choice( np.arange( n ), size=int( n*k ), replace=False )
         
+        for e in v_rand:
+            v_filt[e] = True
+
         sample_dir = os.path.dirname( dataset ) + '-sampled-%s' % k
 
         # e.g. dumps/core-sampled-0.25 gets creted if not present
         if not os.path.isdir( sample_dir ):
             if log:
                 log.info( 'Creating directory ..' )
+
             os.mkdir( sample_dir )
-        
-        with open( '%s/data.edgelist.csv' % sample_dir, 'w' ) as dataset_sampled:
-            with open( dataset ) as f:
-                if log:
-                    log.info( 'Sampling edgelist ..' )
-                for i, line in enumerate(f):
-                    for k, line_sample in enumerate(sample):
-                        if line_sample > i:
-                            break
-                        if line_sample < i:
-                            continue
-                        
-                        dataset_sampled.write( line )
-                        sample = sample[k:]
-                        break
+       
+        df.iloc[v_filt].to_csv( '%s/data.edgelist.csv' % sample_dir, sep=' ', header=False, index=False )
 
         if log:
             log.info( 'Done' )
@@ -67,8 +60,8 @@ def sample_edgelist( paths, log=None ):
         if log:
             log.info( 'Reading lines ..' )
             
-        num_lines = sum( 1 for line in open( dataset ) )
-        n         = np.arange( num_lines ) + 1
+        df  = pd.read_csv( dataset, delim_whitespace=True, header=None )
+        n   = df.shape[0]
 
         # prepare
         sem = threading.Semaphore( 10 )
@@ -76,7 +69,7 @@ def sample_edgelist( paths, log=None ):
 
         for k in np.linspace(0.05, 0.5, num=10):  # e.g. [ 0.25, 0.5, 0.75 ]
 
-            t = threading.Thread( target = sample_edgelist_job, name = '%s[%s]' % ( os.path.dirname(dataset), k ), args = ( dataset, n, k, sem ) )
+            t = threading.Thread( target = sample_edgelist_job, name = '%s[%s]' % ( os.path.dirname(dataset), k ), args = ( dataset, df, n, k, sem ) )
             t.start()
 
             threads.append( t )
