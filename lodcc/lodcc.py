@@ -28,6 +28,7 @@ except:
 try:
     from lxxhash import xxhash_nt
     from merge_edgelists import merge_edgelists
+    from gini import gini
 except:
     print 'One of other lodcc modules could not be found. Make sure you have imported all requirements.'
 
@@ -490,6 +491,16 @@ def fs_digraph_using_degree( D, stats ):
 
         log.debug( 'done standard deviation and variance' )
 
+    if 'gini' in args['features']:
+        gini_coeff = gini( degree_list )
+        stats['gini_coefficient'] = gini_coeff
+
+        gini_coeff_in_degree = gini( D.get_in_degrees( D.get_vertices() ) )
+        stats['gini_coefficient_in_degree'] = gini_coeff_in_degree
+    
+        gini_coeff_out_degree = gini( D.get_out_degrees( D.get_vertices() ) )
+        stats['gini_coefficient_out_degree'] = gini_coeff_out_degree
+
     # feature: h_index_u
     if 'h_index' in args['features']:
         degree_list[::-1].sort()
@@ -511,7 +522,6 @@ def fs_digraph_using_degree( D, stats ):
         stats['powerlaw_exponent_degree'] = float( fit.power_law.alpha )
         stats['powerlaw_exponent_degree_dmin'] = float( fit.power_law.xmin )
         log.debug( 'done powerlaw_exponent' )
-
 
     # plot degree distribution
     if not 'plots' in args['skip_features'] and 'plots' in args['features']:
