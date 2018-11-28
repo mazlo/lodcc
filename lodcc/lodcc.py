@@ -472,11 +472,9 @@ def fs_digraph_using_degree( D, stats ):
         stats['max_in_degree_centrality']=v_max_in[0]*s
         stats['max_out_degree_centrality']=v_max_out[0]*s
 
-        stats['centralization_degree'] = float((v_max[0]-degree_list).sum()) / ( ( num_vertices-1 )*(num_vertices-2))
         # stats['centralization_in_degree'] = (v_max_in[0]-(D.get_in_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
         # stats['centralization_out_degree'] = (v_max_out[0]-(D.get_out_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
 
-        log.debug( 'done centrality measures' )
 
         # feature: standard deviation
         stddev_in_degree = D.get_in_degrees( D.get_vertices() ).std()
@@ -602,6 +600,22 @@ def fs_digraph_using_indegree( D, stats ):
 
         lock.release()
 
+def f_centralization( D, stats ):
+    """"""
+
+    LC = label_largest_component( D, directed=False )
+    LCU = GraphView( D, vfilt=LC )
+
+    degree_list = D.degree_property_map( 'total' ).a
+    max_degree  = degree_list.max()
+
+    stats['centralization_degree'] = float((max_degree-degree_list).sum()) / ( ( degree_list.size()-1 )*(degree_list.size()-2))
+    
+    # stats['centralization_in_degree'] = (v_max_in[0]-(D.get_in_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
+    # stats['centralization_out_degree'] = (v_max_out[0]-(D.get_out_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
+
+    log.debug( 'done centrality measures' )
+
 def f_reciprocity( D, stats ):
     """"""
 
@@ -719,6 +733,7 @@ def fs_digraph_start_job( dataset, D, stats ):
         # fs = feature set
         fs_digraph_using_basic_properties,
         fs_digraph_using_degree, fs_digraph_using_indegree,
+        f_centralization,
         f_reciprocity,
         f_avg_clustering,
         f_pagerank, 
