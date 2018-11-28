@@ -760,10 +760,10 @@ def f_avg_clustering( D, stats ):
 def f_pseudo_diameter( U, stats ):
     """"""
 
-    LU = label_largest_component(U)
-    U = GraphView( U, vfilt=LU )
+    LC = label_largest_component(U, directed=False)
+    LCU = GraphView( U, vfilt=LC )
     if 'diameter' in args['features']:
-        dist, ends = pseudo_diameter(U)
+        dist, ends = pseudo_diameter(LCU)
         stats['pseudo_diameter']=dist
         stats['pseudo_diameter_src_vertex']=U.vertex_properties['name'][ends[0]]
         stats['pseudo_diameter_trg_vertex']=U.vertex_properties['name'][ends[1]]
@@ -856,6 +856,7 @@ def graph_analyze( dataset, stats ):
     log.info( 'Computing feature set DiGraph' )
     fs_digraph_start_job( dataset, D, stats )
     
+    D.set_directed(False)
     log.info( 'Computing feature set UGraph' )
     fs_ugraph_start_job( dataset, D, stats )
     
