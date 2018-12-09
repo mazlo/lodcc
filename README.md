@@ -24,7 +24,7 @@ $ sudo apt-get install dtrx raptor2-utils
 
 `python lodcc.py --parse-resource-urls --use-datasets museums-in-italy pokepedia-fr --threads 2`
 
-#### File system
+#### Command line
 
 - Determine file sizes of all dumps
 
@@ -32,6 +32,14 @@ $ sudo apt-get install dtrx raptor2-utils
 $ find dumps/ -type f -exec ls -s --block-size=M {} \; > dumps-sizes.txt
 $ cat dumps-sizes.txt | sed -e '/edgelist/! s/^.*$/###/' -e '/^###/D' | sort -h -r | less
 ```
+
+- Print max-in-degree of all vertices
+
+```sh
+$ cat dumps/bio2rdf-sabiork/sabiork.nq.edgelist.csv | cut -d ' ' -f2 | sort | uniq -c | sort -n -r | less
+```
+
+For max-out-degrees use `-f1` in `cut`-command
 
 #### Database
 
