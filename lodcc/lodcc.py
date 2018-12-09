@@ -953,8 +953,8 @@ def job_start_download_and_prepare( dataset, sem, from_file ):
 
         log.info( 'Done' ) 
 
-def parse_resource_urls( datasets, no_of_threads=1, from_file=False ):
-    """parse_resource_urls"""
+def prepare_graph( datasets, no_of_threads=1, from_file=False ):
+    """prepare_graph"""
 
     if len( datasets ) == 0:
         log.error( 'No datasets to parse. exiting' )
@@ -1021,7 +1021,7 @@ if __name__ == '__main__':
     actions = parser.add_mutually_exclusive_group( required = True )
 
     actions.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
-    actions.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
+    actions.add_argument( '--prepare-graph', '-pu', action = "store_true", help = '' )
     actions.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
     
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
@@ -1142,7 +1142,7 @@ if __name__ == '__main__':
             cur.close()
 
     # option 2
-    if args['parse_resource_urls']:
+    if args['prepare_graph']:
         if args['from_db']:
             # respect --use-datasets argument
             if args['use_datasets']:
@@ -1179,7 +1179,7 @@ if __name__ == '__main__':
             names = ', '.join( map( lambda d: d[1], datasets ) )
             log.debug( 'Configured datasets: %s', names )
 
-        parse_resource_urls( datasets, None if 'threads' not in args else args['threads'], args['from_file'] )
+        prepare_graph( datasets, None if 'threads' not in args else args['threads'], args['from_file'] )
 
     # option 3
     if args['build_graph'] or args['dump_graph']:
