@@ -13,23 +13,28 @@ import os
 import argparse
 import json
 import logging as log
+import numpy as np
 import threading
 import sys
 import urlparse
+import xxhash as xh
 
 from constants import *
 try:
     import psycopg2
     import psycopg2.extras
 except:
-    log.warning( 'psycogp2 could not be found' )
+    print 'psycogp2 could not be found'
 try:
     from lxxhash import xxhash_nt
     from merge_edgelists import merge_edgelists
+    from gini import gini
 except:
-    log.warning( 'one of other lodcc modules could not be found' )
+    print 'One of other lodcc modules could not be found. Make sure you have imported all requirements.'
 
 mediatype_mappings = {}
+
+conn = None
 
 def ensure_db_schema_complete( cur, table_name, attribute ):
     """ensure_db_schema_complete"""
@@ -160,7 +165,7 @@ def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
 
 # -----------------
 
-def download_prepare( dataset ):
+def download_prepare( dataset, from_file ):
     """download_prepare
 
     returns a tuple of url and application media type, if it can be discovered from the given dataset. For instance,
@@ -180,32 +185,48 @@ def download_prepare( dataset ):
     # id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads
 
     urls = list()
+    
+    if from_file:
+        # if --from-file specified the format is given on cli not from db column
+        log.debug( 'Using format passed as third parameter with --from-file' )
+        
+        if len( dataset ) != 4:
+            log.error( 'Missing third format argument in --from-file. Please specify' )
+            return [( None, APPLICATION_UNKNOWN )]
 
-    # this list of if-else's also respects priority
+        if not dataset[3] in SHORT_FORMAT_MAP:
+            log.error( 'Wrong format. Please specify one of %s', ','.join( SHORT_FORMAT_MAP.keys() ) )
+            return [( None , APPLICATION_UNKNOWN )]
+        
+        urls.append( ( dataset[2], SHORT_FORMAT_MAP[dataset[3]] ) )
+        return urls
+
+    log.debug( 'Determining available formats..' )
+    # this list of if-else's also respects db column priority
 
     # n-triples
     if len( dataset ) >= 3 and dataset[2]:
-        log.debug( 'Using format APPLICATION_N_TRIPLES with url %s', dataset[2] )
+        log.debug( 'Found format APPLICATION_N_TRIPLES with url %s', dataset[2] )
         urls.append( ( dataset[2], APPLICATION_N_TRIPLES ) )
 
     # rdf+xml
     if len( dataset ) >= 4 and dataset[3]:
-        log.debug( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
+        log.debug( 'Found format APPLICATION_RDF_XML with url: %s', dataset[3] )
         urls.append( ( dataset[3], APPLICATION_RDF_XML ) )
 
     # turtle
     if len( dataset ) >= 5 and dataset[4]:
-        log.debug( 'Using format TEXT_TURTLE with url: %s', dataset[4] )
+        log.debug( 'Found format TEXT_TURTLE with url: %s', dataset[4] )
         urls.append( ( dataset[4], TEXT_TURTLE ) )
 
     # notation3
     if len( dataset ) >= 6 and dataset[5]:
-        log.debug( 'Using format TEXT_N3 with url: %s', dataset[5] )
+        log.debug( 'Found format TEXT_N3 with url: %s', dataset[5] )
         urls.append( ( dataset[5], TEXT_N3 ) )
 
     # nquads
     if len( dataset ) >= 7 and dataset[6]:
-        log.debug( 'Using format APPLICATION_N_QUADS with url: %s', dataset[6] )
+        log.debug( 'Found format APPLICATION_N_QUADS with url: %s', dataset[6] )
         urls.append( ( dataset[6], APPLICATION_N_QUADS ) )
 
     # more to follow?
@@ -279,7 +300,7 @@ def download_data( dataset, urls ):
         # reuse dump if exists
         valid = ensure_valid_download_data( path )
         if not args['overwrite_dl'] and valid:
-            log.debug( 'Reusing dump for %s', dataset[1] )
+            log.debug( 'Overwrite dl? %s. Reusing local dump', args['overwrite_dl'] )
             return dict( { 'path': path, 'filename': filename, 'folder': folder, 'format': format_ } )
 
         # download anew otherwise
@@ -289,7 +310,7 @@ def download_data( dataset, urls ):
 
         valid = ensure_valid_download_data( path )
         if not valid:
-            log.info( 'Skipping format %s', format_ )
+            log.warn( 'Skipping format %s. Trying with other format if available.', format_ )
             continue
         else:
             return dict( { 'path': path, 'filename': filename, 'folder': folder, 'format': format_ } )
@@ -310,7 +331,7 @@ def build_graph_prepare( dataset, file ):
     format_ = file['format']
     path = file['path']
 
-    overwrite_nt = 'false' if args['overwrite_nt'] else 'true'
+    overwrite_nt = 'true' if args['overwrite_nt'] else 'false'
     rm_original  = 'true' if args['rm_original'] else 'false'
 
     # transform into ntriples if necessary
@@ -318,6 +339,8 @@ def build_graph_prepare( dataset, file ):
     # TODO check content of file
     # TODO check if file ends with .nt
     log.info( 'Transforming to ntriples..' )
+    log.debug( 'Overwrite nt? %s', overwrite_nt )
+    log.debug( 'Remove original file? %s', rm_original )
     log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
     os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
 
@@ -345,7 +368,7 @@ def job_cleanup_intermediate( dataset, rm_edgelists, sem ):
 try:
     from graph_tool.all import *
 except:
-    log.warning( 'graph_tool module could not be imported' )
+    print 'graph_tool module could not be imported'
 import numpy as n
 import powerlaw
 n.warnings.filterwarnings('ignore')
@@ -354,16 +377,16 @@ import collections
 try:
     import matplotlib.pyplot as plt
 except:
-    log.warning( 'matplotlib.pyplot module could not be imported' )
+    print 'matplotlib.pyplot module could not be imported'
 
 lock = threading.Lock()
 
 def fs_digraph_using_basic_properties( D, stats ):
     """"""
 
-    eprop = label_parallel_edges( D, mark_only=True )
-    PE = GraphView( D, efilt=eprop )
-    num_edges_PE = PE.num_edges()
+    # at least one of these features needed to continue
+    if len([f for f in ['degree','parallel_edges','fill'] if f in args['features']]) == 0:
+        return
 
     # feature: order
     num_vertices = D.num_vertices()
@@ -375,7 +398,6 @@ def fs_digraph_using_basic_properties( D, stats ):
 
     stats['n']=num_vertices
     stats['m']=num_edges
-    stats['m_unique']=num_edges - num_edges_PE
 
     # feature: avg_degree
     if 'degree' in args['features']:
@@ -387,15 +409,22 @@ def fs_digraph_using_basic_properties( D, stats ):
         stats['fill_overall']=float( num_edges ) / ( num_vertices * num_vertices )
         log.debug( 'done fill_overall' )
 
-    # feature: parallel_edges
-    if 'parallel_edges' in args['features']:
-        stats['parallel_edges']=num_edges_PE
-        log.debug( 'done parallel_edges' )
+    if 'parallel_edges' in args['features'] or 'fill' in args['features']:
+        eprop = label_parallel_edges( D, mark_only=True )
+        PE = GraphView( D, efilt=eprop )
+        num_edges_PE = PE.num_edges()
 
-    # feature: fill
-    if 'fill' in args['features']:
-        stats['fill']=float( num_edges - num_edges_PE ) / ( num_vertices * num_vertices )
-        log.debug( 'done fill' )
+        stats['m_unique']=num_edges - num_edges_PE
+
+        # feature: parallel_edges
+        if 'parallel_edges' in args['features']:
+            stats['parallel_edges']=num_edges_PE
+            log.debug( 'done parallel_edges' )
+
+        # feature: fill
+        if 'fill' in args['features']:
+            stats['fill']=float( num_edges - num_edges_PE ) / ( num_vertices * num_vertices )
+            log.debug( 'done fill' )
 
 def fs_digraph_using_degree( D, stats ):
     """"""
@@ -450,11 +479,9 @@ def fs_digraph_using_degree( D, stats ):
         stats['max_in_degree_centrality']=v_max_in[0]*s
         stats['max_out_degree_centrality']=v_max_out[0]*s
 
-        stats['centralization_degree'] = float((v_max[0]-degree_list).sum()) / ( ( num_vertices-1 )*(num_vertices-2))
         # stats['centralization_in_degree'] = (v_max_in[0]-(D.get_in_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
         # stats['centralization_out_degree'] = (v_max_out[0]-(D.get_out_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
 
-        log.debug( 'done centrality measures' )
 
         # feature: standard deviation
         stddev_in_degree = D.get_in_degrees( D.get_vertices() ).std()
@@ -468,6 +495,16 @@ def fs_digraph_using_degree( D, stats ):
         stats['var_out_degree'] = D.get_out_degrees( D.get_vertices() ).var()
 
         log.debug( 'done standard deviation and variance' )
+
+    if 'gini' in args['features']:
+        gini_coeff = gini( degree_list )
+        stats['gini_coefficient'] = gini_coeff
+
+        gini_coeff_in_degree = gini( D.get_in_degrees( D.get_vertices() ) )
+        stats['gini_coefficient_in_degree'] = gini_coeff_in_degree
+    
+        gini_coeff_out_degree = gini( D.get_out_degrees( D.get_vertices() ) )
+        stats['gini_coefficient_out_degree'] = gini_coeff_out_degree
 
     # feature: h_index_u
     if 'h_index' in args['features']:
@@ -490,7 +527,6 @@ def fs_digraph_using_degree( D, stats ):
         stats['powerlaw_exponent_degree'] = float( fit.power_law.alpha )
         stats['powerlaw_exponent_degree_dmin'] = float( fit.power_law.xmin )
         log.debug( 'done powerlaw_exponent' )
-
 
     # plot degree distribution
     if not 'plots' in args['skip_features'] and 'plots' in args['features']:
@@ -570,6 +606,27 @@ def fs_digraph_using_indegree( D, stats ):
         log.debug( 'done plotting in-degree distribution' )
 
         lock.release()
+
+def f_centralization( D, stats ):
+    """"""
+
+    if not 'centralization' in args['features']:
+        return
+
+    D_copied = D.copy()
+    D = None
+
+    remove_parallel_edges( D_copied )
+
+    degree_list = D_copied.degree_property_map( 'total' ).a
+    max_degree  = degree_list.max()
+
+    stats['centralization_degree'] = float((max_degree-degree_list).sum()) / ( ( degree_list.size-1 )*(degree_list.size-2))
+    
+    # stats['centralization_in_degree'] = (v_max_in[0]-(D.get_in_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
+    # stats['centralization_out_degree'] = (v_max_out[0]-(D.get_out_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
+
+    log.debug( 'done centrality measures' )
 
 def f_reciprocity( D, stats ):
     """"""
@@ -671,7 +728,7 @@ def save_stats( dataset, stats ):
     # e.g. avg_degree=%(avg_degree)s, max_degree=%(max_degree)s, ..
     cols = ', '.join( map( lambda d: d +'=%('+ d +')s', stats ) )
 
-    sql='UPDATE stats_graph SET '+ cols +' WHERE id=%(id)s'
+    sql=('UPDATE %s SET ' % args['db_tbname']) + cols +' WHERE id=%(id)s'
     stats['id']=dataset[0]
 
     cur = conn.cursor()
@@ -681,6 +738,25 @@ def save_stats( dataset, stats ):
 
     log.debug( 'done saving results' )
 
+def f_pseudo_diameter( D, stats ):
+    """"""
+
+    LC = label_largest_component(D)
+    LCD = GraphView( D, vfilt=LC )
+
+    if 'diameter' in args['features']:
+        if LCD.num_vertices() == 0 or LCD.num_vertices() == 1:
+            # if largest component does practically not exist, use the whole graph
+            dist, ends = pseudo_diameter(D)
+        else:
+            dist, ends = pseudo_diameter(LCD)
+
+        stats['pseudo_diameter']=dist
+        # D may be used in both cases
+        stats['pseudo_diameter_src_vertex']=D.vertex_properties['name'][ends[0]]
+        stats['pseudo_diameter_trg_vertex']=D.vertex_properties['name'][ends[1]]
+        log.debug( 'done pseudo_diameter' )
+
 def fs_digraph_start_job( dataset, D, stats ):
     """"""
 
@@ -688,7 +764,9 @@ def fs_digraph_start_job( dataset, D, stats ):
         # fs = feature set
         fs_digraph_using_basic_properties,
         fs_digraph_using_degree, fs_digraph_using_indegree,
+        f_centralization,
         f_reciprocity,
+        f_pseudo_diameter,
         f_avg_clustering,
         f_pagerank, 
         f_eigenvector_centrality,
@@ -697,7 +775,7 @@ def fs_digraph_start_job( dataset, D, stats ):
     for ftr in features:
         ftr( D, stats )
 
-        if not args['print_stats']:
+        if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
 
 def f_avg_shortest_path( U, stats, sem ):
@@ -726,16 +804,6 @@ def f_avg_clustering( D, stats ):
     stats['avg_clustering']=vertex_average(D, local_clustering(D))[0]
     log.debug( 'done avg_clustering' )
 
-def f_pseudo_diameter( U, stats ):
-    """"""
-
-    if 'diameter' in args['features']:
-        dist, ends = pseudo_diameter(U)
-        stats['pseudo_diameter']=dist
-        stats['pseudo_diameter_src_vertex']=U.vertex_properties['name'][ends[0]]
-        stats['pseudo_diameter_trg_vertex']=U.vertex_properties['name'][ends[1]]
-        log.debug( 'done pseudo_diameter' )
-
 def fs_ugraph_start_job( dataset, U, stats ):
     """"""
 
@@ -743,13 +811,12 @@ def fs_ugraph_start_job( dataset, U, stats ):
         # fs = feature set
         f_global_clustering, #f_avg_clustering, 
         # f_avg_shortest_path, 
-        f_pseudo_diameter,
     ]
 
     for ftr in features:
         ftr( U, stats )
 
-        if not args['print_stats']:
+        if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
 
 def load_graph_from_edgelist( dataset, stats ):
@@ -775,7 +842,7 @@ def load_graph_from_edgelist( dataset, stats ):
     else:
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
         return None
-    
+
     # dump graph after reading if required
     if D and args['dump_graph']:
         log.info( 'Dumping graph..' )
@@ -791,7 +858,23 @@ def load_graph_from_edgelist( dataset, stats ):
         stats['path_graph_gt'] = graph_gt
 
         # thats it here
-        save_stats( dataset, stats )
+        if not args['print_stats'] and not args['from_file']:
+            save_stats( dataset, stats )
+
+    # check if subgraph is required
+    if D and args['sample_vertices']:
+        k = args['sample_size']
+        
+        vfilt   = D.new_vertex_property( 'bool' )
+        v       = D.get_vertices()
+        v_rand  = np.random.choice( v, size=int( len(v)*k ), replace=False )
+
+        log.info( 'Sampling vertices ...')
+
+        for e in v_rand:
+            vfilt[e] = True
+        
+        return GraphView( D, vfilt=vfilt )
 
     return D
 
@@ -807,6 +890,7 @@ def graph_analyze( dataset, stats ):
     log.info( 'Computing feature set DiGraph' )
     fs_digraph_start_job( dataset, D, stats )
     
+    D.set_directed(False)
     log.info( 'Computing feature set UGraph' )
     fs_ugraph_start_job( dataset, D, stats )
     
@@ -823,11 +907,16 @@ def build_graph_analyse( dataset, threads_openmp=7 ):
     graph_tool.openmp_set_num_threads( threads_openmp )
 
     # init stats
+    
     stats = dict( (attr, dataset[attr]) for attr in ['path_edgelist','path_graph_gt'] )
     graph_analyze( dataset, stats )
 
     if args['print_stats']:
-        print stats
+        if args['from_file']:
+            print ', '.join( [ key for key in stats.keys() ] )
+            print ', '.join( [ str(stats[key]) for key in stats.keys() ] )
+        else:
+            print stats
 
 # real job
 def job_start_build_graph( dataset, sem, threads_openmp=7 ):
@@ -846,7 +935,7 @@ def job_start_build_graph( dataset, sem, threads_openmp=7 ):
         log.info( 'Done' ) 
 
 # real job
-def job_start_download_and_prepare( dataset, sem ):
+def job_start_download_and_prepare( dataset, sem, from_file ):
     """job_start_download_and_prepare"""
 
     # let's go
@@ -854,7 +943,7 @@ def job_start_download_and_prepare( dataset, sem ):
         log.info( 'Let''s go' )
         
         # - download_prepare
-        urls = download_prepare( dataset )
+        urls = download_prepare( dataset, from_file )
 
         # - download_data
         file = download_data( dataset, urls )
@@ -864,12 +953,10 @@ def job_start_download_and_prepare( dataset, sem ):
 
         log.info( 'Done' ) 
 
-def parse_resource_urls( cur, no_of_threads=1 ):
-    """parse_resource_urls"""
+def prepare_graph( datasets, no_of_threads=1, from_file=False ):
+    """prepare_graph"""
 
-    datasets = cur.fetchall()
-
-    if cur.rowcount == 0:
+    if len( datasets ) == 0:
         log.error( 'No datasets to parse. exiting' )
         return None
 
@@ -879,7 +966,7 @@ def parse_resource_urls( cur, no_of_threads=1 ):
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[1],dataset[0]), args = ( dataset, sem ) )
+        t = threading.Thread( target = job_start_download_and_prepare, name = '%s[%s]' % (dataset[1],dataset[0]), args = ( dataset, sem, from_file ) )
         t.start()
 
         threads.append( t )
@@ -904,12 +991,10 @@ def parse_resource_urls( cur, no_of_threads=1 ):
     for t in threads:
         t.join()
     
-def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
+def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
     """"""
 
-    datasets = cur.fetchall()
-
-    if cur.rowcount == 0:
+    if len( datasets ) == 0:
         log.error( 'No datasets to parse. exiting' )
         return None
 
@@ -933,9 +1018,12 @@ def build_graph( cur, no_of_threads=1, threads_openmp=7 ):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
-    parser.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
-    parser.add_argument( '--parse-resource-urls', '-pu', action = "store_true", help = '' )
-    parser.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
+    actions = parser.add_mutually_exclusive_group( required = True )
+
+    actions.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
+    actions.add_argument( '--prepare-graph', '-pu', action = "store_true", help = '' )
+    actions.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
+    
     parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
 
     parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
@@ -944,11 +1032,19 @@ if __name__ == '__main__':
     parser.add_argument( '--rm-original', '-dro', action = "store_true", help = 'If this argument is present, the program WILL REMOVE the original downloaded data dump file' )
     parser.add_argument( '--keep-edgelists', '-dke', action = "store_true", help = 'If this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless.' )
     
+    group = parser.add_mutually_exclusive_group( required = True )
+    group.add_argument( '--from-db', '-fdb', action = "store_true", help = '' )
+    group.add_argument( '--from-file', '-ffl', action = "append", help = '', nargs = '*')
+
     parser.add_argument( '--log-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-info', '-li', action = "store_true", help = '' )
-    parser.add_argument( '--log-stdout', '-lf', action = "store_true", help = '' )
+    parser.add_argument( '--log-file', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
-    parser.add_argument( '--processes', '-pt', required = False, type = int, default = 1, help = 'Specify how many processes will be used for downloading and parsing' )
+    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
+
+    # TODO add --sample-edges
+    parser.add_argument( '--sample-vertices', '-gsv', action = "store_true", help = '' )
+    parser.add_argument( '--sample-size', '-gss', required = False, type = float, default = 0.2, help = '' )
 
     # RE graph or feature computation
     parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
@@ -958,29 +1054,35 @@ if __name__ == '__main__':
     parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
     parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
     parser.add_argument( '--skip-features', '-gsfs', nargs='*', required = False, default = list(), help = '' )
-
-    # read all properties in file into args-dict
-    if os.path.isfile( 'db.properties' ):
-        with open( 'db.properties', 'rt' ) as f:
-            args = dict( ( key.replace( '.', '-' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) )
-    else:
-        log.error( 'Please verify your settings in db.properties (file exists?)' )
-        sys.exit()
-
-    z = vars( parser.parse_args() ).copy()
-    z.update( args )
-    args = z
     
+    # args is available globaly
+    args = vars( parser.parse_args() ).copy()
+
+    # configure logging
     if args['log_debug']:
         level = log.DEBUG
     else:
         level = log.INFO
 
-    if args['log_stdout']:
-        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
-    else:
+    if args['log_file']:
         log.basicConfig( filename = 'lodcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+    else:
+        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+
+    # read all properties in file into args-dict
+    if args['from_db']:
+        log.debug( 'Requested to read data from db' )
+
+        if not os.path.isfile( 'db.properties' ):
+            log.error( '--from-db given but no db.properties file found. please specify.' )
+            sys.exit(0)
+        else:
+            with open( 'db.properties', 'rt' ) as f:
+                args.update( dict( ( key.replace( '.', '_' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) ) )
     
+    elif args['from_file']:
+        log.debug( 'Requested to read data from file' )
+
     # read all format mappings
     if os.path.isfile( 'formats.properties' ):
         with open( 'formats.properties', 'rt' ) as f:
@@ -989,29 +1091,31 @@ if __name__ == '__main__':
             # creates a hashmap from each multimappings
             mediatype_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
 
-    # connect to an existing database
-    conn = psycopg2.connect( host=args['db-host'], dbname=args['db-dbname'], user=args['db-user'], password=args['db-password'] )
-    conn.set_session( autocommit=True )
+    if args['from_db']:
+        # connect to an existing database
+        conn = psycopg2.connect( host=args['db_host'], dbname=args['db_dbname'], user=args['db_user'], password=args['db_password'] )
+        conn.set_session( autocommit=True )
 
-    try:
-        cur = conn.cursor()
-        cur.execute( "SELECT 1;" )
-        result = cur.fetchall()
-        cur.close()
+        try:
+            cur = conn.cursor()
+            cur.execute( "SELECT 1;" )
+            result = cur.fetchall()
+            cur.close()
 
-        log.debug( 'Database ready to query execution' )
-    except:
-        log.error( 'Database not ready for query execution. %s', sys.exc_info()[0] )
-        raise 
+            log.debug( 'Database ready to query execution' )
+        except:
+            log.error( 'Database not ready for query execution. Check db.properties. db error:\n %s', sys.exc_info()[0] )
+            raise 
 
     # option 1
     if args['parse_datapackages']:
         if args['dry_run']:
+            # TODO respect --from-db
             log.info( 'Running in dry-run mode' )
             log.info( 'Using example dataset "Museums in Italy"' )
     
             cur = conn.cursor()
-            cur.execute( 'SELECT id, url, name FROM stats WHERE url = %s LIMIT 1', ('https://old.datahub.io/dataset/museums-in-italy') )
+            cur.execute( 'SELECT id, url, name FROM stats_2017_08 WHERE url = %s LIMIT 1', ('https://old.datahub.io/dataset/museums-in-italy') )
             
             if cur.rowcount == 0:
                 log.error( 'Example dataset not found. Is the database filled?' )
@@ -1025,6 +1129,7 @@ if __name__ == '__main__':
             conn.commit()
             cur.close()
         else:
+            # TODO respect --from-db
             cur = conn.cursor()
             cur.execute( 'SELECT id, url, name FROM stats' )
             datasets_to_fetch = cur.fetchall()
@@ -1037,63 +1142,86 @@ if __name__ == '__main__':
             cur.close()
 
     # option 2
-    if args['parse_resource_urls']:
+    if args['prepare_graph']:
+        if args['from_db']:
+            # respect --use-datasets argument
+            if args['use_datasets']:
+                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+                names = tuple( args['use_datasets'] )
+            else:
+                names = 'all'
 
-        # respect --use-datasets argument
-        if args['use_datasets']:
-            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-            names = tuple( args['use_datasets'] )
+            if args['dry_run']:
+                log.info( 'Running in dry-run mode' )
+
+                # if not given explicitely above, shrink available datasets to one special
+                if not args['use_datasets']:
+                    names_query = 'name = %s'
+                    names = tuple( ['museums-in-italy'] )
+
+            log.debug( 'Configured datasets: '+ ', '.join( names ) )
+
+            if 'names_query' in locals():
+                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats_2017_08 WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
+            else:
+                sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats_2017_08 WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
+
+            cur = conn.cursor()
+            cur.execute( sql, names )
+
+            datasets = cur.fetchall()
+            cur.close()
+
         else:
-            names = 'all'
+            datasets = args['from_file']        # argparse returns [[..], [..],..]
+            # add an artificial id from hash. array now becomes [[id, ..],[id,..],..]
+            datasets = map( lambda d: [xh.xxh64( d[0] ).hexdigest()[0:4]] + d, datasets )
+            names = ', '.join( map( lambda d: d[1], datasets ) )
+            log.debug( 'Configured datasets: %s', names )
 
-        if args['dry_run']:
-            log.info( 'Running in dry-run mode' )
-
-            # if not given explicitely above, shrink available datasets to one special
-            if not args['use_datasets']:
-                names_query = 'name = %s'
-                names = tuple( ['museums-in-italy'] )
-
-        log.debug( 'Configured datasets: '+ ', '.join( names ) )
-
-        if 'names_query' in locals():
-            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE '+ names_query +' AND (application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL) ORDER BY id'
-        else:
-            sql = 'SELECT id, name, application_n_triples, application_rdf_xml, text_turtle, text_n3, application_n_quads FROM stats WHERE application_rdf_xml IS NOT NULL OR application_n_triples IS NOT NULL OR text_turtle IS NOT NULL OR text_n3 IS NOT NULL OR application_n_quads IS NOT NULL ORDER BY id'
-
-        cur = conn.cursor()
-        cur.execute( sql, names )
-
-        parse_resource_urls( cur, None if 'processes' not in args else args['processes'] )
-        cur.close()
+        prepare_graph( datasets, None if 'threads' not in args else args['threads'], args['from_file'] )
 
     # option 3
     if args['build_graph'] or args['dump_graph']:
 
-        # respect --use-datasets argument
-        if args['use_datasets']:
-            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-            names = tuple( args['use_datasets'] )
+        if args['from_db']:
+            # respect --use-datasets argument
+            if args['use_datasets']:
+                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+                names = tuple( args['use_datasets'] )
+            else:
+                names = 'all'
+
+            if args['dry_run']:
+                log.info( 'Running in dry-run mode' )
+
+                # if not given explicitely above, shrink available datasets to one special
+                if not args['use_datasets']:
+                    names_query = 'name = %s'
+                    names = tuple( ['museums-in-italy'] )
+
+            log.debug( 'Configured datasets: '+ ', '.join( names ) )
+
+            if 'names_query' in locals():
+                sql = ('SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE ' % args['db_tbname']) + names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
+            else:
+                sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id' % args['db_tbname']
+            
+            cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
+            cur.execute( sql, names )
+
+            datasets = cur.fetchall()
+            cur.close()
+
         else:
-            names = 'all'
-
-        if args['dry_run']:
-            log.info( 'Running in dry-run mode' )
-
-            # if not given explicitely above, shrink available datasets to one special
-            if not args['use_datasets']:
-                names_query = 'name = %s'
-                names = tuple( ['museums-in-italy'] )
-
-        log.debug( 'Configured datasets: '+ ', '.join( names ) )
-
-        if 'names_query' in locals():
-            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE '+ names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
-        else:
-            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM stats_graph WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
-        
-        cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
-        cur.execute( sql, names )
+            datasets = args['from_file']        # argparse returns [[..], [..]]
+            datasets = map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
+                'name': ds[0], 
+                'path_edgelist': 'dumps/%s/data.edgelist.csv' % ds[0], 
+                'path_graph_gt': 'dumps/%s/data.graph.gt.gz' % ds[0] }, datasets )
+            
+            names = ', '.join( map( lambda d: d['name'], datasets ) )
+            log.debug( 'Configured datasets: %s', names )
 
         if args['build_graph']:
 
@@ -1102,11 +1230,15 @@ if __name__ == '__main__':
                 # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
                 args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
-            build_graph( cur, args['processes'], args['threads_openmp'] )
+            build_graph( datasets, args['threads'], args['threads_openmp'] )
 
         elif args['dump_graph']:
+            # this is only respected when --dump-graph is specified without --build-graph (that's why the elif)
+            # --dump-graph is respected in the build_graph function, when specified together with --build-graph.
             
+            # TODO ZL respect --file-file
             datasets = cur.fetchall()
+            cur.close()
 
             for ds in datasets:
                 stats = {}
@@ -1125,10 +1257,9 @@ if __name__ == '__main__':
                 save_stats( ds, stats )
                 continue
 
-        cur.close()
-
     # close communication with the database
-    conn.close()
+    if args['from_db']:
+        conn.close()
 
 # -----------------
 #
