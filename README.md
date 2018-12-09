@@ -12,25 +12,29 @@ The framework is capable of dealing with the following:
 
 ## TLDR;
 
-##### Prepare several RDF data sets for graph-analysis in parallel
+### Example commands
+
+##### Prepare several RDF datasets for graph-analysis in parallel
 
 `python lodcc/lodcc.py --prepare-graph --from-db --use-datasets core education-data-gov-uk webisalod --threads 3`
 
 This command will download (if not present), transform (if necessary), and prepare an edgelist ready to be read as graph-structure. `--from-db` loads the appropriate formats and urls from database configured in `db.properties`.
 
-##### Run analysis on several prepared RDF data sets in parallel
+##### Run analysis on several prepared RDF datasets in parallel
 
 `python lodcc/lodcc.py --build-graph --from-file core education-data-gov-uk webisalod --threads 2 --threads-openmp 8 --features diameter --print-stats`
 
-This command loads the edgelists of the three given data sets `--from-file`, 2 in parallel. For each of them a graph-structure is created and the `diameter` feature is computed. Results will be printed to standard out.
+This command loads the edgelists of the three given datasets `--from-file`, 2 in parallel. For each of them a graph-structure is created and the `diameter` feature is computed. Results will be printed to standard out.
 
-## Installation requirements
+## Documentation
+
+#### Installation requirements
 
 The framework is build with python2 and relies on many other libraries. It has been developed and tested in a linux-environment (debian jessie) with shell. Please make sure you have installed all required libraries.
 
 ##### Unix tools
 
-- `curl`, the downloading RDF data set dumps.
+- `curl`, the downloading RDF dataset dumps.
 
 - `dtrx`, for the extraction of data dumps. You can [download it here](https://brettcsmith.org/2007/dtrx/), but there are also [packages provided](https://reposcope.com/package/dtrx) by various linux distributions.
 
@@ -42,15 +46,17 @@ The framework is build with python2 and relies on many other libraries. It has b
 
 - `requirements.txt`. Please find requirements of further python modules in this file. Please install them with `pip install -r requirements.txt`
 
-### Configuration
+#### Configuration
 
-If you are using a database (which is optional, but convenient) please configure it in `db.properties` file. You can find a `db.properties.example` file in the root folder of the project.
+1. If you are using a database (which is optional, but convenient) please configure it in `db.properties` file. You can find a `db.properties.example` file in the root folder of the project. 
 
-## Usage
+2. Please create a `dumps` folder located in the root folder of the project structure. The program will look into this folder in all the following commands.
+
+### Usage
 
 At the top-level, the framework supports three main functions, which are:
 
-### Step 1: Acquire Metadata (optional)
+#### Step 1: Acquire Metadata (optional)
 
 ##### Command example
 
@@ -58,13 +64,17 @@ At the top-level, the framework supports three main functions, which are:
 
 ##### Details on `--parse-datapackages`
 
-This command requires a database to be configured beforehand. The table has to provide at least a list of data sets (e.g. from the current LOD Cloud) with at least: `| id | name | url |` of the data package.
+This command requires a database to be configured beforehand. The table has to provide at least a list of data sets (e.g. from the current LOD Cloud) with at least: `| id | name | url |` of the data package. An initial table setup can be found in [db/01-create-table-mysql.sql](db/02-init-table-stats-mysql.sql)
 
 The metadata is first crawled from the web (datahub.io). Then relevant information are parsed (from `datapackage.json` file), like the format and the urls to obtain the data dump from, and stored in the table.
 
+The program will respect the [formats.properties](formats.properties) file, in order to map non-official format statements to the official mime-type.
+
 ##### Results from this step
 
-A database table will be extended by the list of available formats for all data sets. Each format will be written to its own column.
+A database table will be extended by the list of available formats for all data sets. Each format will be written to its own column. 
+
+[db/03-init-table-stats-result-step1-mysql.sql](db/03-init-table-stats-result-step1-mysql.sql) shows an initialized table after execution (last modified: 2017-12-01).
 
 ##### Mandatory parameters
    
@@ -72,7 +82,9 @@ None.
 
 ##### Optional parameters
 
-### Step 2. Prepare Data Sets for Graph-based Analysis (optional)
+None.
+
+#### Step 2. Prepare Datasets for Graph-based Analysis (optional)
 
 ##### Command example
 
@@ -80,11 +92,11 @@ None.
 
 ##### Details on `--prepare-graph`
 
-This step is optional, but very convenient if you haven't prepared an edgelist from an RDF data set before. You will need to decide if to use the database or a local file to read some required information (basically the filename and format). 
+This step is optional, but very convenient if you haven't prepared an edgelist from an RDF dataset before. You will need to decide if to use the database or a local file to read some required information (basically the filename and format). 
 
-With this command an edgelist will be created for each RDF data set that is passed to the command. This is achieved by 
+With this command an edgelist will be created for each RDF dataset that is passed to the command. This is achieved by 
 
-1. downloading each RDF data set dump first, if not present.
+1. downloading each RDF dataset dump first, if not present.
 2. Extracting the dump, if necessary.
 3. Transforming the file (all files, if there is a nested folder structure, ignoring (many) non-RDF formats) into ntriples, if necessary.
 4. Making a hashed edgelist from (all) ntriple-files.
@@ -93,13 +105,13 @@ With this command an edgelist will be created for each RDF data set that is pass
    
 - `--from-db`, uses the database to read urls and formats from.
 
-   * Pass a list of data set names with `--use-datasets [DATASET [DATASET ...]]`
+   * Pass a list of dataset names with `--use-datasets [DATASET [DATASET ...]]`
    
 - `--from-file DATASET FILENAME FORMAT [--from-file ... [...]]`, if a local file should be used. More than one file may be given. You will need to provide the name and format for each, e.g. `--from-file webisalod data-dump.n3 n3 --from-file oecd-linked-data file.nt ntriples`. 
 
 ##### Results from this step
 
-A `data.edgelist.csv` file for each of the given data sets. This file represents the edgelist of the RDF data set dump. This file can be loaded efficiently by the graph_tool library.
+A `data.edgelist.csv` file for each of the given datasets. This file represents the edgelist of the RDF dataset dump. This file can be loaded efficiently by the graph_tool library.
 
 ##### Optional parameters
    
@@ -112,9 +124,9 @@ the original downloaded data dump file when the edgelist if created. Default: FA
 
 - `--keep-edgelists`. If the downloaded data dump consists of several files (compressed archive) and this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless. Default: FALSE.
 
-- `--threads THREADS`. Control parallel execution. There will be only `THREADS` data sets handled at a time. Default: 1.
+- `--threads THREADS`. Control parallel execution. There will be only `THREADS` datasets handled at a time. Default: 1.
 
-### Step 3: Execute Graph-based Analysis
+#### Step 3: Execute Graph-based Analysis
 
 ##### Command example
 
@@ -122,7 +134,7 @@ the original downloaded data dump file when the edgelist if created. Default: FA
 
 ##### Details on `--build-graph`
 
-With this command a graph-structure, for each RDF data set that is passed to the command, will be created from the corresponding edgelist. If no further parameters are provided the graph analysis will be done for all measures.
+With this command a graph-structure, for each RDF dataset that is passed to the command, will be created from the corresponding edgelist. If no further parameters are provided the graph analysis will be done for all measures.
 
 The program will first look for a `data.graph.gt.gz` file to load the graph-structure from, else `data.edgelist.csv` is considered. Otherwise an error is thrown.
 
@@ -130,13 +142,13 @@ The program will first look for a `data.graph.gt.gz` file to load the graph-stru
 
 - `--from-db`, uses the database to read and store values for measures.
 
-   * Pass a list of data set names with `--use-datasets [DATASET [DATASET ...]]`
+   * Pass a list of dataset names with `--use-datasets [DATASET [DATASET ...]]`
    
-- `--from-file DATASET [--from-file DATASET [...]]`, if a local file should be used. More than one file may be given. You will need to provide the name of the data set, e.g. `--from-file webisalod --from-file oecd-linked-data`. 
+- `--from-file DATASET [--from-file DATASET [...]]`, if a local file should be used. More than one file may be given. You will need to provide the name of the dataset, e.g. `--from-file webisalod --from-file oecd-linked-data`. 
 
 ##### Results from this step
 
-Results on the graph-based analysis on the RDF data set, either stored in database or printed to standard out.
+Results on the graph-based analysis on the RDF dataset, either stored in database or printed to standard out.
 
 ##### Optional parameters
 
