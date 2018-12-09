@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/128509275.svg)](https://zenodo.org/badge/latestdoi/128509275)
 
-# A Software Framework for the Analysis of Graph Measures on RDF Graphs
+# Analysis of Graph Measures on RDF Graphs
 
 The main purpose of the framework is to prepare and perform a graph-based analysis on the graph topology of an RDF dataset. The main challenges were to do that on large scale and with focus on performance, i.e. with large state-of-the-art RDF graphs (hundreds of millions of edges) and in parallel with many datasets at once. 
 
