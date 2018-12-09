@@ -1,4 +1,5 @@
-db.host=spkosc03
-db.user=zlochms
-db.password=zlochms
+db.host=localhost
+db.user=user
+db.password=pass
 db.dbname=cloudstats
+db.tbname=stats_graph_2017_08
