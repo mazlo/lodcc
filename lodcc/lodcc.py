@@ -201,31 +201,32 @@ def download_prepare( dataset, from_file ):
         urls.append( ( dataset[2], SHORT_FORMAT_MAP[dataset[3]] ) )
         return urls
 
+    log.debug( 'Determining available formats..' )
     # this list of if-else's also respects db column priority
 
     # n-triples
     if len( dataset ) >= 3 and dataset[2]:
-        log.debug( 'Using format APPLICATION_N_TRIPLES with url %s', dataset[2] )
+        log.debug( 'Found format APPLICATION_N_TRIPLES with url %s', dataset[2] )
         urls.append( ( dataset[2], APPLICATION_N_TRIPLES ) )
 
     # rdf+xml
     if len( dataset ) >= 4 and dataset[3]:
-        log.debug( 'Using format APPLICATION_RDF_XML with url: %s', dataset[3] )
+        log.debug( 'Found format APPLICATION_RDF_XML with url: %s', dataset[3] )
         urls.append( ( dataset[3], APPLICATION_RDF_XML ) )
 
     # turtle
     if len( dataset ) >= 5 and dataset[4]:
-        log.debug( 'Using format TEXT_TURTLE with url: %s', dataset[4] )
+        log.debug( 'Found format TEXT_TURTLE with url: %s', dataset[4] )
         urls.append( ( dataset[4], TEXT_TURTLE ) )
 
     # notation3
     if len( dataset ) >= 6 and dataset[5]:
-        log.debug( 'Using format TEXT_N3 with url: %s', dataset[5] )
+        log.debug( 'Found format TEXT_N3 with url: %s', dataset[5] )
         urls.append( ( dataset[5], TEXT_N3 ) )
 
     # nquads
     if len( dataset ) >= 7 and dataset[6]:
-        log.debug( 'Using format APPLICATION_N_QUADS with url: %s', dataset[6] )
+        log.debug( 'Found format APPLICATION_N_QUADS with url: %s', dataset[6] )
         urls.append( ( dataset[6], APPLICATION_N_QUADS ) )
 
     # more to follow?
@@ -299,7 +300,7 @@ def download_data( dataset, urls ):
         # reuse dump if exists
         valid = ensure_valid_download_data( path )
         if not args['overwrite_dl'] and valid:
-            log.debug( 'Reusing dump for %s', dataset[1] )
+            log.debug( 'Overwrite dl? %s. Reusing local dump', args['overwrite_dl'] )
             return dict( { 'path': path, 'filename': filename, 'folder': folder, 'format': format_ } )
 
         # download anew otherwise
@@ -309,7 +310,7 @@ def download_data( dataset, urls ):
 
         valid = ensure_valid_download_data( path )
         if not valid:
-            log.info( 'Skipping format %s', format_ )
+            log.warn( 'Skipping format %s. Trying with other format if available.', format_ )
             continue
         else:
             return dict( { 'path': path, 'filename': filename, 'folder': folder, 'format': format_ } )
