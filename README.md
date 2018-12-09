@@ -1,5 +1,13 @@
 # A Software Framework for the Analysis of Graph Measures on RDF Graphs
 
+The main purpose of the framework is to prepare and perform a graph-based analysis on the graph topology of an RDF dataset. The main challenges were to do that on large scale and with focus on performance, i.e. with large state-of-the-art RDF graphs (hundreds of millions of edges) and in parallel with many datasets at once. 
+
+The framework is capable of dealing with the following:
+ 
+* Packed data dumps. Various formats are supported, like bz2, 7zip, tar.gz, etc. This is achieved by utilizing the unix-tool [dtrx](https://brettcsmith.org/2007/dtrx/).
+* Archives, which contain a hierarchy of files and folders, will get scanned for files containing RDF data. Other files will be ignored, e.g. Excel- or text-files, etc.
+* Any files containing other formats than N-Triples are transformed (if necessary). The list of supported formats is currently limited to the most common ones for RDF data, which are N-Triples, RDF/XML, Turtle, N-Quads, and Notation3. This is achieved by utilizing [rapper](http://librdf.org/raptor/).
+
 ## TLDR;
 
 ##### Prepare several RDF data sets for graph-analysis in parallel
