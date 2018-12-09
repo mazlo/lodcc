@@ -738,6 +738,25 @@ def save_stats( dataset, stats ):
 
     log.debug( 'done saving results' )
 
+def f_pseudo_diameter( D, stats ):
+    """"""
+
+    LC = label_largest_component(D)
+    LCD = GraphView( D, vfilt=LC )
+
+    if 'diameter' in args['features']:
+        if LCD.num_vertices() == 0 or LCD.num_vertices() == 1:
+            # if largest component does practically not exist, use the whole graph
+            dist, ends = pseudo_diameter(D)
+        else:
+            dist, ends = pseudo_diameter(LCD)
+
+        stats['pseudo_diameter']=dist
+        # D may be used in both cases
+        stats['pseudo_diameter_src_vertex']=D.vertex_properties['name'][ends[0]]
+        stats['pseudo_diameter_trg_vertex']=D.vertex_properties['name'][ends[1]]
+        log.debug( 'done pseudo_diameter' )
+
 def fs_digraph_start_job( dataset, D, stats ):
     """"""
 
@@ -747,6 +766,7 @@ def fs_digraph_start_job( dataset, D, stats ):
         fs_digraph_using_degree, fs_digraph_using_indegree,
         f_centralization,
         f_reciprocity,
+        f_pseudo_diameter,
         f_avg_clustering,
         f_pagerank, 
         f_eigenvector_centrality,
@@ -784,18 +804,6 @@ def f_avg_clustering( D, stats ):
     stats['avg_clustering']=vertex_average(D, local_clustering(D))[0]
     log.debug( 'done avg_clustering' )
 
-def f_pseudo_diameter( U, stats ):
-    """"""
-
-    LC = label_largest_component(U, directed=False)
-    LCU = GraphView( U, vfilt=LC )
-    if 'diameter' in args['features']:
-        dist, ends = pseudo_diameter(LCU)
-        stats['pseudo_diameter']=dist
-        stats['pseudo_diameter_src_vertex']=U.vertex_properties['name'][ends[0]]
-        stats['pseudo_diameter_trg_vertex']=U.vertex_properties['name'][ends[1]]
-        log.debug( 'done pseudo_diameter' )
-
 def fs_ugraph_start_job( dataset, U, stats ):
     """"""
 
@@ -803,7 +811,6 @@ def fs_ugraph_start_job( dataset, U, stats ):
         # fs = feature set
         f_global_clustering, #f_avg_clustering, 
         # f_avg_shortest_path, 
-        f_pseudo_diameter,
     ]
 
     for ftr in features:
