@@ -28,7 +28,7 @@ This command loads the edgelists of the three given datasets `--from-file`, 2 in
 
 ## Documentation
 
-#### Installation requirements
+### Installation requirements
 
 The framework is build with python2 and relies on many other libraries. It has been developed and tested in a linux-environment (debian jessie) with shell. Please make sure you have installed all required libraries.
 
@@ -92,14 +92,14 @@ None.
 
 ##### Details on `--prepare-graph`
 
-This step is optional, but very convenient if you haven't prepared an edgelist from an RDF dataset before. You will need to decide if to use the database or a local file to read some required information (basically the filename and format). 
+This step is optional, but very convenient if you haven't prepared an edgelist from an RDF dataset before. You will need to decide if to use the database or a local file to read some required information (basically the filename and format). In case using a database you will need to provide the official mime-types in the columns for the datasets, e.g. `application_n_triples`. An example table setup can be found in [db/03-init-table-stats-result-step1-mysql.sql](db/03-init-table-stats-result-step1-mysql.sql).
 
-With this command an edgelist will be created for each RDF dataset that is passed to the command. This is achieved by 
+The prepare-graph command creates a compact edgelist representation for each RDF dataset that is passed to the command. This is achieved by 
 
 1. downloading each RDF dataset dump first, if not present.
 2. Extracting the dump, if necessary.
-3. Transforming the file (all files, if there is a nested folder structure, ignoring (many) non-RDF formats) into ntriples, if necessary.
-4. Making a hashed edgelist from (all) ntriple-files.
+3. Transforming the file (all files, if there is a nested folder structure, ignoring (many) non-RDF formats) into n-triples, if necessary.
+4. Making a hashed edgelist from (all) ntriple-files and combining this into a file called `data.edgelist.csv`.
 
 ##### Mandatory parameters
    
@@ -111,7 +111,7 @@ With this command an edgelist will be created for each RDF dataset that is passe
 
 ##### Results from this step
 
-A `data.edgelist.csv` file for each of the given datasets. This file represents the edgelist of the RDF dataset dump. This file can be loaded efficiently by the graph_tool library.
+A `data.edgelist.csv` file for each of the given datasets in the corresponding folder of the dataset (i.e. `PROJECT_ROOT/dumps/DATASET/data.edgelist.csv`). This file represents the edgelist of the RDF dataset dump and can be loaded efficiently by the graph_tool library.
 
 ##### Optional parameters
    
@@ -148,7 +148,7 @@ The program will first look for a `data.graph.gt.gz` file to load the graph-stru
 
 ##### Results from this step
 
-Results on the graph-based analysis on the RDF dataset, either stored in database or printed to standard out.
+Results on the graph-based analysis on the RDF dataset, either stored in database or printed to standard out. In case of using a database, please ensure to have an initial table structure. An example can be found in [db/01-create-table-mysql.sql](01-create-table-mysql.sql).
 
 ##### Optional parameters
 
