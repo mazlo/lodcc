@@ -610,13 +610,18 @@ def fs_digraph_using_indegree( D, stats ):
 def f_centralization( D, stats ):
     """"""
 
-    LC = label_largest_component( D, directed=False )
-    LCU = GraphView( D, vfilt=LC )
+    if not 'centralization' in args['features']:
+        return
 
-    degree_list = D.degree_property_map( 'total' ).a
+    D_copied = D.copy()
+    D = None
+
+    remove_parallel_edges( D_copied )
+
+    degree_list = D_copied.degree_property_map( 'total' ).a
     max_degree  = degree_list.max()
 
-    stats['centralization_degree'] = float((max_degree-degree_list).sum()) / ( ( degree_list.size()-1 )*(degree_list.size()-2))
+    stats['centralization_degree'] = float((max_degree-degree_list).sum()) / ( ( degree_list.size-1 )*(degree_list.size-2))
     
     # stats['centralization_in_degree'] = (v_max_in[0]-(D.get_in_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
     # stats['centralization_out_degree'] = (v_max_out[0]-(D.get_out_degrees( D.get_vertices() ))).sum() / ( ( num_vertices-1 )*(num_vertices-2))
