@@ -10,7 +10,7 @@ The framework is capable of dealing with the following:
 * Archives, which contain a hierarchy of files and folders, will get scanned for files containing RDF data. Other files will be ignored, e.g. Excel- or text-files, etc.
 * Any files containing other formats than N-Triples are transformed (if necessary). The list of supported formats is currently limited to the most common ones for RDF data, which are N-Triples, RDF/XML, Turtle, N-Quads, and Notation3. This is achieved by utilizing [rapper](http://librdf.org/raptor/).
 
-A case study with datasets from the last LOD Cloud 2017 has recently been conducted with this framework. There is [a citable resource](https://doi.org/10.5281/zenodo.1214433) with all results and [a browsable version](http://data.gesis.org/lodc/2017-08) of all results from this study. 
+A case study with datasets from the last LOD Cloud 2017 has recently been conducted with this framework. There is [a citable resource](https://doi.org/10.5281/zenodo.1214433) with all results and [a browsable version](http://data.gesis.org/lodcc/2017-08) of all results from this study. 
 
 ## TLDR;
 
