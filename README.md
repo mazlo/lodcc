@@ -169,3 +169,12 @@ Results on the graph-based analysis on the RDF dataset, either stored in databas
 - `--log-debug`. If present, the program will log in debug mode. Default: FALSE.
 
 - `--log-info`. If present, the program will log in info mode. Default: TRUE.
+
+## License
+
+This package is licensed under the MIT License.
+
+## How to Cite
+
+Please refer to the DOI for citation. You can cite all versions of this project by using the DOI [10.5281/zenodo.2109469](https://doi.org/10.5281/zenodo.2109469). This DOI represents all versions, and will always resolve to the latest one.
+
