@@ -2,8 +2,11 @@ import argparse
 import logging as log
 import os
 import pickle
-import psycopg2
-import psycopg2.extras
+try:
+    import psycopg2
+    import psycopg2.extras
+except:
+    print 'psycogp2 could not be found'
 import re
 import threading
 import xxhash as xh
@@ -64,7 +67,7 @@ def find_vertices( in_file, dataset, hashes_to_find ):
     with open( in_file, 'r' ) as openedfile:
         for line in openedfile:
 
-            s,o = parse_spo( line, '.nt$' )
+            s,_,o = parse_spo( line, '.nt$' )
 
             sh = xh.xxh64( s ).hexdigest()
             oh = xh.xxh64( o ).hexdigest()
