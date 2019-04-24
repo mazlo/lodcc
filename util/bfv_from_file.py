@@ -5,7 +5,7 @@ import pickle
 import re
 import xxhash as xh
 
-from ldicthash import parse_spo
+from lodcc.util.ldicthash import parse_spo
 
 def find_nt_files( path ):
     """"""
