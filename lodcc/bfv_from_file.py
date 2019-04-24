@@ -2,11 +2,6 @@ import argparse
 import logging as log
 import os
 import pickle
-try:
-    import psycopg2
-    import psycopg2.extras
-except:
-    print 'psycogp2 could not be found'
 import re
 import xxhash as xh
 

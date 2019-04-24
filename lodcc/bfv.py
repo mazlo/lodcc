@@ -2,8 +2,11 @@ import argparse
 import logging as log
 import os
 import pickle
-import psycopg2
-import psycopg2.extras
+try:
+    import psycopg2
+    import psycopg2.extras
+except:
+    print 'psycogp2 could not be found'
 import re
 import threading
 import xxhash as xh
