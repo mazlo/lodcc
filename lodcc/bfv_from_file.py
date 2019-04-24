@@ -42,9 +42,10 @@ def find_vertices( in_file, dataset, vertices_map ):
     with open( in_file, 'r' ) as openedfile:
         for line in openedfile:
 
-            s,o = parse_spo( line, '.nt$' )
+            s,p,o = parse_spo( line, '.nt$' )
 
             sh = xh.xxh64( s ).hexdigest()
+            ph = xh.xxh64( p ).hexdigest()
             oh = xh.xxh64( o ).hexdigest()
 
             if sh in left_to_bf:

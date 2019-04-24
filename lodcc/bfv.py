@@ -64,7 +64,7 @@ def find_vertices( in_file, dataset, hashes_to_find ):
     with open( in_file, 'r' ) as openedfile:
         for line in openedfile:
 
-            s,o = parse_spo( line, '.nt$' )
+            s,_,o = parse_spo( line, '.nt$' )
 
             sh = xh.xxh64( s ).hexdigest()
             oh = xh.xxh64( o ).hexdigest()
