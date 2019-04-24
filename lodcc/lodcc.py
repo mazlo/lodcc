@@ -26,8 +26,8 @@ try:
 except:
     print 'psycogp2 could not be found'
 try:
-    from lxxhash import xxhash_nt
-    from merge_edgelists import merge_edgelists
+    from util.lxxhash import xxhash_nt
+    from util.merge_edgelists import merge_edgelists
     from gini import gini
 except:
     print 'One of other lodcc modules could not be found. Make sure you have imported all requirements.'
