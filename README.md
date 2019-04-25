@@ -16,13 +16,13 @@ The framework is capable of dealing with the following:
 
 ##### Prepare several RDF datasets for graph-analysis in parallel
 
-`python lodcc/lodcc.py --prepare-graph --from-db --use-datasets core education-data-gov-uk webisalod --threads 3`
+`python -m graph.main --prepare-graph --from-db --use-datasets core education-data-gov-uk webisalod --threads 3`
 
 This command will download (if not present), transform (if necessary), and prepare an edgelist ready to be read as graph-structure. `--from-db` loads the appropriate formats and urls from database configured in `db.properties`.
 
 ##### Run analysis on several prepared RDF datasets in parallel
 
-`python lodcc/lodcc.py --build-graph --from-file core education-data-gov-uk webisalod --threads 2 --threads-openmp 8 --features diameter --print-stats`
+`python -m graph.main --build-graph --from-file core education-data-gov-uk webisalod --threads 2 --threads-openmp 8 --features diameter --print-stats`
 
 This command loads the edgelists of the three given datasets `--from-file`, 2 in parallel. For each of them a graph-structure is created and the `diameter` feature is computed. Results will be printed to standard out.
 
@@ -60,7 +60,7 @@ At the top-level, the framework supports three main functions, which are:
 
 ##### Command example
 
-`python lodcc/lodcc.py --parse-datapackages`
+`python -m graph.main --parse-datapackages`
 
 ##### Details on `--parse-datapackages`
 
@@ -88,7 +88,7 @@ None.
 
 ##### Command example
 
-`python lodcc/lodcc.py --prepare-graph --use-datasets education-data-gov-uk`
+`python -m graph.main --prepare-graph --use-datasets education-data-gov-uk`
 
 ##### Details on `--prepare-graph`
 
@@ -130,7 +130,7 @@ the original downloaded data dump file when the edgelist if created. Default: FA
 
 ##### Command example
 
-`python lodcc/lodcc.py --build-graph --from-file asn-us`
+`python -m graph.main --build-graph --from-file asn-us`
 
 ##### Details on `--build-graph`
 
