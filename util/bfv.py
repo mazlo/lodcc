@@ -11,7 +11,7 @@ import re
 import threading
 import xxhash as xh
 
-from ldicthash import parse_spo
+from lodcc.util.ldicthash import parse_spo
 
 def find_path( dataset ):
     """"""
