@@ -191,8 +191,8 @@ def load_graph_from_edgelist( dataset ):
 if __name__ == '__main__':
 
     # configure args parser
-    parser = argparse.ArgumentParser( description = 'lodq - instantiate common queries from a given dataset' )
-    parser.add_argument( '--from-file', '-ffl', action = "append", help = '', nargs = '*')
+    parser = argparse.ArgumentParser( description = 'generator - instantiate common queries from a given dataset' )
+    parser.add_argument( '--datasets', '-d', action = "append", required = True, help = '', nargs = '*')
     parser.add_argument( '--queries', '-q', action = "append", help = '', nargs = '*', type=int )
     
     parser.add_argument( '--query-graphs', '-qg', required = False, type=str, default = 'query.watdiv.query_graphs', help = 'The python module to import the graph graphs from. Example parameter value: "query.watdiv.query_graphs".' )
@@ -218,7 +218,6 @@ if __name__ == '__main__':
     z.update( args )
     args = z
 
-    datasets = args['from_file']        # argparse returns [[..], [..]]
     # import query graph methods
     _module = args['query_graphs']
 
@@ -235,6 +234,8 @@ if __name__ == '__main__':
         log.error( 'Could not find folder with query templates, which is required.' )
         sys.exit(0)
 
+    # 
+    datasets = args['datasets']        # argparse returns [[..], [..]]
     datasets = list( map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
         'name': ds[0], 
         'folder': 'dumps/%s' % ds[0],
