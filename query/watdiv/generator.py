@@ -132,7 +132,7 @@ def generate_queries( D, queries, dataset, no=1 ):
             continue
 
         query_name = QUERY_TPL_NAMES[q_nr]
-        query_template = 'query/watdiv/templates/%s.tpl' % query_name
+        query_template = '%s/%s.tpl' % (args['query_templates_folder'],query_name)
         query_graph = 'query_graph_%s' % q_nr
         
         log.debug( query_name )
@@ -196,10 +196,11 @@ if __name__ == '__main__':
     parser.add_argument( '--queries', '-q', action = "append", help = '', nargs = '*', type=int )
     
     parser.add_argument( '--query-graphs', '-qg', required = False, type=str, default = 'query.watdiv.query_graphs', help = 'The python module to import the graph graphs from. Example parameter value: "query.watdiv.query_graphs".' )
+    parser.add_argument( '--query-templates-folder', '-qf', required = False, type=str, default = 'query/watdiv/templates', help = 'The folder where to find the query templates. Example parameter value: "query/watdiv/templates".' )
+    
     parser.add_argument( '--output-folder', '-o', required = False, type = str, default = 'target' )
     # TODO ZL add param --instances-per-query
     # TODO ZL add param --instances-choose
-    # TODO ZL add param --templates-folder
 
     parser.add_argument( '--log-debug', action='store_true', help = '' )
 
@@ -226,6 +227,12 @@ if __name__ == '__main__':
     except:
         log.debug( 'Query graphs module: %s', _module )
         log.error( 'Could not find module with query graphs, which is required.' )
+        sys.exit(0)
+
+    # check query templates folder
+    if not os.path.isdir( args['query_templates_folder'] ):
+        log.debug( 'Query templates folder: %s', args['query_templates_folder'] )
+        log.error( 'Could not find folder with query templates, which is required.' )
         sys.exit(0)
 
     datasets = list( map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
