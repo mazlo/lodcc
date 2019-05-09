@@ -1,13 +1,14 @@
 from graph_tool.all import *
 import argparse
+from importlib import import_module
 import logging as log
 import os
 import pystache
 import re
+import sys
 import xxhash as xh
 
 from util.bfv_from_file import job_find_vertices
-from query.watdiv.query_graphs import *
 
 QUERY_TPL_NAMES = { 1: "l1", 2: "l2", 3: "l3", 4: "l4", 5: "l5", 6: "s1", 7: "s2", 8: "s3", 9: "s4", 10: "s5", 
                    11: "s6", 12: "s7", 13: "f1", 14: "f2", 15: "f3", 16: "f4", 17: "f5",
@@ -142,11 +143,11 @@ def generate_queries( D, queries, dataset, no=1 ):
             log.error( 'no query template found for query %s', query_name )
             continue
         
-        if not query_graph in globals():
+        if not hasattr( _module, query_graph ):
             log.error( 'no query graph found for query %s', query_name )
             continue
         
-        QG = globals()[ query_graph ]()             # the query-graph, represented as Graph-object
+        QG = getattr( _module, query_graph )()         # the query-graph, represented as Graph-object
         QT = open( query_template, 'r' ).read()     # the query-template, as mustache template
 
         if args['log_debug']:
@@ -193,6 +194,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description = 'lodq - instantiate common queries from a given dataset' )
     parser.add_argument( '--from-file', '-ffl', action = "append", help = '', nargs = '*')
     parser.add_argument( '--queries', '-q', action = "append", help = '', nargs = '*', type=int )
+    
+    parser.add_argument( '--query-graphs', '-qg', required = False, type=str, default = 'query.watdiv.query_graphs', help = 'The python module to import the graph graphs from. Example parameter value: "query.watdiv.query_graphs".' )
     parser.add_argument( '--output-folder', '-o', required = False, type = str, default = 'target' )
     # TODO ZL add param --instances-per-query
     # TODO ZL add param --instances-choose
@@ -215,6 +218,16 @@ if __name__ == '__main__':
     args = z
 
     datasets = args['from_file']        # argparse returns [[..], [..]]
+    # import query graph methods
+    _module = args['query_graphs']
+
+    try:
+        _module = import_module( _module )
+    except:
+        log.debug( 'Query graphs module: %s', _module )
+        log.error( 'Could not find module with query graphs, which is required.' )
+        sys.exit(0)
+
     datasets = list( map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
         'name': ds[0], 
         'folder': 'dumps/%s' % ds[0],
