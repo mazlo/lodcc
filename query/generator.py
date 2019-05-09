@@ -10,10 +10,6 @@ import xxhash as xh
 
 from util.bfv_from_file import job_find_vertices
 
-QUERY_TPL_NAMES = { 1: "l1", 2: "l2", 3: "l3", 4: "l4", 5: "l5", 6: "s1", 7: "s2", 8: "s3", 9: "s4", 10: "s5", 
-                   11: "s6", 12: "s7", 13: "f1", 14: "f2", 15: "f3", 16: "f4", 17: "f5",
-                   18: "c1", 19: "c2", 20: "c3" }
-
 def slice_url( e, prefixes={} ):
     """"""
     # '<http://purl.org/asit/terms/hasTown>' becomes
@@ -125,15 +121,10 @@ def generate_queries( D, queries, dataset, no=1 ):
         queries = range( queries, queries+1 )
     
     log.info( 'Rendering queries ..' )
-    for q_nr in queries:
-        
-        if not q_nr in QUERY_TPL_NAMES:
-            log.error( 'no mapping found for query %s', q_nr )
-            continue
+    for query_name in queries:
 
-        query_name = QUERY_TPL_NAMES[q_nr]
         query_template = '%s/%s.tpl' % (args['query_templates_folder'],query_name)
-        query_graph = 'query_graph_%s' % q_nr
+        query_graph = 'query_graph_%s' % query_name
         
         log.debug( query_name )
         log.debug( query_template )
@@ -193,7 +184,7 @@ if __name__ == '__main__':
     # configure args parser
     parser = argparse.ArgumentParser( description = 'generator - instantiate common queries from a given dataset' )
     parser.add_argument( '--datasets', '-d', action = "append", required = True, help = '', nargs = '*')
-    parser.add_argument( '--queries', '-q', action = "append", help = '', nargs = '*', type=int )
+    parser.add_argument( '--queries', '-q', action = "append", help = '', nargs = '*', type=str )
     
     parser.add_argument( '--query-graphs', '-qg', required = False, type=str, default = 'query.watdiv.query_graphs', help = 'The python module to import the graph graphs from. Example parameter value: "query.watdiv.query_graphs".' )
     parser.add_argument( '--query-templates-folder', '-qf', required = False, type=str, default = 'query/watdiv/templates', help = 'The folder where to find the query templates. Example parameter value: "query/watdiv/templates".' )

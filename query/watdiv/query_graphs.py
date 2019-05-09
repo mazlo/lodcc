@@ -1,6 +1,6 @@
 from graph_tool import Graph
 
-def query_graph_1():
+def query_graph_l1():
     G=Graph( directed=True )
     
     v0=G.add_vertex()
@@ -14,7 +14,7 @@ def query_graph_1():
     
     return G
 
-def query_graph_2():
+def query_graph_l2():
     G=Graph( directed=True )
     
     v0=G.add_vertex()
@@ -28,7 +28,7 @@ def query_graph_2():
     
     return G
 
-def query_graph_3():
+def query_graph_l3():
     G=Graph( directed=True )
     
     v0=G.add_vertex()
@@ -40,7 +40,7 @@ def query_graph_3():
     
     return G
 
-def query_graph_4():
+def query_graph_l4():
     G=Graph( directed=True )
     
     v0=G.add_vertex()
@@ -52,7 +52,7 @@ def query_graph_4():
     
     return G
 
-def query_graph_5():
+def query_graph_l5():
     G=Graph( directed=True )
     
     v0=G.add_vertex()
@@ -66,7 +66,7 @@ def query_graph_5():
     
     return G
 
-def query_graph_6():
+def query_graph_s1():
     """query s1"""
     G=Graph( directed=True )
     
@@ -93,7 +93,7 @@ def query_graph_6():
     
     return G
 
-def query_graph_7():
+def query_graph_s2():
     """query s2"""
     G=Graph( directed=True )
     
@@ -110,7 +110,7 @@ def query_graph_7():
     
     return G
 
-def query_graph_8():
+def query_graph_s3():
     """query s3"""
     G=Graph( directed=True )
     
@@ -127,7 +127,7 @@ def query_graph_8():
     
     return G
 
-def query_graph_9():
+def query_graph_s4():
     """query s4"""
     G=Graph( directed=True )
     
@@ -144,7 +144,7 @@ def query_graph_9():
     
     return G
 
-def query_graph_10():
+def query_graph_s5():
     """query s5"""
     G=Graph( directed=True )
     
@@ -161,7 +161,7 @@ def query_graph_10():
     
     return G
 
-def query_graph_11():
+def query_graph_s6():
     """query s6"""
     G=Graph( directed=True )
     
@@ -176,7 +176,7 @@ def query_graph_11():
     
     return G
 
-def query_graph_12():
+def query_graph_s7():
     """query s7"""
     G=Graph( directed=True )
     
@@ -191,7 +191,7 @@ def query_graph_12():
     
     return G
 
-def query_graph_13():
+def query_graph_f1():
     """query f1"""
     G=Graph( directed=True )
     
@@ -212,7 +212,7 @@ def query_graph_13():
     
     return G
 
-def query_graph_14():
+def query_graph_f2():
     """query f2"""
     G=Graph( directed=True )
     
@@ -237,7 +237,7 @@ def query_graph_14():
     
     return G
 
-def query_graph_15():
+def query_graph_f3():
     """query f3"""
     G=Graph( directed=True )
     
@@ -258,7 +258,7 @@ def query_graph_15():
     
     return G
 
-def query_graph_16():
+def query_graph_f4():
     """query f4"""
     G=Graph( directed=True )
     
@@ -285,7 +285,7 @@ def query_graph_16():
     
     return G
     
-def query_graph_17():
+def query_graph_f5():
     """query f5"""
     G=Graph( directed=True )
     
@@ -306,7 +306,7 @@ def query_graph_17():
     
     return G
 
-def query_graph_18():
+def query_graph_c1():
     """query c1"""
     G=Graph( directed=True )
     
@@ -331,7 +331,7 @@ def query_graph_18():
     
     return G
 
-def query_graph_19():
+def query_graph_c2():
     """query c2"""
     G=Graph( directed=True )
     
@@ -360,7 +360,7 @@ def query_graph_19():
     
     return G
 
-def query_graph_20():
+def query_graph_c3():
     """query c3"""
     G=Graph( directed=True )
     
