@@ -6,8 +6,8 @@ import pystache
 import re
 import xxhash as xh
 
-from lodcc.util.bfv_from_file import job_find_vertices
-from lodcc.query.watdiv.query_graphs import *
+from util.bfv_from_file import job_find_vertices
+from query.watdiv.query_graphs import *
 
 QUERY_TPL_NAMES = { 1: "l1", 2: "l2", 3: "l3", 4: "l4", 5: "l5", 6: "s1", 7: "s2", 8: "s3", 9: "s4", 10: "s5", 
                    11: "s6", 12: "s7", 13: "f1", 14: "f2", 15: "f3", 16: "f4", 17: "f5",
