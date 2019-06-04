@@ -13,7 +13,10 @@ def find_nt_files( path ):
     return [ nt for nt in os.listdir( path ) if re.search( '\.nt$', nt ) ]
 
 def bf_necessary( vertices_map ):
-    """"""
+    """Argument is expected to contain items like { 'v1': ( 'value', False ) }, 
+        i.e. the hash as key and a tuple ('value', False) as value.
+        This method iterates vertices_map and returns in turn a dictionary 
+        with those items where the value-tuple contains False."""
 
     if len( vertices_map ) == 0:
         return {}
@@ -59,8 +62,11 @@ def find_vertices( in_file, dataset, vertices_map ):
 
         return vertices_map
 
-def job_find_vertices( dataset, vertices ):
-    """"""
+def job_find_vertices( dataset, vertices, vertices_map={} ):
+    """
+        dataset: a path to a directory where the original ntriple files reside.
+        vertices: a list of all hashes to find, e.g. [ 'ae984768', '63dc6ec5', ... ]
+    """
 
     if not os.path.isdir( dataset ):
         log.error( 'Dataset %s is not a directory.' % ( dataset ) )
@@ -73,8 +79,9 @@ def job_find_vertices( dataset, vertices ):
         return
 
     if type( vertices ) == list:
-        # before: vertices = [ 'v1', 'v2', ... ]
-        # after: vertices = { 'v1': ('v1', False), 'v2': ('v2', False), ... }
+        # initialize the dictionary required for processing.
+        # before: vertices = [ 'ae984768', '63dc6ec5', ... ]
+        # after: vertices = { 'ae984768': ('ae984768', False), '63dc6ec5': ('63dc6ec5', False), ... }
         vertices = dict( { v:(v,False) for v in vertices } )
 
     log.debug( 'Scanning %s files (in %s)' % ( len(files), files ) )
@@ -86,8 +93,8 @@ def job_find_vertices( dataset, vertices ):
         if len( left_to_bf ) == 0:
             break   # done
 
-    # before: vertices = { 'v1': ('v1', False), 'v2': ('v2', False), ... }
-    # after: vertices = { 'v1': 'v1', 'v2': 'v2', ... }
+    # before: vertices = { 'ae984768': ('ae984768', False), '63dc6ec5': ('http://', True), ... }
+    # after: vertices = { 'ae984768': 'ae984768', '63dc6ec5': 'http://', ... }
     return dict( { k:v[0] for k,v in vertices.items() } )
 
 if __name__ == '__main__':

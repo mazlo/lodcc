@@ -93,6 +93,7 @@ def instantiate_query( D, QG, template, dataset, max_n=3 ):
         
         log.debug( mmap )
         
+        log.info( 'Resolving hashes ..' )
         log.debug( 'resolving hashes to URIs from nt-files in folder %s' % dataset )
         hmap = job_find_vertices( dataset, list(mmap.values()) )
 
@@ -105,7 +106,6 @@ def instantiate_query( D, QG, template, dataset, max_n=3 ):
         # after: { 'e0': 'prefix1:prop1', 'e1': 'prefix2:prop2', ... }
         hmap = prefix_it( hmap )
 
-        log.debug( 'Rendering template %s' % template )
         # the real query
         query = pystache.render( template, hmap )
         queries.append( query )
