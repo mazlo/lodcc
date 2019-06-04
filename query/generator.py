@@ -10,6 +10,8 @@ import xxhash as xh
 
 from util.bfv_from_file import job_find_vertices
 
+hmap_global = dict()
+
 def slice_url( e, prefixes={} ):
     """"""
     # '<http://purl.org/asit/terms/hasTown>' becomes
@@ -69,6 +71,8 @@ def instantiate_query( D, QG, template, dataset, max_n=3 ):
         log.warn( 'No isomorphisms found' )
         return queries
     
+    global hmap_global
+
     for i in range(len(I)):
         pmap = I[i]
         
@@ -95,7 +99,11 @@ def instantiate_query( D, QG, template, dataset, max_n=3 ):
         
         log.info( 'Resolving hashes ..' )
         log.debug( 'resolving hashes to URIs from nt-files in folder %s' % dataset )
-        hmap = job_find_vertices( dataset, list(mmap.values()) )
+        
+        # returned by this function is a map of hashes to urls, 
+        # e.g. { 'ae984768': 'ae984768', '63dc6ec5': 'http://', ... }
+        # remember for later use
+        hmap_global = hmap = job_find_vertices( dataset, list(mmap.values()), hmap_global )
 
         # after: { 'e0: '<http://...', 'e1': '<http://...', ... }
         hmap = dict( map( lambda t: (t[0], hmap[t[1]]) if t[1] in hmap else t, mmap.items() ) )

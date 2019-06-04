@@ -84,6 +84,12 @@ def job_find_vertices( dataset, vertices, vertices_map={} ):
         # after: vertices = { 'ae984768': ('ae984768', False), '63dc6ec5': ('63dc6ec5', False), ... }
         vertices = dict( { v:(v,False) for v in vertices } )
 
+    if len( vertices_map ) != 0:
+        # reuse already resolved hashes
+        # before: vertices = { 'ae984768': ('ae984768', False), '63dc6ec5': ('63dc6ec5', False), ... }
+        # after: vertices = { 'ae984768': ('http://..', True), '63dc6ec5': ('63dc6ec5', False), ... }
+        vertices = dict( map( lambda e: (e[0],(vertices_map[e[0]],True)) if e[0] in vertices_map else e, vertices.items() ) )
+
     log.debug( 'Scanning %s files (in %s)' % ( len(files), files ) )
     for file in files:
         vertices = find_vertices( '/'.join( [dataset,file] ), dataset, vertices )
