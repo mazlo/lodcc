@@ -84,31 +84,7 @@ def build_graph_prepare( dataset, stats ):
 
     if not D:
         log.error( 'Could not instantiate graph, None' )
-        return
-
-    # =========
-    # CAUTION
-    # please keep in mind that YOU CANNOT work with the vertice's and edge's index, 'cause it's a unique integer.
-    # you have to work with the vertice's and edge's label in all operations
-    # =========
-
-    prop_s = D.new_vertex_property( 'bool', val=False )
-    prop_o = D.new_vertex_property( 'bool', val=False )
-
-    D.vertex_properties['subject'] = prop_s
-    D.vertex_properties['object'] = prop_o
-
-    for v in D.vertices():
-        if v.out_degree() > 0:
-            prop_s[v] = True
-        if v.in_degree() > 0:
-            prop_o[v] = True
-
-    S = GraphView( D, vfilt=prop_s )
-    O = GraphView( D, vfilt=prop_o )
-
-    print( "Number of subjects: %s" % S.num_vertices() )
-    print( "Number of objects: %s" % O.num_vertices() )
+        return None
 
     return D
 
