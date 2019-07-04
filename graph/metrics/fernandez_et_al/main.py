@@ -47,12 +47,20 @@ def load_graph_from_edgelist( dataset ):
     return D
 
 def graph_analyze( dataset, D, stats ):
-    """"""
+    """
+        CAUTION
+        please keep in mind that YOU CANNOT work with the vertice's and edge's index, 'cause it's a unique integer.
+        you have to work with the vertice's and edge's label in all operations
+    """
 
     features = n.array( mf.all ).flatten()
 
+    # one-time computation of edge-labels
+    log.info( 'Preparing edge-label structure' )
+    edge_labels = D.ep.c0.get_2d_array([0])[0]
+
     for ftr in features:
-        ftr( D, stats )
+        ftr( D, stats, edge_labels )
 
         if not args['print_stats']:
             save_stats( dataset, stats )
