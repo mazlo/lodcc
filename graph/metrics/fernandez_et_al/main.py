@@ -105,6 +105,10 @@ def job_start_build_graph( dataset, sem, threads_openmp=7 ):
         # - build_graph_prepare
         D = build_graph_prepare( dataset, stats )
 
+        if not D:
+            log.error( 'Exiting due to graph None' )
+            return
+
         start = datetime.datetime.now()
         # - build_graph_analyse
         build_graph_analyse( dataset, D, stats, threads_openmp )
