@@ -10,9 +10,9 @@ try:
     from graph_tool.all import *
 except:
     print( 'graph_tool module could not be imported' )
-import numpy as n
+import numpy as np
 import powerlaw
-n.warnings.filterwarnings('ignore')
+np.warnings.filterwarnings('ignore')
 
 import graph.metrics.fernandez_et_al.all as mf
 
@@ -53,7 +53,7 @@ def graph_analyze( dataset, D, stats ):
         you have to work with the vertice's and edge's label in all operations
     """
 
-    features = n.array( mf.all ).flatten()
+    features = np.array( mf.all ).flatten()
 
     # one-time computation of edge-labels
     log.info( 'Preparing edge-label structure' )
