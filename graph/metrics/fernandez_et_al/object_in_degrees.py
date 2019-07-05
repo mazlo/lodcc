@@ -39,7 +39,7 @@ def labelled_in_degree( D, stats, edge_labels=np.empty(0) ):
     df = pd.DataFrame( data=list(l), index=np.arange(0, D.get_edges().shape[0]), columns=np.arange(0, D.get_edges().shape[1]-1) )
 
     l = df.groupby(0).nunique()[1]
-    print( "(Eq.7) labelled in-degree deg^{+}_L(s). max: %s, mean: %s" % ( l.max(), l.mean() ) )
+    print( "(Eq.7) labelled in-degree deg^{+}_L(s). max: %s, mean: %f" % ( l.max(), l.mean() ) )
 
 def direct_in_degree( D, stats, edge_labels=np.empty(0) ):
     """"""
@@ -51,6 +51,6 @@ def direct_in_degree( D, stats, edge_labels=np.empty(0) ):
         columns=np.arange(0, D.get_edges().shape[1]) )
 
     l = df.groupby(1).nunique()[0]
-    print( "(Eq.8) direct in-degree. max: %s, mean: %s" % ( l.max(), l.mean() ) )
+    print( "(Eq.8) direct in-degree. max: %s, mean: %f" % ( l.max(), l.mean() ) )
 
 all = [ in_degree, partial_in_degree, labelled_in_degree, direct_in_degree ]
