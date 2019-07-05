@@ -1,7 +1,18 @@
+from graph_tool import GraphView
 import numpy as np
 import pandas as pd
 
 # SUBJECT OUT-DEGREES
+
+def out_degree( D, stats, edge_labels=None ):
+    """"""
+    V = GraphView( D, efilt=D.get_edges()[:,0] )
+
+    # the number of triples in G in which s occurs as subject
+    l = V.get_out_degrees( V.get_vertices() ) + 0.0
+    l[l == 0] = np.nan
+    print( "(3) out-degree deg^{-}(s). max: %s, mean: %f" % ( np.nanmax(l), np.nanmean(l) ) )
+
 
 def partial_out_degree( D, stats, edge_labels=np.empty(0) ):
     """"""
@@ -45,4 +56,4 @@ def direct_out_degree( D, stats, edge_labels=np.empty(0) ):
     l = df.groupby(0).nunique()[1]
     print( "(6) direct out-degree. max: %s, mean: %s" % ( l.max(), l.mean() ) )
 
-all = [ partial_out_degree, labelled_out_degree, direct_out_degree ]
+all = [ out_degree, partial_out_degree, labelled_out_degree, direct_out_degree ]
