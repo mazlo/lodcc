@@ -27,7 +27,7 @@ def partial_out_degree( D, stats, edge_labels=np.empty(0) ):
             edge_labels ) )
 
     _, l = np.unique( l, return_counts=True, axis=0 )
-    print( "(4) partial out-degree. max: %s, mean: %f" % ( np.max( l ), np.mean( l ) ) )
+    print( "(4) partial out-degree deg^{--}(s,p). max: %s, mean: %f" % ( np.max( l ), np.mean( l ) ) )
 
 def labelled_out_degree( D, stats, edge_labels=np.empty(0) ):
     """"""
@@ -42,7 +42,7 @@ def labelled_out_degree( D, stats, edge_labels=np.empty(0) ):
     df = pd.DataFrame( data=list(l), index=np.arange(0, D.get_edges().shape[0]), columns=np.arange(0, D.get_edges().shape[1]-1) )
 
     l = df.groupby(0).nunique()[1]
-    print( "(5) labelled out-degree. max: %s, mean: %s" % ( l.max(), l.mean() ) )
+    print( "(5) labelled out-degree deg^{-}_L(s). max: %s, mean: %s" % ( l.max(), l.mean() ) )
 
 def direct_out_degree( D, stats, edge_labels=np.empty(0) ):
     """"""
@@ -54,6 +54,6 @@ def direct_out_degree( D, stats, edge_labels=np.empty(0) ):
         columns=np.arange(0, D.get_edges().shape[1]) )
 
     l = df.groupby(0).nunique()[1]
-    print( "(6) direct out-degree. max: %s, mean: %s" % ( l.max(), l.mean() ) )
+    print( "(6) direct out-degree deg^{-}_D(s). max: %s, mean: %s" % ( l.max(), l.mean() ) )
 
 all = [ out_degree, partial_out_degree, labelled_out_degree, direct_out_degree ]
