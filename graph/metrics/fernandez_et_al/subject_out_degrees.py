@@ -36,10 +36,12 @@ def labelled_out_degree( D, stats, edge_labels=np.empty(0) ):
         edge_labels = D.ep.c0.get_2d_array([0])[0]
 
     # the number of different predicates (labels) of G with which s is related as a subject
-    l = zip( 
-        D.get_edges()[:,0], 
-        edge_labels )
-    df = pd.DataFrame( data=list(l), index=np.arange(0, D.get_edges().shape[0]), columns=np.arange(0, D.get_edges().shape[1]-1) )
+    l = zip( D.get_edges()[:,0], edge_labels )
+    
+    df = pd.DataFrame( 
+        data=list(l), 
+        index=np.arange(0, D.get_edges().shape[0]), 
+        columns=np.arange(0, D.get_edges().shape[1]-1) )
 
     l = df.groupby(0).nunique()[1]
     print( "(Eq.3) labelled out-degree deg^{-}_L(s). max: %s, mean: %f" % ( l.max(), l.mean() ) )

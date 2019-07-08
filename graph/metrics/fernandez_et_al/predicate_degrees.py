@@ -29,6 +29,6 @@ def predicate_out_degree( D, stats, edge_labels=np.empty(0) ):
 
     l = list( zip( edge_labels, D.get_edges()[:,1] ) )
     _, l = np.unique( l, return_counts=True, axis=0 )
-    print( "(Eq.11) predicate out-degree. max: %s, mean: %f" % ( np.max(l), np.mean(l) ) )
+    print( "(Eq.11) predicate out-degree deg^{-}_P(p). max: %s, mean: %f" % ( np.max(l), np.mean(l) ) )
 
 all = [ predicate_degree, predicate_in_degree, predicate_out_degree ]
