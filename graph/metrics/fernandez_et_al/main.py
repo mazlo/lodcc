@@ -179,9 +179,9 @@ if __name__ == '__main__':
 
         datasets = args['use_datasets']        # argparse returns [[..], [..]]
         datasets = list( map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
-            'name': ds[0], 
-            'path_edgelist': '%s/dumps/%s/data.edgelist.csv' % (ROOT_DIR, ds[0]), 
-            'path_graph_gt': '%s/dumps/%s/data.graph.gt.gz' % (ROOT_DIR, ds[0]) }, datasets ) )
+            'name': ds, 
+            'path_edgelist': '%s/dumps/%s/data.edgelist.csv' % (ROOT_DIR, ds), 
+            'path_graph_gt': '%s/dumps/%s/data.graph.gt.gz' % (ROOT_DIR, ds) }, datasets ) )
         
         names = ', '.join( map( lambda d: d['name'], datasets ) )
         log.debug( 'Configured datasets: %s', names )
