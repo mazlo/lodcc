@@ -45,19 +45,17 @@ def labelled_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
         edge_labels = D.ep.c0.get_2d_array([0])[0]
 
     # the number of different predicates (labels) of G with which s is related as a subject
-    l = zip( D.get_edges()[:,0], edge_labels )
-    
     df = pd.DataFrame( 
-        data=list(l), 
+        data=list(zip( D.get_edges()[:,0], edge_labels )), 
         index=np.arange(0, D.get_edges().shape[0]), 
         columns=np.arange(0, D.get_edges().shape[1]-1) )
 
-    l = df.groupby(0).nunique()[1]
+    df = df.groupby(0).nunique()[1]
 
     if print_stats:
-        print( "(Eq.3) labelled out-degree deg^{-}_L(s). max: %s, mean: %f" % ( l.max(), l.mean() ) )
+        print( "(Eq.3) labelled out-degree deg^{-}_L(s). max: %s, mean: %f" % ( df.max(), df.mean() ) )
 
-    stats['max_labelled_out_degree'], stats['mean_labelled_out_degree'] = l.max(), l.mean()
+    stats['max_labelled_out_degree'], stats['mean_labelled_out_degree'] = df.max(), df.mean()
 
 def direct_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     """"""
@@ -68,12 +66,12 @@ def direct_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
         index=np.arange( 0, D.get_edges().shape[0] ), 
         columns=np.arange(0, D.get_edges().shape[1]) )
 
-    l = df.groupby(0).nunique()[1]
+    df = df.groupby(0).nunique()[1]
 
     if print_stats:
-        print( "(Eq.4) direct out-degree deg^{-}_D(s). max: %s, mean: %f" % ( l.max(), l.mean() ) )
+        print( "(Eq.4) direct out-degree deg^{-}_D(s). max: %s, mean: %f" % ( df.max(), df.mean() ) )
 
-    stats['max_direct_out_degree'], stats['mean_direct_out_degree'] = l.max(), l.mean()
+    stats['max_direct_out_degree'], stats['mean_direct_out_degree'] = df.max(), df.mean()
 
 METRICS = [ out_degree, partial_out_degree, labelled_out_degree, direct_out_degree ]
 LABELS  = [ 'max_out_degree', 'mean_out_degree', 'max_partial_out_degree', 'mean_partial_out_degree', 'max_labelled_out_degree', 'mean_labelled_out_degree', 'max_direct_out_degree', 'mean_direct_out_degree' ]

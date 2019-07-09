@@ -41,19 +41,17 @@ def labelled_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
         edge_labels = D.ep.c0.get_2d_array([0])[0]
 
     # the number of different predicates (labels) of G with which o is related as a object
-    l = zip( D.get_edges()[:,1], edge_labels )
-    
     df = pd.DataFrame( 
-        data=list(l), 
+        data=list(zip( D.get_edges()[:,1], edge_labels )), 
         index=np.arange(0, D.get_edges().shape[0]), 
         columns=np.arange(0, D.get_edges().shape[1]-1) )
 
-    l = df.groupby(0).nunique()[1]
+    df = df.groupby(0).nunique()[1]
 
     if print_stats:
-        print( "(Eq.7) labelled in-degree deg^{+}_L(s). max: %s, mean: %f" % ( l.max(), l.mean() ) )
+        print( "(Eq.7) labelled in-degree deg^{+}_L(s). max: %s, mean: %f" % ( df.max(), df.mean() ) )
 
-    stats['max_labelled_in_degree'], stats['mean_labelled_in_degree'] = l.max(), l.mean()
+    stats['max_labelled_in_degree'], stats['mean_labelled_in_degree'] = df.max(), sdf.mean()
 
 def direct_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     """"""
@@ -64,12 +62,12 @@ def direct_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
         index=np.arange( 0, D.get_edges().shape[0] ), 
         columns=np.arange(0, D.get_edges().shape[1]) )
 
-    l = df.groupby(1).nunique()[0]
+    df = df.groupby(1).nunique()[0]
 
     if print_stats:
-        print( "(Eq.8) direct in-degree deg^{+}_D(o). max: %s, mean: %f" % ( l.max(), l.mean() ) )
+        print( "(Eq.8) direct in-degree deg^{+}_D(o). max: %s, mean: %f" % ( df.max(), df.mean() ) )
 
-    stats['max_direct_in_degree'], stats['mean_direct_in_degree'] = l.max(), l.mean()
+    stats['max_direct_in_degree'], stats['mean_direct_in_degree'] = df.max(), df.mean()
 
 METRICS = [ in_degree, partial_in_degree, labelled_in_degree, direct_in_degree ]
 LABELS  = [ 'max_in_degree', 'mean_in_degree', 'max_partial_in_degree', 'mean_partial_in_degree', 'max_labelled_in_degree', 'mean_labelled_in_degree', 'max_direct_in_degree', 'mean_direct_in_degree' ]
