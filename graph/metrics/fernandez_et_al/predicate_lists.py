@@ -21,5 +21,6 @@ def repeated_predicate_lists( D, stats, edge_labels=np.empty(0) ):
     L_G = df.groupby(0)[1].apply(list).apply(tuple).apply(hash).to_frame().reset_index()
     L_G = L_G.groupby(1).count()
     print( "(Eq.17) ratio of repeated predicate lists r_L(G): %f" % (1 - ( L_G.size / S.num_vertices() )) )
+    print( "(Eq.18/19) predicate list degree deg_{PL}(G). max: %f, mean: %f" % ( L_G.max(), L_G.mean() ) )
 
 all = [ repeated_predicate_lists ]
