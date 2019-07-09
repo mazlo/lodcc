@@ -3,6 +3,7 @@ import os
 import argparse
 import json
 import logging as log
+import pandas as pd
 import threading
 import sys
 
@@ -89,7 +90,7 @@ def build_graph_prepare( dataset, stats ):
 import datetime
 
 # real job
-def job_start_build_graph( dataset, sem, threads_openmp=7 ):
+def job_start_build_graph( dataset, dataframe, sem, threads_openmp=7 ):
     """job_start_build_graph"""
 
     # let's go
@@ -97,10 +98,8 @@ def job_start_build_graph( dataset, sem, threads_openmp=7 ):
         log.info( 'Let''s go' )
         log.debug( dataset )
 
-        # init stats
-        stats = dict( (attr, dataset[attr]) for attr in ['path_edgelist','path_graph_gt'] )
-
         # - build_graph_prepare
+        stats = dict()
         D = build_graph_prepare( dataset, stats )
 
         if not D:
@@ -112,6 +111,8 @@ def job_start_build_graph( dataset, sem, threads_openmp=7 ):
         build_graph_analyse( dataset, D, stats, threads_openmp )
         print( datetime.datetime.now() - start )
 
+        dataframe[dataset['name']] = pd.Series( stats )
+
         # - job_cleanup
 
         log.info( 'Done' ) 
@@ -122,6 +123,10 @@ def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
     if len( datasets ) == 0:
         log.error( 'No datasets to parse. exiting' )
         return None
+
+    # init dataframe with index being all metrics + some defaults.
+    # the transposed DataFrame is written to csv-file a results.
+    dataframe = pd.DataFrame( index=np.array( metrics.LABELS ).flatten() )
 
     sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
     threads = []
@@ -137,6 +142,9 @@ def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
     # wait for all threads to finish
     for t in threads:
         t.join()
+
+    dataframe = dataframe.T.reset_index().rename( columns={ 'index': 'name' } )
+    dataframe.to_csv( '%s/%s_results.csv' % (ROOT_DIR, datetime.datetime.now()), index_label='id' )
 
 # ----------------
 

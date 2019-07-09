@@ -12,6 +12,9 @@ def in_degree( D, stats, edge_labels=None, print_stats=False ):
 
     if print_stats:
         print( "(Eq.5) in-degree deg^{+}(o). max: %s, mean: %f" % ( np.nanmax(l), np.nanmean(l) ) )
+
+    stats['max_in_degree'], stats['mean_in_degree'] = np.nanmax(l), np.nanmean(l)
+
 def partial_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     """"""
 
@@ -28,6 +31,9 @@ def partial_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     if print_stats:
         print( "(Eq.6) partial in-degree deg^{++}(o,p). max: %s, mean: %f" % ( np.max( l ), np.mean( l ) ) )
+
+    stats['max_partial_in_degree'], stats['mean_partial_in_degree'] = np.max( l ), np.mean( l )
+
 def labelled_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     """"""
 
@@ -46,6 +52,9 @@ def labelled_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     if print_stats:
         print( "(Eq.7) labelled in-degree deg^{+}_L(s). max: %s, mean: %f" % ( l.max(), l.mean() ) )
+
+    stats['max_labelled_in_degree'], stats['mean_labelled_in_degree'] = l.max(), l.mean()
+
 def direct_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     """"""
 
@@ -59,5 +68,8 @@ def direct_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     if print_stats:
         print( "(Eq.8) direct in-degree deg^{+}_D(o). max: %s, mean: %f" % ( l.max(), l.mean() ) )
+
+    stats['max_direct_in_degree'], stats['mean_direct_in_degree'] = l.max(), l.mean()
+
 METRICS = [ in_degree, partial_in_degree, labelled_in_degree, direct_in_degree ]
 LABELS  = [ 'max_in_degree', 'mean_in_degree', 'max_partial_in_degree', 'mean_partial_in_degree', 'max_labelled_in_degree', 'mean_labelled_in_degree', 'max_direct_in_degree', 'mean_direct_in_degree' ]

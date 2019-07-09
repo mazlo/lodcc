@@ -24,5 +24,8 @@ def repeated_predicate_lists( D, stats, edge_labels=np.empty(0), print_stats=Fal
         print( "(Eq.17) ratio of repeated predicate lists r_L(G): %f" % (1 - ( L_G.size / S.num_vertices() )) )
         print( "(Eq.18/19) predicate list degree deg_{PL}(G). max: %f, mean: %f" % ( L_G.max(), L_G.mean() ) )
 
+    stats['repeated_predicate_lists'] = 1 - ( L_G.size / S.num_vertices() )
+    stats['max_predicate_list_degree'], stats['mean_predicate_list_degree'] = L_G.max(), L_G.mean()
+
 METRICS = [ repeated_predicate_lists ]
 LABELS  = [ 'repeated_predicate_lists', 'max_predicate_list_degree', 'mean_predicate_list_degree' ]

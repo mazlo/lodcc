@@ -9,6 +9,8 @@ def subject_object_ratio( D, stats, edge_labels=None, print_stats=False ):
 
     if print_stats:
         print( "(Eq.12) subject-object ratio \\alpha_{s-o}(G): %f" % ( float(len(nom_intersection)) / len(denom_union) ) )
+    
+    stats['subject_object_ratio'] = float(len(nom_intersection)) / len(denom_union)
 
 def subject_predicate_ratio( D, stats, edge_labels=np.empty(0) ):
     """"""
