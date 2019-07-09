@@ -3,6 +3,7 @@ dataset*
 db.properties
 dumps*
 target*
+*.csv
 *.DS_Store
 *.project
 *.pydevproject
