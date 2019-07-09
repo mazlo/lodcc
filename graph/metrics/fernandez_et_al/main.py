@@ -35,11 +35,7 @@ def load_graph_from_edgelist( dataset ):
     
     elif edgelist and os.path.isfile( edgelist ):
         log.info( 'Constructing DiGraph from edgelist' )
-
-        if args['dict_hashed']:
-            D=load_graph_from_csv( edgelist, directed=True, string_vals=False, hashed=False, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
-        else:
-            D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+        D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
     
     else:
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
