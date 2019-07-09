@@ -151,7 +151,7 @@ if __name__ == '__main__':
 
     actions.add_argument( '--build-graph', '-b', action = "store_true", help = '' )
 
-    parser.add_argument( '--use-datasets', '-d', nargs='*', action = 'append', required = True, help = '' )
+    parser.add_argument( '--use-datasets', '-d', nargs='*', required = True, help = '' )
     parser.add_argument( '--print-stats', '-dp', action= "store_true", help = '' )
     
     parser.add_argument( '--log-debug', '-ld', action = "store_true", help = '' )
