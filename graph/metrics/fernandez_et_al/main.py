@@ -14,7 +14,7 @@ import numpy as np
 import powerlaw
 np.warnings.filterwarnings('ignore')
 
-import graph.metrics.fernandez_et_al.all as mf
+import graph.metrics.fernandez_et_al.all as metrics
 
 lock = threading.Lock()
 
@@ -53,7 +53,7 @@ def graph_analyze( dataset, D, stats ):
         you have to work with the vertice's and edge's label in all operations
     """
 
-    features = np.array( mf.all ).flatten()
+    features = np.array( metrics.all ).flatten()
 
     # one-time computation of edge-labels
     log.info( 'Preparing edge-label structure' )

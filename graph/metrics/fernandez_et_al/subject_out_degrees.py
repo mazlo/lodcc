@@ -62,5 +62,7 @@ def direct_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     l = df.groupby(0).nunique()[1]
 
-all = [ out_degree, partial_out_degree, labelled_out_degree, direct_out_degree ]    if print_stats:
         print( "(Eq.4) direct out-degree deg^{-}_D(s). max: %s, mean: %f" % ( l.max(), l.mean() ) )
+
+METRICS = [ out_degree, partial_out_degree, labelled_out_degree, direct_out_degree ]
+LABELS  = [ 'max_out_degree', 'mean_out_degree', 'max_partial_out_degree', 'mean_partial_out_degree', 'max_labelled_out_degree', 'mean_labelled_out_degree', 'max_direct_out_degree', 'mean_direct_out_degree' ]

@@ -57,6 +57,7 @@ def direct_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     l = df.groupby(1).nunique()[0]
 
-all = [ in_degree, partial_in_degree, labelled_in_degree, direct_in_degree ]
     if print_stats:
         print( "(Eq.8) direct in-degree deg^{+}_D(o). max: %s, mean: %f" % ( l.max(), l.mean() ) )
+METRICS = [ in_degree, partial_in_degree, labelled_in_degree, direct_in_degree ]
+LABELS  = [ 'max_in_degree', 'mean_in_degree', 'max_partial_in_degree', 'mean_partial_in_degree', 'max_labelled_in_degree', 'mean_labelled_in_degree', 'max_direct_in_degree', 'mean_direct_in_degree' ]

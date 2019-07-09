@@ -20,4 +20,5 @@ def predicate_object_ratio( D, stats, edge_labels=np.empty(0) ):
 
     # TODO because this is a costly computation
 
-all = [ subject_object_ratio ]
+METRICS = [ subject_object_ratio ]
+LABELS  = [ 'subject_object_ratio' ]
