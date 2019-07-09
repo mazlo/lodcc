@@ -2,7 +2,7 @@ from graph_tool import GraphView
 import numpy as np
 import pandas as pd
 
-def ratio_repeated_predicate_lists( D, stats, edge_labels=np.empty(0) ):
+def repeated_predicate_lists( D, stats, edge_labels=np.empty(0) ):
     """"""
 
     if edge_labels.size == 0:
@@ -22,4 +22,4 @@ def ratio_repeated_predicate_lists( D, stats, edge_labels=np.empty(0) ):
     L_G = L_G.groupby(1).count()
     print( "(Eq.17) ratio of repeated predicate lists r_L(G): %f" % (1 - ( L_G.size / S.num_vertices() )) )
 
-all = [ ratio_repeated_predicate_lists ]
+all = [ repeated_predicate_lists ]
