@@ -50,7 +50,7 @@ def labelled_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     df = pd.DataFrame( 
         data=list(l), 
         index=np.arange(0, D.get_edges().shape[0]), 
-        columns=np.arange(0, D.get_edges().shape[1]-1) )
+        columns=np.arange(0, D.get_edges().shape[1]) )
 
     l = df.groupby(0).nunique()[1]
 

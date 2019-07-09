@@ -16,7 +16,7 @@ def repeated_predicate_lists( D, stats, edge_labels=np.empty(0), print_stats=Fal
     df = pd.DataFrame( 
         data=list(l), 
         index=np.arange(0, D.get_edges().shape[0]), 
-        columns=np.arange(0, D.get_edges().shape[1]-1) )
+        columns=np.arange(0, D.get_edges().shape[1]) )
 
     L_G = df.groupby(0)[1].apply(list).apply(tuple).apply(hash).to_frame().reset_index()
     L_G = L_G.groupby(1).count()[0]
