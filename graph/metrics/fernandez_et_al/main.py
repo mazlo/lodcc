@@ -130,7 +130,7 @@ def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_build_graph, name = dataset['name'], args = ( dataset, sem, threads_openmp ) )
+        t = threading.Thread( target = job_start_build_graph, name = dataset['name'], args = ( dataset, dataframe, sem, threads_openmp ) )
         t.start()
 
         threads.append( t )
