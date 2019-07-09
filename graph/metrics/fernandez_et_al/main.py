@@ -59,11 +59,9 @@ def graph_analyze( dataset, D, stats ):
     log.info( 'Preparing edge-label structure' )
     edge_labels = D.ep.c0.get_2d_array([0])[0]
 
+    log.info( 'Computing features' )
     for ftr in features:
         ftr( D, stats, edge_labels )
-
-        if not args['print_stats']:
-            save_stats( dataset, stats )
 
 def build_graph_analyse( dataset, D, stats, threads_openmp=7 ):
     """"""
