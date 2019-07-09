@@ -20,6 +20,7 @@ import graph.metrics.fernandez_et_al.all as metrics
 lock = threading.Lock()
 
 ROOT_DIR = os.path.abspath( os.curdir )
+DEFAULT_DATAFRAME_INDEX = [ 'time_overall' ]
 
 def load_graph_from_edgelist( dataset ):
     """"""
@@ -102,11 +103,14 @@ def job_start_build_graph( dataset, dataframe, sem, threads_openmp=7 ):
             log.error( 'Exiting due to graph None' )
             return
 
+        # start timer
         start = datetime.datetime.now()
+
         # - build_graph_analyse
         build_graph_analyse( dataset, D, stats, threads_openmp )
-        print( datetime.datetime.now() - start )
 
+        # save results
+        stats['time_overall'] = datetime.datetime.now() - start
         dataframe[dataset['name']] = pd.Series( stats )
 
         # - job_cleanup
@@ -122,7 +126,7 @@ def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
 
     # init dataframe with index being all metrics + some defaults.
     # the transposed DataFrame is written to csv-file a results.
-    dataframe = pd.DataFrame( index=np.array( metrics.LABELS ).flatten() )
+    dataframe = pd.DataFrame( index=metrics.LABELS + DEFAULT_DATAFRAME_INDEX )
 
     sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
     threads = []
