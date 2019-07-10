@@ -1,4 +1,3 @@
-from graph_tool import GraphView
 import numpy as np
 import pandas as pd
 
@@ -6,10 +5,9 @@ import pandas as pd
 
 def out_degree( D, stats, edge_labels=None, print_stats=False ):
     """"""
-    V = GraphView( D, efilt=D.get_edges()[:,0] )
 
     # the number of triples in G in which s occurs as subject
-    l = V.get_out_degrees( V.get_vertices() ) + 0.0
+    l = D.get_out_degrees( D.get_vertices() ) + 0.0
     l[l == 0] = np.nan
 
     if print_stats:
@@ -26,10 +24,7 @@ def partial_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     # the number of triples of G, in which s occurs as subject and p as predicate
     ## e.g. l = [ ['/John','foaf:mbox'], ['/John','foaf:mbox'], ['/John','rdf:type'], ['/John','ex:birthPlace'], ['/Rome', 'foaf:name'], ['/Giacomo', 'ex:areaOfWork'], ['/Piero', 'ex:areaOfWork'] ]
-    l = list( zip( 
-            D.get_edges()[:,0], 
-            edge_labels ) )
-
+    l = list( zip( D.get_edges()[:,0], edge_labels ) )
     _, l = np.unique( l, return_counts=True, axis=0 )
 
     if print_stats:

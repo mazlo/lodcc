@@ -6,7 +6,7 @@ def repeated_predicate_lists( D, stats, edge_labels=np.empty(0), print_stats=Fal
     """"""
 
     if edge_labels.size == 0:
-        edge_labels = D.ep.c0.get_2d_array([0])[0]
+        edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     S = GraphView( D, vfilt=D.get_edges()[:,0] )
 

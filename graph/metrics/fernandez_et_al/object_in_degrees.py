@@ -1,13 +1,10 @@
-from graph_tool import GraphView
 import numpy as np
 import pandas as pd
 
 def in_degree( D, stats, edge_labels=None, print_stats=False ):
     """"""
-    V = GraphView( D, efilt=D.get_edges()[:,1] )
-
     # the number of triples in G in which o occurs as object
-    l = V.get_in_degrees( V.get_vertices() ) + 0.0
+    l = D.get_in_degrees( D.get_vertices() ) + 0.0
     l[l == 0] = np.nan
 
     if print_stats:
@@ -23,10 +20,7 @@ def partial_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     # the number of triples of G, in which o occurs as object and p as predicate
     ## e.g. l = ['foaf:mbox_john@example.org', 'foaf:mbox_john@doe.org', 'rdf:type_/Researcher', 'ex:areaOfWork_/Rome', 'ex:areaOfWork_/Rome', 'ex:birthPlace_/Rome', 'foaf:name_"Roma"@it']
-    l = list( zip( 
-            D.get_edges()[:,1], 
-            edge_labels ) )
-
+    l = list( zip( D.get_edges()[:,1], edge_labels ) )
     _, l = np.unique( l, return_counts=True, axis=0 )
 
     if print_stats:
@@ -51,7 +45,7 @@ def labelled_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     if print_stats:
         print( "(Eq.7) labelled in-degree deg^{+}_L(s). max: %s, mean: %f" % ( df.max(), df.mean() ) )
 
-    stats['max_labelled_in_degree'], stats['mean_labelled_in_degree'] = df.max(), sdf.mean()
+    stats['max_labelled_in_degree'], stats['mean_labelled_in_degree'] = df.max(), df.mean()
 
 def direct_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     """"""
