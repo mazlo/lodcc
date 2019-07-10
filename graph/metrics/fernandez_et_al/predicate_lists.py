@@ -8,15 +8,16 @@ def repeated_predicate_lists( D, stats, edge_labels=np.empty(0), print_stats=Fal
     if edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
-    S = GraphView( D, vfilt=D.get_edges()[:,0] )
+    # filter those vertices v | out-degree(v) > 0
+    S = GraphView( D, vfilt=D.get_out_degrees( D.get_vertices() ) )
 
     # .. is defined as the ratio of repeated predicate lists from the total lists in the graph G
     df = pd.DataFrame( 
-        data=list(zip( D.get_edges()[:,0], edge_labels )), 
+        data=list( zip( D.get_edges()[:,0], edge_labels ) ), 
         index=np.arange(0, D.get_edges().shape[0]), 
         columns=np.arange(0, D.get_edges().shape[1]-1) )
 
-    df = df.groupby(0)[1].apply(list).apply(tuple).apply(hash).to_frame().reset_index()
+    df = df.groupby(0)[1].apply(tuple).apply(hash).to_frame().reset_index()
     df = df.groupby(1).count()[0]
 
     if print_stats:
