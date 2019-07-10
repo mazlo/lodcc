@@ -19,7 +19,7 @@ def partial_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:
-        edge_labels = D.ep.c0.get_2d_array([0])[0]
+        edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of triples of G, in which o occurs as object and p as predicate
     ## e.g. l = ['foaf:mbox_john@example.org', 'foaf:mbox_john@doe.org', 'rdf:type_/Researcher', 'ex:areaOfWork_/Rome', 'ex:areaOfWork_/Rome', 'ex:birthPlace_/Rome', 'foaf:name_"Roma"@it']
@@ -38,11 +38,11 @@ def labelled_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:
-        edge_labels = D.ep.c0.get_2d_array([0])[0]
+        edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of different predicates (labels) of G with which o is related as a object
     df = pd.DataFrame( 
-        data=list(zip( D.get_edges()[:,1], edge_labels )), 
+        data=list( zip( D.get_edges()[:,1], edge_labels ) ), 
         index=np.arange(0, D.get_edges().shape[0]), 
         columns=np.arange(0, D.get_edges().shape[1]-1) )
 
