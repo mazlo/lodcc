@@ -1,14 +1,15 @@
 import os
+import re
 try:
     import psycopg2
     import psycopg2.extras
 except:
-    print 'psycogp2 could not be found'
+    print( 'psycogp2 could not be found' )
 
 # remember
 conn = None
 
-def init( args ):
+def init( args, log ):
     """"""
 
     if not os.path.isfile( 'db.properties' ):
@@ -23,6 +24,7 @@ def check( args ):
     """"""
 
     # connect to an existing database
+    global conn
     conn = psycopg2.connect( host=args['db_host'], dbname=args['db_dbname'], user=args['db_user'], password=args['db_password'] )
     conn.set_session( autocommit=True )
 
