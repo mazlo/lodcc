@@ -28,13 +28,11 @@ def connect( args ):
     conn = psycopg2.connect( host=args['db_host'], dbname=args['db_dbname'], user=args['db_user'], password=args['db_password'] )
     conn.set_session( autocommit=True )
 
-    try:
-        cur = conn.cursor()
-        cur.execute( "SELECT 1;" )
-        result = cur.fetchall()
-        cur.close()
-    except:
-        raise 
+    cur = conn.cursor()
+    cur.execute( "SELECT * FROM information_schema.tables AS t WHERE t.table_name=%s AND t.table_schema=%s", (args['db_tbname'],"public") )
+    
+    if cur.rowcount == 0:
+        raise Exception( 'Table %s could not be found in database.' % args['db_tbname'] )
 
 def save_stats( dataset, stats ):
     """"""
