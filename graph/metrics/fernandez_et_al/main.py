@@ -64,7 +64,7 @@ def graph_analyze( dataset, D, stats ):
     for ftr in features:
         ftr( D, stats, edge_labels )
 
-        if arg['from_db']:
+        if args['from_db']:
             db.save_stats( dataset, stats )
 
 def build_graph_analyse( dataset, D, stats, threads_openmp=7 ):
