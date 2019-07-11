@@ -15,6 +15,7 @@ import numpy as np
 import powerlaw
 np.warnings.filterwarnings('ignore')
 
+import db.helpers as db
 import graph.metrics.fernandez_et_al.all as metrics
 
 lock = threading.Lock()
@@ -57,11 +58,14 @@ def graph_analyze( dataset, D, stats ):
     log.info( 'Preparing edge-label structure' )
     # we unfortunately need to iterate over all edges once, since the order of appearance of
     # edge labels together with subjects and objects is important
-    edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
+    edge_labels = np.array( [ D.ep.c0[p] for p in D.edges() ] )
 
     log.info( 'Computing features' )
     for ftr in features:
         ftr( D, stats, edge_labels )
+
+        if args['from_db']:
+            db.save_stats( dataset, stats )
 
 def build_graph_analyse( dataset, D, stats, threads_openmp=7 ):
     """"""
@@ -157,6 +161,10 @@ if __name__ == '__main__':
 
     actions.add_argument( '--build-graph', '-b', action = "store_true", help = '' )
 
+    group = parser.add_mutually_exclusive_group( required = True )
+    group.add_argument( '--from-db', '-fdb', action = "store_true", help = '' )
+    group.add_argument( '--from-file', '-ffl', action = "store_true", help = '' )
+
     parser.add_argument( '--use-datasets', '-d', nargs='*', required = True, help = '' )
     parser.add_argument( '--print-stats', '-dp', action= "store_true", help = '' )
     
@@ -180,17 +188,45 @@ if __name__ == '__main__':
 
     log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
 
-   # option 3
-    if args['build_graph']:
+    # configure datasets
+    datasets = args['use_datasets']        # argparse returns [[..], [..]]
+    log.debug( 'Configured datasets: '+ ', '.join( datasets ) )
 
-        datasets = args['use_datasets']        # argparse returns [[..], [..]]
-        datasets = list( map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
+    # either from db
+    if args['from_db']:
+        log.debug( 'Requested to read data from db' )
+
+        try:
+            # connects, checks connection, and loads datasets
+            db.init( args, log )
+            db.connect()
+        except:
+            log.error( 'Database not ready for query execution. Check db.properties.\n Raised error: %s', sys.exc_info() )
+            sys.exit(0)
+
+        # read datasets
+        names_query = '( ' + ' OR '.join( 'name = %s' for ds in datasets ) + ' )'
+            
+        if 'names_query' in locals():
+            sql = ('SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE ' % args['db_tbname']) + names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
+        else:
+            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id' % args['db_tbname']
+            
+        datasets = db.run( sql, tuple( datasets ) )
+
+    # or passed by cli arg
+    elif args['from_file']:
+        log.debug( 'Requested to read data from file' )
+
+        # transform the cli arg list into object structure.
+        # this format is compatible with the format that is returned by the database
+        datasets = list( map( lambda ds: {
             'name': ds, 
             'path_edgelist': '%s/dumps/%s/data.edgelist.csv' % (ROOT_DIR, ds), 
             'path_graph_gt': '%s/dumps/%s/data.graph.gt.gz' % (ROOT_DIR, ds) }, datasets ) )
-        
-        names = ', '.join( map( lambda d: d['name'], datasets ) )
-        log.debug( 'Configured datasets: %s', names )
+
+   # option 3
+    if args['build_graph']:
 
         # init feature list
         if len( args['features'] ) == 0:

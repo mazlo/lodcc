@@ -66,7 +66,7 @@ At the top-level, the framework supports three main functions, which are:
 
 ##### Details on `--parse-datapackages`
 
-This command requires a database to be configured beforehand. The table has to provide at least a list of data sets (e.g. from the current LOD Cloud) with at least: `| id | name | url |` of the data package. An initial table setup can be found in [db/01-create-table-mysql.sql](db/02-init-table-stats-mysql.sql)
+This command requires a database to be configured beforehand. The table has to provide at least a list of data sets (e.g. from the current LOD Cloud) with at least: `| id | name | url |` of the data package. An initial table setup can be found in [resources/db/01-create-table-mysql.sql](02-init-table-stats-mysql.sql)
 
 The metadata is first crawled from the web (datahub.io). Then relevant information are parsed (from `datapackage.json` file), like the format and the urls to obtain the data dump from, and stored in the table.
 
@@ -76,7 +76,7 @@ The program will respect the [formats.properties](formats.properties) file, in o
 
 A database table will be extended by the list of available formats for all data sets. Each format will be written to its own column. 
 
-[db/03-init-table-stats-result-step1-mysql.sql](db/03-init-table-stats-result-step1-mysql.sql) shows an initialized table after execution (last modified: 2017-12-01).
+[resources/db/03-init-table-stats-result-step1-mysql.sql](03-init-table-stats-result-step1-mysql.sql) shows an initialized table after execution (last modified: 2017-12-01).
 
 ##### Mandatory parameters
    
@@ -94,7 +94,7 @@ None.
 
 ##### Details on `--prepare-graph`
 
-This step is optional, but very convenient if you haven't prepared an edgelist from an RDF dataset before. You will need to decide if to use the database or a local file to read some required information (basically the filename and format). In case using a database you will need to provide the official mime-types in the columns for the datasets, e.g. `application_n_triples`. An example table setup can be found in [db/03-init-table-stats-result-step1-mysql.sql](db/03-init-table-stats-result-step1-mysql.sql).
+This step is optional, but very convenient if you haven't prepared an edgelist from an RDF dataset before. You will need to decide if to use the database or a local file to read some required information (basically the filename and format). In case using a database you will need to provide the official mime-types in the columns for the datasets, e.g. `application_n_triples`. An example table setup can be found in [resources/db/03-init-table-stats-result-step1-mysql.sql](03-init-table-stats-result-step1-mysql.sql).
 
 The prepare-graph command creates a compact edgelist representation for each RDF dataset that is passed to the command. This is achieved by 
 
@@ -150,7 +150,7 @@ The program will first look for a `data.graph.gt.gz` file to load the graph-stru
 
 ##### Results from this step
 
-Results on the graph-based analysis on the RDF dataset, either stored in database or printed to standard out. In case of using a database, please ensure to have an initial table structure. An example can be found in [db/01-create-table-mysql.sql](01-create-table-mysql.sql).
+Results on the graph-based analysis on the RDF dataset, either stored in database or printed to standard out. In case of using a database, please ensure to have an initial table structure. An example can be found in [resources/db/01-create-table-mysql.sql](01-create-table-mysql.sql).
 
 ##### Optional parameters
 
