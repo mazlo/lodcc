@@ -40,19 +40,42 @@ def connect():
     conn.set_session( autocommit=True )
 
     cur = conn.cursor()
-    cur.execute( "SELECT * FROM information_schema.tables AS t WHERE t.table_name=%s AND t.table_schema=%s", (db['db_tbname'],"public") )
+    cur.execute( 'SELECT * FROM information_schema.tables AS t WHERE t.table_name=%s AND t.table_schema=%s', (db['db_tbname'],'public') )
     
     if cur.rowcount == 0:
         raise Exception( 'Table %s could not be found in database.' % db['db_tbname'] )
 
+def ensure_schema_completeness( stats ):
+    """"""
+
+    cur = conn.cursor()
+    
+    for attr in stats:
+        cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s", (db['db_tbname'], attr) )
+
+        if cur.rowcount == 0:
+            log.debug( 'Creating missing attribute %s', attr )
+            ctype = 'BIGINT' if 'max' in attr else 'DOUBLE PRECISION'
+            cur.execute( 'ALTER TABLE %s.%s ADD COLUMN %s %s' % ('public',db['db_tbname'],attr,ctype) )
+    
+    cur.close()
+
 def save_stats( dataset, stats ):
     """"""
+
+    if 'id' in stats:
+        del stats['id']
+
+    ensure_schema_completeness( stats )
 
     # e.g. avg_degree=%(avg_degree)s, max_degree=%(max_degree)s, ..
     cols = ', '.join( map( lambda d: d +'=%('+ d +')s', stats ) )
 
     sql=('UPDATE %s SET ' % db['db_tbname']) + cols +' WHERE id=%(id)s'
     stats['id']=dataset['id']
+
+    log.debug( 'Saving: %s' % stats )
+    log.debug( sql )
 
     cur = conn.cursor()
     cur.execute( sql, stats )
