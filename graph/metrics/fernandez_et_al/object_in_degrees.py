@@ -37,8 +37,8 @@ def labelled_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     # the number of different predicates (labels) of G with which o is related as a object
     df = pd.DataFrame( 
         data=list( zip( D.get_edges()[:,1], edge_labels ) ), 
-        index=np.arange(0, D.get_edges().shape[0]), 
-        columns=np.arange(0, D.get_edges().shape[1]-1) )
+        index=np.arange( 0, D.get_edges().shape[0] ), 
+        columns=np.arange( 0, D.get_edges().shape[1] ) )
 
     df = df.groupby(0).nunique()[1]
 
@@ -54,7 +54,7 @@ def direct_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     df = pd.DataFrame( 
         data=D.get_edges(), 
         index=np.arange( 0, D.get_edges().shape[0] ), 
-        columns=np.arange(0, D.get_edges().shape[1]) )
+        columns=np.arange( 0, D.get_edges().shape[1] ) )
 
     df = df.groupby(1).nunique()[0]
 
