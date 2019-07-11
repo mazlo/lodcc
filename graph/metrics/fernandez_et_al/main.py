@@ -199,7 +199,7 @@ if __name__ == '__main__':
         try:
             # connects, checks connection, and loads datasets
             db.init( args, log )
-            db.connect( args )
+            db.connect()
         except:
             log.error( 'Database not ready for query execution. Check db.properties.\n Raised error: %s', sys.exc_info() )
             sys.exit(0)

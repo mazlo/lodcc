@@ -8,6 +8,7 @@ except:
 
 # remember
 conn = None
+db = None
 
 def init( args, log ):
     """"""
@@ -18,21 +19,25 @@ def init( args, log ):
 
     with open( 'db.properties', 'rt' ) as f:
         args.update( dict( ( key.replace( '.', '_' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) ) )
+
+        global db
+        db = args
+
         return args
 
-def connect( args ):
+def connect():
     """"""
 
     # connect to an existing database
     global conn
-    conn = psycopg2.connect( host=args['db_host'], dbname=args['db_dbname'], user=args['db_user'], password=args['db_password'] )
+    conn = psycopg2.connect( host=db['db_host'], dbname=db['db_dbname'], user=db['db_user'], password=db['db_password'] )
     conn.set_session( autocommit=True )
 
     cur = conn.cursor()
-    cur.execute( "SELECT * FROM information_schema.tables AS t WHERE t.table_name=%s AND t.table_schema=%s", (args['db_tbname'],"public") )
+    cur.execute( "SELECT * FROM information_schema.tables AS t WHERE t.table_name=%s AND t.table_schema=%s", (db['db_tbname'],"public") )
     
     if cur.rowcount == 0:
-        raise Exception( 'Table %s could not be found in database.' % args['db_tbname'] )
+        raise Exception( 'Table %s could not be found in database.' % db['db_tbname'] )
 
 def save_stats( dataset, stats ):
     """"""
@@ -40,7 +45,7 @@ def save_stats( dataset, stats ):
     # e.g. avg_degree=%(avg_degree)s, max_degree=%(max_degree)s, ..
     cols = ', '.join( map( lambda d: d +'=%('+ d +')s', stats ) )
 
-    sql=('UPDATE %s SET ' % args['db_tbname']) + cols +' WHERE id=%(id)s'
+    sql=('UPDATE %s SET ' % db['db_tbname']) + cols +' WHERE id=%(id)s'
     stats['id']=dataset['id']
 
     cur = conn.cursor()
