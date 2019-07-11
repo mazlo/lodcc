@@ -55,7 +55,9 @@ def graph_analyze( dataset, D, stats ):
 
     # one-time computation of edge-labels
     log.info( 'Preparing edge-label structure' )
-    edge_labels = D.ep.c0.get_2d_array([0])[0]
+    # we unfortunately need to iterate over all edges once, since the order of appearance of
+    # edge labels together with subjects and objects is important
+    edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     log.info( 'Computing features' )
     for ftr in features:
