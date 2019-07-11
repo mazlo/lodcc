@@ -1,16 +1,22 @@
+import logging as log
+import numpy as np
 import os
 import re
 try:
     import psycopg2
     import psycopg2.extras
+
+    from psycopg2.extensions import register_adapter, AsIs
+    psycopg2.extensions.register_adapter( np.int64, psycopg2._psycopg.AsIs )
+    psycopg2.extensions.register_adapter( np.float64, psycopg2._psycopg.AsIs )
 except:
-    print( 'psycogp2 could not be found' )
+    print( 'psycopg2 could not be found' )
 
 # remember
 conn = None
 db = None
 
-def init( args, log ):
+def init( args ):
     """"""
 
     if not os.path.isfile( 'db.properties' ):
