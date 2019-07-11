@@ -204,18 +204,15 @@ if __name__ == '__main__':
             log.error( 'Database not ready for query execution. Check db.properties.\n Raised error: %s', sys.exc_info() )
             sys.exit(0)
 
-            # read datasets
-            names_query = '( ' + ' OR '.join( 'name = %s' for ds in datasets ) + ' )'
+        # read datasets
+        names_query = '( ' + ' OR '.join( 'name = %s' for ds in datasets ) + ' )'
             
-            if 'names_query' in locals():
-                sql = ('SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE ' % args['db_tbname']) + names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
-            else:
-                sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id' % args['db_tbname']
+        if 'names_query' in locals():
+            sql = ('SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE ' % args['db_tbname']) + names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
+        else:
+            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id' % args['db_tbname']
             
-            datasets = db.run( sql, names_query )
-        except:
-            log.error( 'Database not ready for query execution. Check db.properties. db error:\n %s', sys.exc_info()[0] )
-            raise 
+        datasets = db.run( sql, tuple( datasets ) )
 
     # or passed by cli arg
     elif args['from_file']:
