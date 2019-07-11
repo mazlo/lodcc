@@ -20,7 +20,7 @@ def init( args, log ):
         args.update( dict( ( key.replace( '.', '_' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) ) )
         return args
 
-def check( args ):
+def connect( args ):
     """"""
 
     # connect to an existing database
@@ -58,7 +58,7 @@ def run( sql, arguments=None ):
     cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
     cur.execute( sql, arguments )
 
-    result = cur.fetchall()
+    fetched = cur.fetchall()
     cur.close()
 
-    return result
+    return fetched
