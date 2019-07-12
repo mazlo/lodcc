@@ -8,8 +8,8 @@ def number_of_classes( D, stats, edge_labels=np.empty(0), print_stats=False ):
         edge_labels = np.array( [ D.ep.c0[p] for p in D.get_edges() ] )
 
     # ae98476863dc6ec5 = http://www.w3.org/1999/02/22-rdf-syntax-ns#type
-    C_G = GraphView( D, efilt=preds == 'ae98476863dc6ec5' )
-    C_G = np.unique( V.get_edges()[:,1] )
+    C_G = GraphView( D, efilt=edge_labels == 'ae98476863dc6ec5' )
+    C_G = np.unique( C_G.get_edges()[:,1] )
 
     if print_stats:
         print( "number of different classes C_G: %s" % C_G.size )
@@ -26,8 +26,8 @@ def ratio_of_typed_subjects( D, stats, edge_labels=np.empty(0), print_stats=Fals
         edge_labels = np.array( [ D.ep.c0[p] for p in D.get_edges() ] )
 
     # ae98476863dc6ec5 = http://www.w3.org/1999/02/22-rdf-syntax-ns#type
-    S_C_G = GraphView( D, efilt=preds == 'ae98476863dc6ec5', vfilt=lambda v:v.out_degree() > 0 )
-    S_C_G = np.unique( V.get_vertices() )
+    S_C_G = GraphView( D, efilt=edge_labels == 'ae98476863dc6ec5', vfilt=lambda v:v.out_degree() > 0 )
+    S_C_G = np.unique( S_C_G.get_vertices() )
 
     if print_stats:
         print( "number of different typed subjects S^{C}_G: %s" % S_C_G.size )
