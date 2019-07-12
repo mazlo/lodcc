@@ -35,6 +35,7 @@ def predicate_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False )
     if edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
+    # the number of different objects of G with which p is related as a predicate
     l = list( zip( edge_labels, D.get_edges()[:,1] ) )
     _, l = np.unique( l, return_counts=True, axis=0 )
 
