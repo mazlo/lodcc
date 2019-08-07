@@ -22,7 +22,7 @@ def predicate_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     # the number of different subjects of G with which p is related as a predicate
     df = pd.DataFrame( 
-        data=list( zip (preds, D.get_edges()[:,0] ) ), 
+        data=list( zip ( edge_labels, D.get_edges()[:,0] ) ), 
         index=np.arange( 0, D.get_edges().shape[0] ), 
         columns=np.arange( 0, D.get_edges().shape[1] ) )
 
@@ -40,8 +40,8 @@ def predicate_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False )
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of different objects of G with which p is related as a predicate
-     df = pd.DataFrame( 
-        data=list( zip (preds, D.get_edges()[:,1] ) ), 
+    df = pd.DataFrame( 
+        data=list( zip ( edge_labels, D.get_edges()[:,1] ) ), 
         index=np.arange( 0, D.get_edges().shape[0] ), 
         columns=np.arange( 0, D.get_edges().shape[1] ) )
 
