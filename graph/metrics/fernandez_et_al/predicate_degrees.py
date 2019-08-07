@@ -21,13 +21,17 @@ def predicate_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of different subjects of G with which p is related as a predicate
-    l = list( zip( edge_labels, D.get_edges()[:,0] ) )
-    _, l = np.unique( l, return_counts=True, axis=0 )
+    df = pd.DataFrame( 
+        data=list( zip (preds, D.get_edges()[:,0] ) ), 
+        index=np.arange( 0, D.get_edges().shape[0] ), 
+        columns=np.arange( 0, D.get_edges().shape[1] ) )
+
+    df = df.groupby(0).nunique()[1]
 
     if print_stats:
-        print( "(Eq.10) predicate in-degree deg^{+}_P(p). max: %s, mean: %f" % ( np.max(l), np.mean(l) ) )
+        print( "(Eq.10) predicate in-degree deg^{+}_P(p). max: %s, mean: %f" % ( df.max(), df.mean() ) )
 
-    stats['max_predicate_in_degree'], stats['mean_predicate_in_degree'] = np.max(l), np.mean(l)
+    stats['max_predicate_in_degree'], stats['mean_predicate_in_degree'] = df.max(), df.mean()
 
 def predicate_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     """"""
