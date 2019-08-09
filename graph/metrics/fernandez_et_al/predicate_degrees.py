@@ -54,4 +54,5 @@ def predicate_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=
     stats['max_predicate_out_degree'], stats['mean_predicate_out_degree'] = df.max(), df.mean()
 
 METRICS = [ predicate_degree, predicate_in_degree, predicate_out_degree ]
+METRICS_SET = { 'PREDICATE_DEGREES': METRICS }
 LABELS  = [ 'max_predicate_degree', 'mean_predicate_degree', 'max_predicate_in_degree', 'mean_predicate_in_degree', 'max_predicate_out_degree', 'mean_predicate_out_degree' ]

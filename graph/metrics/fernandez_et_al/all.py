@@ -9,3 +9,4 @@ all    = subj_out_deg.METRICS + obj_in_deg.METRICS + pred_deg.METRICS + ratios.M
 LABELS = subj_out_deg.LABELS + obj_in_deg.LABELS + pred_deg.LABELS + ratios.LABELS + pred_lists.LABELS + typed_so.LABELS
 SETS   = {}
 SETS.update( obj_in_deg.METRICS_SET )
+SETS.update( pred_deg.METRICS_SET )

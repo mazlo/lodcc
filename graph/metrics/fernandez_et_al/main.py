@@ -65,7 +65,22 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
 
             pods = np.append( pods, feature( O_G_s, edge_labels, {}, True ) )
 
-        log.info( "max %s, mean %s", ( pods.max(), pods.mean() ) )
+        log.info( "max %s, mean %s", pods.max(), pods.mean() )
+
+    elif feature in metrics.SETS['PREDICATE_DEGREES']:
+
+        edge_labels = np.array( [D.ep.c0[p] for p in D.edges() ] )
+        partitions = np.array_split( np.unique( edge_labels ), NO_PARTITIONS )
+
+        pods = np.array([],dtype=int)
+        for p_idx in np.arange( NO_PARTITIONS ):
+
+            P_G_s = GraphView( D, efilt=np.isin( edge_labels, partitions[p_idx] ) )
+            edge_labels_subgraph = np.array( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
+
+            pods = np.append( pods, feature( P_G_s, edge_labels_subgraph, {}, True ) )
+
+        log.info( "max %s, mean %s", pods.max(), pods.mean() )
 
 def graph_analyze( dataset, D, stats ):
     """
