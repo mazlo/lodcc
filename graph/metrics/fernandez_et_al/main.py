@@ -95,7 +95,7 @@ def graph_analyze( dataset, D, stats ):
         
         if NO_PARTITIONS <= 1:
             # compute the feature on the whole graph
-            ftr( D, stats, edge_labels )
+            ftr( D, edge_labels, stats )
 
             if args['from_db']:
                 db.save_stats( dataset, stats )
