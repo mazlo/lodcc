@@ -1,7 +1,7 @@
 from graph_tool import GraphView
 import numpy as np
 
-def number_of_classes( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def number_of_classes( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """counts the number of different classes"""
 
     if edge_labels.size == 0:
@@ -16,7 +16,7 @@ def number_of_classes( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     stats['distinct_classes'] = C_G.size
 
-def ratio_of_typed_subjects( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def ratio_of_typed_subjects( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """
         (1) number of all different typed subjects
         (2) ratio of typed subjects

@@ -2,7 +2,7 @@ from graph_tool import GraphView
 import numpy as np
 import pandas as pd
 
-def repeated_predicate_lists( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def repeated_predicate_lists( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:

@@ -3,7 +3,7 @@ import pandas as pd
 
 # SUBJECT OUT-DEGREES
 
-def out_degree( D, stats, edge_labels=None, print_stats=False ):
+def out_degree( D, edge_labels=None, stats=dict(), print_stats=False ):
     """"""
 
     # the number of triples in G in which s occurs as subject
@@ -16,7 +16,7 @@ def out_degree( D, stats, edge_labels=None, print_stats=False ):
     stats['max_out_degree'], stats['mean_out_degree'] = np.nanmax(l), np.nanmean(l)
 
 
-def partial_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def partial_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:
@@ -33,7 +33,7 @@ def partial_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     stats['max_partial_out_degree'], stats['mean_partial_out_degree'] = np.max( l ), np.mean( l )
 
-def labelled_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def labelled_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:
@@ -52,7 +52,7 @@ def labelled_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     stats['max_labelled_out_degree'], stats['mean_labelled_out_degree'] = df.max(), df.mean()
 
-def direct_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def direct_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     # the number of different objects of G with which s is related as a subject
@@ -69,4 +69,5 @@ def direct_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
     stats['max_direct_out_degree'], stats['mean_direct_out_degree'] = df.max(), df.mean()
 
 METRICS = [ out_degree, partial_out_degree, labelled_out_degree, direct_out_degree ]
+METRIC_SET = { 'SUBJECT_OUT_DEGREES' : METRICS  }
 LABELS  = [ 'max_out_degree', 'mean_out_degree', 'max_partial_out_degree', 'mean_partial_out_degree', 'max_labelled_out_degree', 'mean_labelled_out_degree', 'max_direct_out_degree', 'mean_direct_out_degree' ]

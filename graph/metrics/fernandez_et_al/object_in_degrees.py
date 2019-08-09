@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def in_degree( D, stats, edge_labels=None, print_stats=False ):
+def in_degree( D, edge_labels=None, stats=dict(), print_stats=False ):
     """"""
     # the number of triples in G in which o occurs as object
     l = D.get_in_degrees( D.get_vertices() ) + 0.0
@@ -12,7 +12,7 @@ def in_degree( D, stats, edge_labels=None, print_stats=False ):
 
     stats['max_in_degree'], stats['mean_in_degree'] = np.nanmax(l), np.nanmean(l)
 
-def partial_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def partial_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:
@@ -28,7 +28,7 @@ def partial_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     stats['max_partial_in_degree'], stats['mean_partial_in_degree'] = np.max( l ), np.mean( l )
 
-def labelled_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def labelled_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:
@@ -47,7 +47,7 @@ def labelled_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     stats['max_labelled_in_degree'], stats['mean_labelled_in_degree'] = df.max(), df.mean()
 
-def direct_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def direct_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     # the number of different subjects of G with which o is related as a object

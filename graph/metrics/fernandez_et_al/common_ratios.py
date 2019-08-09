@@ -1,6 +1,6 @@
 import numpy as np
 
-def subject_object_ratio( D, stats, edge_labels=None, print_stats=False ):
+def subject_object_ratio( D, edge_labels=None, stats=dict(), print_stats=False ):
     """"""
 
     # the number of elements acting both as subject and objects among all subjects and objects
@@ -12,12 +12,12 @@ def subject_object_ratio( D, stats, edge_labels=None, print_stats=False ):
     
     stats['subject_object_ratio'] = float(len(nom_intersection)) / len(denom_union)
 
-def subject_predicate_ratio( D, stats, edge_labels=np.empty(0) ):
+def subject_predicate_ratio( D, edge_labels=np.empty(0), stats=dict() ):
     """"""
 
     # TODO because this is a costly computation
 
-def predicate_object_ratio( D, stats, edge_labels=np.empty(0) ):
+def predicate_object_ratio( D, edge_labels=np.empty(0), stats=dict() ):
     """"""
 
     # TODO because this is a costly computation

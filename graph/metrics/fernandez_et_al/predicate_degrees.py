@@ -1,6 +1,6 @@
 import numpy as np
 
-def predicate_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def predicate_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:
@@ -14,7 +14,7 @@ def predicate_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     stats['max_predicate_degree'], stats['mean_predicate_degree'] = np.max(l), np.mean(l)
 
-def predicate_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def predicate_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:
@@ -33,7 +33,7 @@ def predicate_in_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
 
     stats['max_predicate_in_degree'], stats['mean_predicate_in_degree'] = df.max(), df.mean()
 
-def predicate_out_degree( D, stats, edge_labels=np.empty(0), print_stats=False ):
+def predicate_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
     if edge_labels.size == 0:
