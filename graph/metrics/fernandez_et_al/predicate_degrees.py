@@ -15,6 +15,8 @@ def predicate_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fals
 
     stats['max_predicate_degree'], stats['mean_predicate_degree'] = np.max(l), np.mean(l)
 
+    return l
+
 def predicate_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
@@ -33,6 +35,8 @@ def predicate_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=F
         print( "(Eq.10) predicate in-degree deg^{+}_P(p). max: %s, mean: %f" % ( df.max(), df.mean() ) )
 
     stats['max_predicate_in_degree'], stats['mean_predicate_in_degree'] = df.max(), df.mean()
+
+    return df
 
 def predicate_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
@@ -53,6 +57,8 @@ def predicate_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=
 
     stats['max_predicate_out_degree'], stats['mean_predicate_out_degree'] = df.max(), df.mean()
 
-METRICS = [ predicate_degree, predicate_in_degree, predicate_out_degree ]
+    return df
+
+METRICS     = [ predicate_degree, predicate_in_degree, predicate_out_degree ]
 METRICS_SET = { 'PREDICATE_DEGREES': METRICS }
-LABELS  = [ 'max_predicate_degree', 'mean_predicate_degree', 'max_predicate_in_degree', 'mean_predicate_in_degree', 'max_predicate_out_degree', 'mean_predicate_out_degree' ]
+LABELS      = [ 'max_predicate_degree', 'mean_predicate_degree', 'max_predicate_in_degree', 'mean_predicate_in_degree', 'max_predicate_out_degree', 'mean_predicate_out_degree' ]
