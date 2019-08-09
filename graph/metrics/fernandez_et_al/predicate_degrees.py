@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 def predicate_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
