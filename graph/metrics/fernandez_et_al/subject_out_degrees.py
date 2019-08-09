@@ -15,6 +15,7 @@ def out_degree( D, edge_labels=None, stats=dict(), print_stats=False ):
 
     stats['max_out_degree'], stats['mean_out_degree'] = np.nanmax(l), np.nanmean(l)
 
+    return l
 
 def partial_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
@@ -30,8 +31,9 @@ def partial_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fa
     if print_stats:
         print( "(Eq.2) partial out-degree deg^{--}(s,p). max: %s, mean: %f" % ( np.max( l ), np.mean( l ) ) )
 
-
     stats['max_partial_out_degree'], stats['mean_partial_out_degree'] = np.max( l ), np.mean( l )
+
+    return l
 
 def labelled_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
@@ -43,7 +45,7 @@ def labelled_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=F
     df = pd.DataFrame( 
         data=list( zip( D.get_edges()[:,0], edge_labels ) ), 
         index=np.arange(0, D.get_edges().shape[0]), 
-        columns=np.arange(0, D.get_edges().shape[1]) )
+        columns=np.arange(0, D.get_edges().shape[1]-1) )
 
     df = df.groupby(0).nunique()[1]
 
@@ -51,6 +53,8 @@ def labelled_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=F
         print( "(Eq.3) labelled out-degree deg^{-}_L(s). max: %s, mean: %f" % ( df.max(), df.mean() ) )
 
     stats['max_labelled_out_degree'], stats['mean_labelled_out_degree'] = df.max(), df.mean()
+
+    return df
 
 def direct_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
@@ -68,6 +72,8 @@ def direct_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fal
 
     stats['max_direct_out_degree'], stats['mean_direct_out_degree'] = df.max(), df.mean()
 
-METRICS = [ out_degree, partial_out_degree, labelled_out_degree, direct_out_degree ]
-METRIC_SET = { 'SUBJECT_OUT_DEGREES' : METRICS  }
-LABELS  = [ 'max_out_degree', 'mean_out_degree', 'max_partial_out_degree', 'mean_partial_out_degree', 'max_labelled_out_degree', 'mean_labelled_out_degree', 'max_direct_out_degree', 'mean_direct_out_degree' ]
+    return df
+
+METRICS     = [ out_degree, partial_out_degree, labelled_out_degree, direct_out_degree ]
+METRICS_SET = { 'SUBJECT_OUT_DEGREES' : METRICS  }
+LABELS      = [ 'max_out_degree', 'mean_out_degree', 'max_partial_out_degree', 'mean_partial_out_degree', 'max_labelled_out_degree', 'mean_labelled_out_degree', 'max_direct_out_degree', 'mean_direct_out_degree' ]

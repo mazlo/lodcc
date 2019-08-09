@@ -50,39 +50,59 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
 
     NO_PARTITIONS = args['partitions']
 
-    if feature in metrics.SETS['OBJECT_IN_DEGREES']:
+    if feature in metrics.SETS['SUBJECT_OUT_DEGREES']:
+        # filter the graph for subjects, vertices with out-degree > 0
+        S_G = GraphView( D, vfilt=lambda v:v.out_degree() > 0 )
 
+        # we split up all subjects into X partitions. For example, 10 fragments of ~7600 vertices 
+        # will result in this: [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
+        partitions = np.array_split( S_G.get_vertices(), NO_PARTITIONS )
+
+        pods = np.array([],dtype=int)
+        for s_idx in np.arange( NO_PARTITIONS ):
+            # now, we filter out those edges with source vertices from the current partition
+            S_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,0], partitions[s_idx] ) )
+            edge_labels = np.array( [ S_G_s.ep.c0[p] for p in S_G_s.edges() ] )
+
+            pods = np.append( pods, feature( S_G_s, edge_labels, {}, True ) )
+
+        log.info( "max %s, mean %s", np.nanmax( pods ), np.nanmean( pods ) )
+
+    elif feature in metrics.SETS['OBJECT_IN_DEGREES']:
+        # filter the graph for objects, vertices with in-degree > 0
         O_G = GraphView( D, vfilt=lambda v:v.in_degree() > 0 )
 
-        # Here we split up all vertices into X fragments. 
-        # For example, 10 fragments of ~7600 vertices will give this array: 
-        # [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
+        # we split up all subjects into X partitions. For example, 10 fragments of ~7600 vertices 
+        # will result in this: [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
         partitions = np.array_split( O_G.get_vertices(), NO_PARTITIONS )
 
         pods = np.array([],dtype=int)
         for o_idx in np.arange( NO_PARTITIONS ):
-            # now, we filter out those edges with sources vertices from the current fragment
+            # now, we filter out those edges with source vertices from the current partition
             O_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,1], partitions[o_idx] ) )
             edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
 
             pods = np.append( pods, feature( O_G_s, edge_labels, {}, True ) )
 
-        log.info( "max %s, mean %s", pods.max(), pods.mean() )
+        log.info( "max %s, mean %s", np.nanmax( pods ), np.nanmean( pods ) )
 
     elif feature in metrics.SETS['PREDICATE_DEGREES']:
-
+        # we first compute a unique set of predicates
         edge_labels = np.array( [D.ep.c0[p] for p in D.edges() ] )
+        # and split up all predicates into X partitions. 
         partitions = np.array_split( np.unique( edge_labels ), NO_PARTITIONS )
 
         pods = np.array([],dtype=int)
         for p_idx in np.arange( NO_PARTITIONS ):
 
+            # now, we filter all edges with labels from the corresponding partition 
             P_G_s = GraphView( D, efilt=np.isin( edge_labels, partitions[p_idx] ) )
+            # and use the edge labels from the current GraphView for the computation of the feature
             edge_labels_subgraph = np.array( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
 
             pods = np.append( pods, feature( P_G_s, edge_labels_subgraph, {}, True ) )
 
-        log.info( "max %s, mean %s", pods.max(), pods.mean() )
+        log.info( "max %s, mean %s", np.nanmax( pods ), np.nanmean( pods ) )
 
 def graph_analyze( dataset, D, stats ):
     """
