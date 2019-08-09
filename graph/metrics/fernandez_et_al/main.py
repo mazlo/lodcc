@@ -72,7 +72,12 @@ def graph_analyze( dataset, D, stats ):
         you have to work with the vertice's and edge's label in all operations
     """
 
-    features = np.array( metrics.all ).flatten()
+    # final set of features is the intersection of both sets
+    features = [ ftr_func for ftr_func in np.array( metrics.all ).flatten() if ftr_func.__name__ in args['features'] ]
+
+    if len( features ) == 0:
+        log.warn( 'Set of features to be computed is empty :/' )
+        return
 
     NO_PARTITIONS = args['partitions']
 
@@ -261,7 +266,7 @@ if __name__ == '__main__':
 
         # init feature list
         if len( args['features'] ) == 0:
-            # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
-            args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
+            #
+            args['features'] = [ ftr.__name__ for ftr in np.array( metrics.all ).flatten() ]
 
         build_graph( datasets, args['threads'], args['threads_openmp'] )
