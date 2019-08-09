@@ -44,8 +44,8 @@ def labelled_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=F
     # the number of different predicates (labels) of G with which s is related as a subject
     df = pd.DataFrame( 
         data=list( zip( D.get_edges()[:,0], edge_labels ) ), 
-        index=np.arange(0, D.get_edges().shape[0]), 
-        columns=np.arange(0, D.get_edges().shape[1]-1) )
+        index=np.arange( 0, D.get_edges().shape[0] ), 
+        columns=np.arange( 0, D.get_edges().shape[1] ) )
 
     df = df.groupby(0).nunique()[1]
 
@@ -63,7 +63,7 @@ def direct_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fal
     df = pd.DataFrame( 
         data=D.get_edges(), 
         index=np.arange( 0, D.get_edges().shape[0] ), 
-        columns=np.arange(0, D.get_edges().shape[1]) )
+        columns=np.arange( 0, D.get_edges().shape[1] ) )
 
     df = df.groupby(0).nunique()[1]
 
