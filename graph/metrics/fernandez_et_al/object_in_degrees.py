@@ -63,5 +63,6 @@ def direct_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fals
 
     stats['max_direct_in_degree'], stats['mean_direct_in_degree'] = df.max(), df.mean()
 
-METRICS = [ in_degree, partial_in_degree, labelled_in_degree, direct_in_degree ]
-LABELS  = [ 'max_in_degree', 'mean_in_degree', 'max_partial_in_degree', 'mean_partial_in_degree', 'max_labelled_in_degree', 'mean_labelled_in_degree', 'max_direct_in_degree', 'mean_direct_in_degree' ]
+METRICS     = [ in_degree, partial_in_degree, labelled_in_degree, direct_in_degree ]
+METRICS_SET = { 'OBJECT_IN_DEGREES': METRICS }
+LABELS      = [ 'max_in_degree', 'mean_in_degree', 'max_partial_in_degree', 'mean_partial_in_degree', 'max_labelled_in_degree', 'mean_labelled_in_degree', 'max_direct_in_degree', 'mean_direct_in_degree' ]

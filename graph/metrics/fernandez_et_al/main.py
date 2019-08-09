@@ -48,22 +48,24 @@ def load_graph_from_edgelist( dataset ):
 def graph_analyze_on_partitions( dataset, D, feature, stats ):
     """"""
 
-    O_G = GraphView( D, vfilt=lambda v:v.in_degree() > 0 )
+    if feature in metrics.SETS['OBJECT_IN_DEGREES']:
 
-    # Here we split up all vertices into X fragments. 
-    # For example, 10 fragments of ~7600 vertices will give this array: 
-    # [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
-    partitions = np.array_split( O_G.get_vertices(), NO_PARTITIONS )
+        O_G = GraphView( D, vfilt=lambda v:v.in_degree() > 0 )
 
-    pods = np.array([],dtype=int)
-    for o_idx in np.arange( NO_PARTITIONS ):
-        # now, we filter out those edges with sources vertices from the current fragment
-        O_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,1], partitions[o_idx] ) )
-        edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
+        # Here we split up all vertices into X fragments. 
+        # For example, 10 fragments of ~7600 vertices will give this array: 
+        # [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
+        partitions = np.array_split( O_G.get_vertices(), NO_PARTITIONS )
 
-        pods = np.append( pods, feature( O_G_s, {}, edge_labels, True ) )
+        pods = np.array([],dtype=int)
+        for o_idx in np.arange( NO_PARTITIONS ):
+            # now, we filter out those edges with sources vertices from the current fragment
+            O_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,1], partitions[o_idx] ) )
+            edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
 
-    log.info( "max %s, mean %s", ( pods.max(), pods.mean() ) )
+            pods = np.append( pods, feature( O_G_s, edge_labels, {}, True ) )
+
+        log.info( "max %s, mean %s", ( pods.max(), pods.mean() ) )
 
 def graph_analyze( dataset, D, stats ):
     """
