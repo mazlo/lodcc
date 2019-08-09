@@ -49,6 +49,7 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
     """"""
 
     NO_PARTITIONS = args['partitions']
+    log.info( 'Computing feature %s on %s partitions of the DiGraph' % ( feature.__name__, NO_PARTITIONS ) )
 
     if feature in metrics.SETS['SUBJECT_OUT_DEGREES']:
         # filter the graph for subjects, vertices with out-degree > 0
@@ -132,7 +133,7 @@ def graph_analyze( dataset, D, stats ):
         
         if NO_PARTITIONS <= 1:
             # compute the feature on the whole graph
-            ftr( D, edge_labels, stats )
+            ftr( D, edge_labels, stats, args['print_stats'] )
 
             if args['from_db']:
                 db.save_stats( dataset, stats )
