@@ -48,6 +48,8 @@ def load_graph_from_edgelist( dataset ):
 def graph_analyze_on_partitions( dataset, D, feature, stats ):
     """"""
 
+    NO_PARTITIONS = args['partitions']
+
     if feature in metrics.SETS['OBJECT_IN_DEGREES']:
 
         O_G = GraphView( D, vfilt=lambda v:v.in_degree() > 0 )
