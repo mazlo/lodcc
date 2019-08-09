@@ -45,6 +45,26 @@ def load_graph_from_edgelist( dataset ):
 
     return D
 
+def graph_analyze_on_partitions( dataset, D, feature, stats ):
+    """"""
+
+    O_G = GraphView( D, vfilt=lambda v:v.in_degree() > 0 )
+
+    # Here we split up all vertices into X fragments. 
+    # For example, 10 fragments of ~7600 vertices will give this array: 
+    # [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
+    partitions = np.array_split( O_G.get_vertices(), NO_PARTITIONS )
+
+    pods = np.array([],dtype=int)
+    for o_idx in np.arange( NO_PARTITIONS ):
+        # now, we filter out those edges with sources vertices from the current fragment
+        O_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,1], partitions[o_idx] ) )
+        edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
+
+        pods = np.append( pods, feature( O_G_s, {}, edge_labels, True ) )
+
+    log.info( "max %s, mean %s", ( pods.max(), pods.mean() ) )
+
 def graph_analyze( dataset, D, stats ):
     """
         CAUTION
@@ -54,18 +74,28 @@ def graph_analyze( dataset, D, stats ):
 
     features = np.array( metrics.all ).flatten()
 
-    # one-time computation of edge-labels
-    log.info( 'Preparing edge-label structure' )
-    # we unfortunately need to iterate over all edges once, since the order of appearance of
-    # edge labels together with subjects and objects is important
-    edge_labels = np.array( [ D.ep.c0[p] for p in D.edges() ] )
+    NO_PARTITIONS = args['partitions']
+
+    if NO_PARTITIONS <= 1:
+        # one-time computation of edge-labels
+        log.info( 'Preparing edge-label structure' )
+        # we unfortunately need to iterate over all edges once, since the order of appearance of
+        # edge labels together with subjects and objects is important
+        edge_labels = np.array( [ D.ep.c0[p] for p in D.edges() ] )
 
     log.info( 'Computing features' )
     for ftr in features:
-        ftr( D, stats, edge_labels )
+        
+        if NO_PARTITIONS <= 1:
+            # compute the feature on the whole graph
+            ftr( D, stats, edge_labels )
 
-        if args['from_db']:
-            db.save_stats( dataset, stats )
+            if args['from_db']:
+                db.save_stats( dataset, stats )
+
+        else:
+            # requested to partition the graph
+            graph_analyze_on_partitions( dataset, D, ftr, stats )
 
 def build_graph_analyse( dataset, D, stats, threads_openmp=7 ):
     """"""
@@ -176,6 +206,7 @@ if __name__ == '__main__':
     parser.add_argument( '--threads-openmp', '-th', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--features', '-f', nargs='*', required = False, default = list(), help = '' )
     parser.add_argument( '--skip-features', '-fs', nargs='*', required = False, default = list(), help = '' )
+    parser.add_argument( '--partitions', '-p', required = False, type = int, default = 1, help = 'If > 1, features will be computed on this number of partitions separately.' )    
     
     # args is available globaly
     args = vars( parser.parse_args() ).copy()
