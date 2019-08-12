@@ -32,9 +32,7 @@ def ratio_of_typed_subjects( D, edge_labels=np.empty(0), stats=dict(), print_sta
     if print_stats:
         print( "number of different typed subjects S^{C}_G: %s" % S_C_G.size )
 
-    prop_out = D.new_vertex_property( 'bool', val=False )
-    prop_out.a = D.get_out_degrees( D.get_vertices() ) > 0
-    S_G = GraphView( D, vfilt=prop_out )
+    S_G = GraphView( D, vfilt=D.get_out_degrees( D.get_vertices() ) )
 
     if print_stats:
         print( "ratio of typed subjects r_T(G): %s" % ( float(S_C_G.size)/S_G.num_vertices() ) )
