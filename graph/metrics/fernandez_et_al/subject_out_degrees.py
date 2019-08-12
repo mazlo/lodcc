@@ -74,6 +74,51 @@ def direct_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fal
 
     return df
 
+def collect_metric( feature, S_G_s, edge_labels, vals, stats, print_stats ):
+    """"""
+    if vals is None:
+        vals = np.empty(0)
+
+    return np.append( vals, feature( S_G_s, edge_labels, stats, print_stats ) )
+
+def reduce_metric( vals, stats, max_metric, mean_metric ):
+    """"""
+    stats[max_metric], stats[mean_metric] = np.nanmax(vals), np.nanmean(vals)
+
+###
+
+def collect_out_degree( S_G_s, edge_labels, vals=np.empty(0), stats=dict(), print_stats=False ):
+    """"""
+    return collect_metric( out_degree, S_G_s, edge_labels, vals, stats, print_stats )
+
+def collect_partial_out_degree( S_G_s, edge_labels, vals=np.empty(0), stats=dict(), print_stats=False ):
+    """"""
+    return collect_metric( partial_out_degree, S_G_s, edge_labels, vals, stats, print_stats )
+
+def collect_labelled_out_degree( S_G_s, edge_labels, vals=pd.DataFrame(), stats=dict(), print_stats=False ):
+    """"""
+    return collect_metric( labelled_out_degree, S_G_s, edge_labels, vals, stats, print_stats )
+
+def collect_direct_out_degree( S_G_s, edge_labels, vals=pd.DataFrame(), stats=dict(), print_stats=False ):
+    """"""
+    return collect_metric( direct_out_degree, S_G_s, edge_labels, vals, stats, print_stats )
+
+def reduce_out_degree( vals, G, stats ):
+    """"""
+    reduce_metric( vals, stats, 'max_out_degree', 'mean_out_degree' )
+
+def reduce_partial_out_degree( vals, G, stats ):
+    """"""
+    reduce_metric( vals, stats, 'max_partial_out_degree', 'mean_partial_out_degree' )
+
+def reduce_labelled_out_degree( vals, G, stats ):
+    """"""
+    reduce_metric( vals, stats, 'max_labelled_out_degree', 'mean_labbelled_out_degree' )
+
+def reduce_direct_out_degree( vals, G, stats ):
+    """"""
+    reduce_metric( vals, stats, 'max_direct_out_degree', 'mean_direct_out_degree' )
+
 METRICS     = [ out_degree, partial_out_degree, labelled_out_degree, direct_out_degree ]
 METRICS_SET = { 'SUBJECT_OUT_DEGREES' : METRICS  }
 LABELS      = [ 'max_out_degree', 'mean_out_degree', 'max_partial_out_degree', 'mean_partial_out_degree', 'max_labelled_out_degree', 'mean_labelled_out_degree', 'max_direct_out_degree', 'mean_direct_out_degree' ]
