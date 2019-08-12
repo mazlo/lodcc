@@ -59,24 +59,17 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
         # will result in this: [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
         partitions = np.array_split( S_G.get_vertices(), NO_PARTITIONS )
 
-        pods = np.array([],dtype=int)
-        df = pd.DataFrame()
+        data = None
         for s_idx in np.arange( NO_PARTITIONS ):
             # now, we filter out those edges with source vertices from the current partition
             S_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,0], partitions[s_idx] ) )
             edge_labels = np.array( [ S_G_s.ep.c0[p] for p in S_G_s.edges() ] )
 
-            if feature in metrics.SETS['PREDICATE_LISTS']:
-                rtn = feature( S_G_s, edge_labels, {}, True, True )
-                df = df.append( rtn, ignore_index=True )
-            else:
-                pods = np.append( pods, feature( S_G_s, edge_labels, {}, True ) )
+            # this should add up all the values we need later when computing the metric
+            data = getattr( metrics, 'collect_'+ feature.__name__ )( S_G_s, edge_labels, data, {}, True )
 
-        if feature in metrics.SETS['PREDICATE_LISTS']:
-            df = df.groupby(1).count()[0]
-            log.info( "sum %s", ( 1 - ( df.size / S_G.num_vertices() ) ) )
-        else:
-            log.info( "max %s, mean %s", np.nanmax( pods ), np.nanmean( pods ) )
+        # compute metric from individual partitions
+        getattr( metrics, 'reduce_'+ feature.__name__ )( data, S_G, stats )
 
     elif feature in metrics.SETS['OBJECT_IN_DEGREES']:
         # filter the graph for objects, vertices with in-degree > 0
