@@ -86,10 +86,10 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
             edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
 
             # this should add up all the values we need later when computing the metric
-            data = getattr( metrics, 'collect_'+ feature.__name__ )( O_G_s, edge_labels, data, {}, True )
+            data = metrics.object_in_degrees.collect_metric( feature, O_G_s, edge_labels, data, {}, True )
 
         # compute metric from individual partitions
-        getattr( metrics, 'reduce_'+ feature.__name__ )( data, O_G, stats )
+        metrics.object_in_degrees.reduce_metric( data, stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
 
     elif feature in metrics.SETS['PREDICATE_DEGREES']:
         # we first compute a unique set of predicates
