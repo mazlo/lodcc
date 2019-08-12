@@ -71,6 +71,51 @@ def direct_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fals
 
     return df
 
+def collect_metric( feature, O_G_s, edge_labels, vals, stats, print_stats ):
+    """"""
+    if vals is None:
+        vals = np.empty(0)
+
+    return np.append( vals, feature( O_G_s, edge_labels, stats, print_stats ) )
+
+def reduce_metric( vals, stats, max_metric, mean_metric ):
+    """"""
+    stats[max_metric], stats[mean_metric] = np.nanmax(vals), np.nanmean(vals)
+
+###
+
+def collect_in_degree( O_G_s, edge_labels, vals=np.empty(0), stats=dict(), print_stats=False ):
+    """"""
+    return collect_metric( in_degree, O_G_s, edge_labels, vals, stats, print_stats )
+
+def collect_partial_in_degree( O_G_s, edge_labels, vals=np.empty(0), stats=dict(), print_stats=False ):
+    """"""
+    return collect_metric( partial_in_degree, O_G_s, edge_labels, vals, stats, print_stats )
+
+def collect_labelled_in_degree( O_G_s, edge_labels, vals=pd.DataFrame(), stats=dict(), print_stats=False ):
+    """"""
+    return collect_metric( labelled_in_degree, O_G_s, edge_labels, vals, stats, print_stats )
+
+def collect_direct_in_degree( O_G_s, edge_labels, vals=pd.DataFrame(), stats=dict(), print_stats=False ):
+    """"""
+    return collect_metric( direct_in_degree, O_G_s, edge_labels, vals, stats, print_stats )
+
+def reduce_in_degree( vals, G, stats ):
+    """"""
+    reduce_metric( vals, stats, 'max_in_degree', 'mean_in_degree' )
+
+def reduce_partial_in_degree( vals, G, stats ):
+    """"""
+    reduce_metric( vals, stats, 'max_partial_in_degree', 'mean_partial_in_degree' )
+
+def reduce_labelled_in_degree( vals, G, stats ):
+    """"""
+    reduce_metric( vals, stats, 'max_labelled_in_degree', 'mean_labbelled_in_degree' )
+
+def reduce_direct_in_degree( vals, G, stats ):
+    """"""
+    reduce_metric( vals, stats, 'max_direct_in_degree', 'mean_direct_in_degree' )
+
 METRICS     = [ in_degree, partial_in_degree, labelled_in_degree, direct_in_degree ]
 METRICS_SET = { 'OBJECT_IN_DEGREES': METRICS }
 LABELS      = [ 'max_in_degree', 'mean_in_degree', 'max_partial_in_degree', 'mean_partial_in_degree', 'max_labelled_in_degree', 'mean_labelled_in_degree', 'max_direct_in_degree', 'mean_direct_in_degree' ]
