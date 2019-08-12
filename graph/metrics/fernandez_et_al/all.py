@@ -11,3 +11,4 @@ SETS   = {}
 SETS.update( subj_out_deg.METRICS_SET )
 SETS.update( obj_in_deg.METRICS_SET )
 SETS.update( pred_deg.METRICS_SET )
+SETS.update( pred_lists.METRICS_SET )

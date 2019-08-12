@@ -51,7 +51,7 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
     NO_PARTITIONS = args['partitions']
     log.info( 'Computing feature %s on %s partitions of the DiGraph' % ( feature.__name__, NO_PARTITIONS ) )
 
-    if feature in metrics.SETS['SUBJECT_OUT_DEGREES']:
+    if feature in metrics.SETS['SUBJECT_OUT_DEGREES'] or feature in metrics.SETS['PREDICATE_LISTS']:
         # filter the graph for subjects, vertices with out-degree > 0
         S_G = GraphView( D, vfilt=lambda v:v.out_degree() > 0 )
 
@@ -60,14 +60,23 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
         partitions = np.array_split( S_G.get_vertices(), NO_PARTITIONS )
 
         pods = np.array([],dtype=int)
+        df = pd.DataFrame()
         for s_idx in np.arange( NO_PARTITIONS ):
             # now, we filter out those edges with source vertices from the current partition
             S_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,0], partitions[s_idx] ) )
             edge_labels = np.array( [ S_G_s.ep.c0[p] for p in S_G_s.edges() ] )
 
-            pods = np.append( pods, feature( S_G_s, edge_labels, {}, True ) )
+            if feature in metrics.SETS['PREDICATE_LISTS']:
+                rtn = feature( S_G_s, edge_labels, {}, True, True )
+                df = df.append( rtn, ignore_index=True )
+            else:
+                pods = np.append( pods, feature( S_G_s, edge_labels, {}, True ) )
 
-        log.info( "max %s, mean %s", np.nanmax( pods ), np.nanmean( pods ) )
+        if feature in metrics.SETS['PREDICATE_LISTS']:
+            df = df.groupby(1).count()[0]
+            log.info( "sum %s", ( 1 - ( df.size / S_G.num_vertices() ) ) )
+        else:
+            log.info( "max %s, mean %s", np.nanmax( pods ), np.nanmean( pods ) )
 
     elif feature in metrics.SETS['OBJECT_IN_DEGREES']:
         # filter the graph for objects, vertices with in-degree > 0
