@@ -16,6 +16,8 @@ def number_of_classes( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fal
 
     stats['distinct_classes'] = C_G.size
 
+    return C_G
+
 def ratio_of_typed_subjects( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """
         (1) number of all different typed subjects
@@ -39,5 +41,17 @@ def ratio_of_typed_subjects( D, edge_labels=np.empty(0), stats=dict(), print_sta
 
     stats['typed_subjects'], stats['ratio_of_typed_subjects'] = S_C_G.size, ( float(S_C_G.size)/S_G.num_vertices() )
 
-METRICS = [ number_of_classes, ratio_of_typed_subjects ]
-LABELS  = [ 'distinct_classes', 'typed_subjects', 'ratio_of_typed_subjects' ]
+def collect_number_of_classes( D, edge_labels, vals=set(), stats=dict(), print_stats=False ):
+    """"""
+    if vals is None:
+        vals = set()
+
+    return vals | set( number_of_classes( D, edge_labels, stats, print_stats ) )
+
+def reduce_number_of_classes( vals, C_G, stats={} ):
+    """"""
+    stats['distinct_classes'] = len( vals )
+
+METRICS     = [ number_of_classes, ratio_of_typed_subjects ]
+METRICS_SET = { 'TYPED_SUBJECTS_OBJECTS': METRICS }
+LABELS      = [ 'distinct_classes', 'typed_subjects', 'ratio_of_typed_subjects' ]

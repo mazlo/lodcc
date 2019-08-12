@@ -51,7 +51,10 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
     NO_PARTITIONS = args['partitions']
     log.info( 'Computing feature %s on %s partitions of the DiGraph' % ( feature.__name__, NO_PARTITIONS ) )
 
-    if feature in metrics.SETS['SUBJECT_OUT_DEGREES'] or feature in metrics.SETS['PREDICATE_LISTS']:
+    if feature in metrics.SETS['SUBJECT_OUT_DEGREES'] \
+        or feature in metrics.SETS['PREDICATE_LISTS'] \
+        or feature in metrics.SETS['TYPED_SUBJECTS_OBJECTS']:
+        
         # filter the graph for subjects, vertices with out-degree > 0
         S_G = GraphView( D, vfilt=lambda v:v.out_degree() > 0 )
 
