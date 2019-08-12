@@ -97,7 +97,7 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
         # and split up all predicates into X partitions. 
         partitions = np.array_split( np.unique( edge_labels ), NO_PARTITIONS )
 
-        pods = np.array([],dtype=int)
+        data = None
         for p_idx in np.arange( NO_PARTITIONS ):
 
             # now, we filter all edges with labels from the corresponding partition 
@@ -105,9 +105,11 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
             # and use the edge labels from the current GraphView for the computation of the feature
             edge_labels_subgraph = np.array( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
 
-            pods = np.append( pods, feature( P_G_s, edge_labels_subgraph, {}, True ) )
+            # this should add up all the values we need later when computing the metric
+            data = metrics.predicate_degrees.collect_metric( feature, P_G_s, edge_labels_subgraph, data, {}, True )
 
-        log.info( "max %s, mean %s", np.nanmax( pods ), np.nanmean( pods ) )
+        # compute metric from individual partitions
+        metrics.predicate_degrees.reduce_metric( data, stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
 
 def graph_analyze( dataset, D, stats ):
     """

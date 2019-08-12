@@ -2,7 +2,7 @@ import graph.metrics.fernandez_et_al.subject_out_degrees as subj_out_deg
 from graph.metrics.fernandez_et_al.subject_out_degrees import *
 import graph.metrics.fernandez_et_al.object_in_degrees as obj_in_deg
 from graph.metrics.fernandez_et_al.object_in_degrees import *
-import graph.metrics.fernandez_et_al.predicate_degrees as pred_deg
+import graph.metrics.fernandez_et_al.predicate_degrees as predicate_degrees
 import graph.metrics.fernandez_et_al.common_ratios as ratios
 import graph.metrics.fernandez_et_al.predicate_lists as pred_lists
 from graph.metrics.fernandez_et_al.predicate_lists import *
@@ -13,5 +13,5 @@ LABELS = subj_out_deg.LABELS + obj_in_deg.LABELS + pred_deg.LABELS + ratios.LABE
 SETS   = {}
 SETS.update( subj_out_deg.METRICS_SET )
 SETS.update( obj_in_deg.METRICS_SET )
-SETS.update( pred_deg.METRICS_SET )
 SETS.update( pred_lists.METRICS_SET )
+SETS.update( predicate_degrees.METRICS_SET )
