@@ -16,6 +16,8 @@ def number_of_classes( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fal
 
     stats['distinct_classes'] = C_G.size
 
+    return C_G
+
 def ratio_of_typed_subjects( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """
         (1) number of all different typed subjects
@@ -32,14 +34,39 @@ def ratio_of_typed_subjects( D, edge_labels=np.empty(0), stats=dict(), print_sta
     if print_stats:
         print( "number of different typed subjects S^{C}_G: %s" % S_C_G.size )
 
-    prop_out = D.new_vertex_property( 'bool', val=False )
-    prop_out.a = D.get_out_degrees( D.get_vertices() ) > 0
-    S_G = GraphView( D, vfilt=prop_out )
+    S_G = GraphView( D, vfilt=D.get_out_degrees( D.get_vertices() ) )
 
     if print_stats:
         print( "ratio of typed subjects r_T(G): %s" % ( float(S_C_G.size)/S_G.num_vertices() ) )
 
     stats['typed_subjects'], stats['ratio_of_typed_subjects'] = S_C_G.size, ( float(S_C_G.size)/S_G.num_vertices() )
 
-METRICS = [ number_of_classes, ratio_of_typed_subjects ]
-LABELS  = [ 'distinct_classes', 'typed_subjects', 'ratio_of_typed_subjects' ]
+    return S_C_G
+
+def collect_number_of_classes( D, edge_labels, vals=set(), stats=dict(), print_stats=False ):
+    """"""
+    if vals is None:
+        vals = set()
+
+    return vals | set( number_of_classes( D, edge_labels, stats, print_stats ) )
+
+def reduce_number_of_classes( vals, D, C_G, stats={} ):
+    """"""
+    stats['distinct_classes'] = len( vals )
+
+def collect_ratio_of_typed_subjects( D, edge_labels, vals=set(), stats=dict(), print_stats=False ):
+    """"""
+    if vals is None:
+        vals = set()
+
+    return vals | set( ratio_of_typed_subjects( D, edge_labels, stats, print_stats ) )
+
+def reduce_ratio_of_typed_subjects( vals, D, S_G, stats={} ):
+    """"""
+    S_G = GraphView( D, vfilt=D.get_out_degrees( D.get_vertices() ) )
+
+    stats['typed_subjects'], stats['ratio_of_typed_subjects'] = len( vals ), ( float(len( vals ))/S_G.num_vertices() )
+
+METRICS     = [ number_of_classes, ratio_of_typed_subjects ]
+METRICS_SET = { 'TYPED_SUBJECTS_OBJECTS': METRICS }
+LABELS      = [ 'distinct_classes', 'typed_subjects', 'ratio_of_typed_subjects' ]

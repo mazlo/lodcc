@@ -48,24 +48,73 @@ def load_graph_from_edgelist( dataset ):
 def graph_analyze_on_partitions( dataset, D, feature, stats ):
     """"""
 
-    if feature in metrics.SETS['OBJECT_IN_DEGREES']:
+    NO_PARTITIONS = args['partitions']
+    log.info( 'Computing feature %s on %s partitions of the DiGraph' % ( feature.__name__, NO_PARTITIONS ) )
 
+    if feature in metrics.SETS['SUBJECT_OUT_DEGREES'] \
+        or feature in metrics.SETS['PREDICATE_LISTS'] \
+        or feature in metrics.SETS['TYPED_SUBJECTS_OBJECTS']:
+        
+        # filter the graph for subjects, vertices with out-degree > 0
+        S_G = GraphView( D, vfilt=lambda v:v.out_degree() > 0 )
+
+        # we split up all subjects into X partitions. For example, 10 fragments of ~7600 vertices 
+        # will result in this: [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
+        partitions = np.array_split( S_G.get_vertices(), NO_PARTITIONS )
+
+        data = None
+        for s_idx in np.arange( NO_PARTITIONS ):
+            # now, we filter out those edges with source vertices from the current partition
+            S_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,0], partitions[s_idx] ) )
+            edge_labels = np.array( [ S_G_s.ep.c0[p] for p in S_G_s.edges() ] )
+
+            # this should add up all the values we need later when computing the metric
+            data = getattr( metrics, 'collect_'+ feature.__name__ )( S_G_s, edge_labels, data, {}, args['print_stats'] )
+
+        # compute metric from individual partitions
+        getattr( metrics, 'reduce_'+ feature.__name__ )( data, D, S_G, stats )
+
+    elif feature in metrics.SETS['OBJECT_IN_DEGREES']:
+        # filter the graph for objects, vertices with in-degree > 0
         O_G = GraphView( D, vfilt=lambda v:v.in_degree() > 0 )
 
-        # Here we split up all vertices into X fragments. 
-        # For example, 10 fragments of ~7600 vertices will give this array: 
-        # [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
+        # we split up all subjects into X partitions. For example, 10 fragments of ~7600 vertices 
+        # will result in this: [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
         partitions = np.array_split( O_G.get_vertices(), NO_PARTITIONS )
 
-        pods = np.array([],dtype=int)
+        data = None
         for o_idx in np.arange( NO_PARTITIONS ):
-            # now, we filter out those edges with sources vertices from the current fragment
+            # now, we filter out those edges with source vertices from the current partition
             O_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,1], partitions[o_idx] ) )
             edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
 
-            pods = np.append( pods, feature( O_G_s, edge_labels, {}, True ) )
+            # this should add up all the values we need later when computing the metric
+            data = metrics.object_in_degrees.collect_metric( feature, O_G_s, edge_labels, data, {}, args['print_stats'] )
 
-        log.info( "max %s, mean %s", ( pods.max(), pods.mean() ) )
+        # compute metric from individual partitions
+        metrics.object_in_degrees.reduce_metric( data, stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
+
+    elif feature in metrics.SETS['PREDICATE_DEGREES']:
+        # we first compute a unique set of predicates
+        edge_labels = np.array( [D.ep.c0[p] for p in D.edges() ] )
+        # and split up all predicates into X partitions. 
+        partitions = np.array_split( np.unique( edge_labels ), NO_PARTITIONS )
+
+        data = None
+        for p_idx in np.arange( NO_PARTITIONS ):
+            # now, we filter all edges with labels from the corresponding partition 
+            P_G_s = GraphView( D, efilt=np.isin( edge_labels, partitions[p_idx] ) )
+            # and use the edge labels from the current GraphView for the computation of the feature
+            edge_labels_subgraph = np.array( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
+
+            # this should add up all the values we need later when computing the metric
+            data = metrics.predicate_degrees.collect_metric( feature, P_G_s, edge_labels_subgraph, data, {}, args['print_stats'] )
+
+        # compute metric from individual partitions
+        metrics.predicate_degrees.reduce_metric( data, stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
+
+    if args['from_db']:
+        db.save_stats( dataset, stats )
 
 def graph_analyze( dataset, D, stats ):
     """
