@@ -54,6 +54,19 @@ def reduce_number_of_classes( vals, D, C_G, stats={} ):
     """"""
     stats['distinct_classes'] = len( vals )
 
+def collect_ratio_of_typed_subjects( D, edge_labels, vals=set(), stats=dict(), print_stats=False ):
+    """"""
+    if vals is None:
+        vals = set()
+
+    return vals | set( ratio_of_typed_subjects( D, edge_labels, stats, print_stats ) )
+
+def reduce_ratio_of_typed_subjects( vals, D, S_G, stats={} ):
+    """"""
+    S_G = GraphView( D, vfilt=D.get_out_degrees( D.get_vertices() ) )
+
+    stats['typed_subjects'], stats['ratio_of_typed_subjects'] = len( vals ), ( float(len( vals ))/S_G.num_vertices() )
+
 METRICS     = [ number_of_classes, ratio_of_typed_subjects ]
 METRICS_SET = { 'TYPED_SUBJECTS_OBJECTS': METRICS }
 LABELS      = [ 'distinct_classes', 'typed_subjects', 'ratio_of_typed_subjects' ]
