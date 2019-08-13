@@ -113,7 +113,7 @@ def reduce_partial_out_degree( vals, D, S_G, stats ):
 
 def reduce_labelled_out_degree( vals, D, S_G, stats ):
     """"""
-    reduce_metric( vals, stats, 'max_labelled_out_degree', 'mean_labbelled_out_degree' )
+    reduce_metric( vals, stats, 'max_labelled_out_degree', 'mean_labelled_out_degree' )
 
 def reduce_direct_out_degree( vals, D, S_G, stats ):
     """"""
