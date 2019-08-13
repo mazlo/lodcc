@@ -41,6 +41,8 @@ def ratio_of_typed_subjects( D, edge_labels=np.empty(0), stats=dict(), print_sta
 
     stats['typed_subjects'], stats['ratio_of_typed_subjects'] = S_C_G.size, ( float(S_C_G.size)/S_G.num_vertices() )
 
+    return S_C_G
+
 def collect_number_of_classes( D, edge_labels, vals=set(), stats=dict(), print_stats=False ):
     """"""
     if vals is None:
@@ -48,7 +50,7 @@ def collect_number_of_classes( D, edge_labels, vals=set(), stats=dict(), print_s
 
     return vals | set( number_of_classes( D, edge_labels, stats, print_stats ) )
 
-def reduce_number_of_classes( vals, C_G, stats={} ):
+def reduce_number_of_classes( vals, D, C_G, stats={} ):
     """"""
     stats['distinct_classes'] = len( vals )
 
