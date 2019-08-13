@@ -113,6 +113,9 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
         # compute metric from individual partitions
         metrics.predicate_degrees.reduce_metric( data, stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
 
+    if args['from_db']:
+        db.save_stats( dataset, stats )
+
 def graph_analyze( dataset, D, stats ):
     """
         CAUTION
