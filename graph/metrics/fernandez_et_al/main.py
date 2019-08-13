@@ -69,7 +69,7 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
             edge_labels = np.array( [ S_G_s.ep.c0[p] for p in S_G_s.edges() ] )
 
             # this should add up all the values we need later when computing the metric
-            data = getattr( metrics, 'collect_'+ feature.__name__ )( S_G_s, edge_labels, data, {}, True )
+            data = getattr( metrics, 'collect_'+ feature.__name__ )( S_G_s, edge_labels, data, {}, args['print_stats'] )
 
         # compute metric from individual partitions
         getattr( metrics, 'reduce_'+ feature.__name__ )( data, D, S_G, stats )
@@ -89,7 +89,7 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
             edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
 
             # this should add up all the values we need later when computing the metric
-            data = metrics.object_in_degrees.collect_metric( feature, O_G_s, edge_labels, data, {}, True )
+            data = metrics.object_in_degrees.collect_metric( feature, O_G_s, edge_labels, data, {}, args['print_stats'] )
 
         # compute metric from individual partitions
         metrics.object_in_degrees.reduce_metric( data, stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
@@ -108,7 +108,7 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
             edge_labels_subgraph = np.array( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
 
             # this should add up all the values we need later when computing the metric
-            data = metrics.predicate_degrees.collect_metric( feature, P_G_s, edge_labels_subgraph, data, {}, True )
+            data = metrics.predicate_degrees.collect_metric( feature, P_G_s, edge_labels_subgraph, data, {}, args['print_stats'] )
 
         # compute metric from individual partitions
         metrics.predicate_degrees.reduce_metric( data, stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
@@ -141,7 +141,7 @@ def graph_analyze( dataset, D, stats ):
         
         if NO_PARTITIONS <= 1:
             # compute the feature on the whole graph
-            ftr( D, edge_labels, stats, args['print_stats'] )
+            ftr( D, edge_labels, stats )
 
             if args['from_db']:
                 db.save_stats( dataset, stats )
