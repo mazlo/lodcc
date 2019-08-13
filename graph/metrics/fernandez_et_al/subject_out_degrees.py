@@ -103,19 +103,19 @@ def collect_direct_out_degree( S_G_s, edge_labels, vals=pd.DataFrame(), stats=di
     """"""
     return collect_metric( direct_out_degree, S_G_s, edge_labels, vals, stats, print_stats )
 
-def reduce_out_degree( vals, G, stats ):
+def reduce_out_degree( vals, D, S_G, stats ):
     """"""
     reduce_metric( vals, stats, 'max_out_degree', 'mean_out_degree' )
 
-def reduce_partial_out_degree( vals, G, stats ):
+def reduce_partial_out_degree( vals, D, S_G, stats ):
     """"""
     reduce_metric( vals, stats, 'max_partial_out_degree', 'mean_partial_out_degree' )
 
-def reduce_labelled_out_degree( vals, G, stats ):
+def reduce_labelled_out_degree( vals, D, S_G, stats ):
     """"""
     reduce_metric( vals, stats, 'max_labelled_out_degree', 'mean_labbelled_out_degree' )
 
-def reduce_direct_out_degree( vals, G, stats ):
+def reduce_direct_out_degree( vals, D, S_G, stats ):
     """"""
     reduce_metric( vals, stats, 'max_direct_out_degree', 'mean_direct_out_degree' )
 

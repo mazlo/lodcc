@@ -72,7 +72,7 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
             data = getattr( metrics, 'collect_'+ feature.__name__ )( S_G_s, edge_labels, data, {}, True )
 
         # compute metric from individual partitions
-        getattr( metrics, 'reduce_'+ feature.__name__ )( data, S_G, stats )
+        getattr( metrics, 'reduce_'+ feature.__name__ )( data, D, S_G, stats )
 
     elif feature in metrics.SETS['OBJECT_IN_DEGREES']:
         # filter the graph for objects, vertices with in-degree > 0
@@ -102,7 +102,6 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
 
         data = None
         for p_idx in np.arange( NO_PARTITIONS ):
-
             # now, we filter all edges with labels from the corresponding partition 
             P_G_s = GraphView( D, efilt=np.isin( edge_labels, partitions[p_idx] ) )
             # and use the edge labels from the current GraphView for the computation of the feature

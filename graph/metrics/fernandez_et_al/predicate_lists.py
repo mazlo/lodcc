@@ -40,11 +40,11 @@ def collect_repeated_predicate_lists( S_G_s, edge_labels, df=pd.DataFrame(), sta
 
     return df
 
-def reduce_repeated_predicate_lists( df, G, stats={} ):
+def reduce_repeated_predicate_lists( df, G, S_G, stats={} ):
     """"""
     df = df.groupby(1).count()[0]
 
-    stats['repeated_predicate_lists'] = 1 - ( df.size / G.num_vertices() )
+    stats['repeated_predicate_lists'] = 1 - ( df.size / S_G.num_vertices() )
     stats['max_predicate_list_degree'], stats['mean_predicate_list_degree'] = df.max(), df.mean()
 
 METRICS     = [ repeated_predicate_lists ]
