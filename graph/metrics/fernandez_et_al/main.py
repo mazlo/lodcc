@@ -82,8 +82,8 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             # compute metric from individual partitions
             getattr( metrics, 'reduce_'+ feature.__name__ )( data[feature], D, S_G, stats )
 
-    if args['from_db']:
-        db.save_stats( dataset, stats )
+            if args['from_db']:
+                db.save_stats( dataset, stats )
 
     # collect features that require in-degree filtering
     feature_subset = [ ftr for ftr in features if ftr in metrics.SETS['OBJECT_IN_DEGREES'] ]
@@ -115,8 +115,8 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             # compute metric from individual partitions
             metrics.object_in_degrees.reduce_metric( data[feature], stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
     
-    if args['from_db']:
-        db.save_stats( dataset, stats )
+            if args['from_db']:
+                db.save_stats( dataset, stats )
 
     # collect features that require in-degree filtering
     feature_subset = [ ftr for ftr in features if ftr in metrics.SETS['PREDICATE_DEGREES'] ]
@@ -148,8 +148,8 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             # compute metric from individual partitions
             metrics.predicate_degrees.reduce_metric( data[feature], stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
 
-    if args['from_db']:
-        db.save_stats( dataset, stats )
+            if args['from_db']:
+                db.save_stats( dataset, stats )
 
 def graph_analyze( dataset, D, stats ):
     """
