@@ -45,16 +45,18 @@ def load_graph_from_edgelist( dataset ):
 
     return D
 
-def graph_analyze_on_partitions( dataset, D, feature, stats ):
+def graph_analyze_on_partitions( dataset, D, features, stats ):
     """"""
 
     NO_PARTITIONS = args['partitions']
-    log.info( 'Computing feature %s on %s partitions of the DiGraph' % ( feature.__name__, NO_PARTITIONS ) )
+    log.info( 'Computing features on %s partitions of the DiGraph' % ( NO_PARTITIONS ) )
 
-    if feature in metrics.SETS['SUBJECT_OUT_DEGREES'] \
-        or feature in metrics.SETS['PREDICATE_LISTS'] \
-        or feature in metrics.SETS['TYPED_SUBJECTS_OBJECTS']:
-        
+    # collect features that require out-degree filtering
+    feature_subset = [ ftr for ftr in features if ftr in metrics.SETS['SUBJECT_OUT_DEGREES'] \
+                                                or ftr in metrics.SETS['PREDICATE_LISTS'] \
+                                                 or ftr in metrics.SETS['TYPED_SUBJECTS_OBJECTS'] ]
+
+    if len( feature_subset ) > 0:
         # filter the graph for subjects, vertices with out-degree > 0
         S_G = GraphView( D, vfilt=lambda v:v.out_degree() > 0 )
 
@@ -62,14 +64,16 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
         # will result in this: [ [0,..,759], [760,.., 1519], .., [6840,7599] ]
         partitions = np.array_split( S_G.get_vertices(), NO_PARTITIONS )
 
-        data = None
+        # init data dictionary
+        data = dict( [ (feature,None) for feature in feature_subset ] )
         for s_idx in np.arange( NO_PARTITIONS ):
             # now, we filter out those edges with source vertices from the current partition
             S_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,0], partitions[s_idx] ) )
             edge_labels = np.array( [ S_G_s.ep.c0[p] for p in S_G_s.edges() ] )
 
-            # this should add up all the values we need later when computing the metric
-            data = getattr( metrics, 'collect_'+ feature.__name__ )( S_G_s, edge_labels, data, {}, args['print_stats'] )
+            for feature in feature_subset:
+                # this should add up all the values we need later when computing the metric
+                data[feature] = getattr( metrics, 'collect_'+ feature.__name__ )( S_G_s, edge_labels, data[feature], {}, args['print_stats'] )
 
         # compute metric from individual partitions
         getattr( metrics, 'reduce_'+ feature.__name__ )( data, D, S_G, stats )
@@ -112,6 +116,9 @@ def graph_analyze_on_partitions( dataset, D, feature, stats ):
 
         # compute metric from individual partitions
         metrics.predicate_degrees.reduce_metric( data, stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
+        for feature in feature_subset:
+            # compute metric from individual partitions
+            getattr( metrics, 'reduce_'+ feature.__name__ )( data[feature], D, S_G, stats )
 
     if args['from_db']:
         db.save_stats( dataset, stats )
@@ -133,25 +140,22 @@ def graph_analyze( dataset, D, stats ):
     NO_PARTITIONS = args['partitions']
 
     if NO_PARTITIONS <= 1:
+        # compute the feature on the whole graph
         # one-time computation of edge-labels
         log.info( 'Preparing edge-label structure' )
         # we unfortunately need to iterate over all edges once, since the order of appearance of
         # edge labels together with subjects and objects is important
         edge_labels = np.array( [ D.ep.c0[p] for p in D.edges() ] )
 
-    log.info( 'Computing features' )
-    for ftr in features:
-        
-        if NO_PARTITIONS <= 1:
-            # compute the feature on the whole graph
+        log.info( 'Computing features' )
+        for ftr in features:
             ftr( D, edge_labels, stats )
 
             if args['from_db']:
                 db.save_stats( dataset, stats )
-
-        else:
-            # requested to partition the graph
-            graph_analyze_on_partitions( dataset, D, ftr, stats )
+    else:
+        # requested to partition the graph
+        graph_analyze_on_partitions( dataset, D, features, stats )
 
 def build_graph_analyse( dataset, D, stats, threads_openmp=7 ):
     """"""
