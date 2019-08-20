@@ -57,6 +57,12 @@ def job_on_partition_in_degrees( sem, feature, G, edge_labels, data ):
     with sem:
         data[feature] = metrics.object_in_degrees.collect_metric( feature, G, edge_labels, data[feature], {}, args['print_stats'] )
 
+def job_on_partition_predicate_lists( sem, feature, G, edge_labels, data ):
+    """"""
+    # can I?
+    with sem:
+        data[feature] = metrics.predicate_degrees.collect_metric( feature, G, edge_labels, data[feature], {}, args['print_stats'] )
+
 def graph_analyze_on_partitions( dataset, D, features, stats ):
     """"""
 
@@ -165,9 +171,19 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             # and use the edge labels from the current GraphView for the computation of the feature
             edge_labels_subgraph = np.array( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
 
+            sem = threading.Semaphore( max( 10, len( feature_subset ) ) )
+            threads = []
+
             for feature in feature_subset:
                 # this should add up all the values we need later when computing the metric
-                data[feature] = metrics.predicate_degrees.collect_metric( feature, P_G_s, edge_labels_subgraph, data[feature], {}, args['print_stats'] )
+                t = threading.Thread( target = job_on_partition_predicate_lists, name = feature.__name__, args = ( sem, feature, P_G_s, edge_labels_subgraph, data ) )
+                t.start()
+
+                threads.append( t )
+
+        # wait for all threads to finish
+        for t in threads:
+            t.join()
 
         for feature in feature_subset:
             # compute metric from individual partitions
