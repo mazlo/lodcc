@@ -4,7 +4,7 @@ import argparse
 import json
 import logging as log
 import pandas as pd
-import threading
+import multiprocessing
 import sys
 
 try:
@@ -18,7 +18,7 @@ np.warnings.filterwarnings('ignore')
 import db.helpers as db
 import graph.metrics.fernandez_et_al.all as metrics
 
-lock = threading.Lock()
+lock = multiprocessing.Lock()
 
 ROOT_DIR = os.path.abspath( os.curdir )
 DEFAULT_DATAFRAME_INDEX = [ 'time_overall' ]
@@ -68,6 +68,8 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
         # init data dictionary
         data = dict( [ (feature,None) for feature in feature_subset ] )
         for s_idx in np.arange( NO_PARTITIONS ):
+            log.info( 'Lets go with partition %s', (s_idx+1) )
+            
             # now, we filter out those edges with source vertices from the current partition
             S_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,0], partitions[s_idx] ) )
             edge_labels = np.array( [ S_G_s.ep.c0[p] for p in S_G_s.edges() ] )
@@ -99,6 +101,8 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
         # init data dictionary
         data = dict( [ (feature,None) for feature in feature_subset ] )
         for o_idx in np.arange( NO_PARTITIONS ):
+            log.info( 'Lets go with partition %s', (o_idx+1) )
+            
             # now, we filter out those edges with source vertices from the current partition
             O_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,1], partitions[o_idx] ) )
             edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
@@ -128,8 +132,11 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
          # init data dictionary
         data = dict( [ (feature,None) for feature in feature_subset ] )
         for p_idx in np.arange( NO_PARTITIONS ):
+            
+            log.info( 'Lets go with partition %s', (p_idx+1) )
             # now, we filter all edges with labels from the corresponding partition 
             P_G_s = GraphView( D, efilt=np.isin( edge_labels, partitions[p_idx] ) )
+            
             # and use the edge labels from the current GraphView for the computation of the feature
             edge_labels_subgraph = np.array( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
 
@@ -245,13 +252,13 @@ def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
     # the transposed DataFrame is written to csv-file a results.
     dataframe = pd.DataFrame( index=metrics.LABELS + DEFAULT_DATAFRAME_INDEX )
 
-    sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
+    sem = multiprocessing.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
     threads = []
 
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_build_graph, name = dataset['name'], args = ( dataset, dataframe, sem, threads_openmp ) )
+        t = multiprocessing.Process( target = job_start_build_graph, name = dataset['name'], args = ( dataset, dataframe, sem, threads_openmp ) )
         t.start()
 
         threads.append( t )
@@ -298,7 +305,7 @@ if __name__ == '__main__':
     else:
         level = log.INFO
 
-    log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
+    log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(processName)s: %(message)s', )
 
     # configure datasets
     datasets = args['use_datasets']        # argparse returns [[..], [..]]
