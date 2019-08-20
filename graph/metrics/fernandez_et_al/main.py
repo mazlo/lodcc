@@ -93,7 +93,7 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             S_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,0], partitions[s_idx] ) )
             edge_labels = np.array( [ S_G_s.ep.c0[p] for p in S_G_s.edges() ] )
 
-            sem = threading.Semaphore( max( 10, len( feature_subset ) ) )
+            sem = threading.Semaphore( min( 10, len( feature_subset ) ) )
             threads = []
 
             for feature in feature_subset:
@@ -136,7 +136,7 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             O_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,1], partitions[o_idx] ) )
             edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
 
-            sem = threading.Semaphore( max( 10, len( feature_subset ) ) )
+            sem = threading.Semaphore( min( 10, len( feature_subset ) ) )
             threads = []
 
             for feature in feature_subset:
@@ -179,7 +179,7 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             # and use the edge labels from the current GraphView for the computation of the feature
             edge_labels_subgraph = np.array( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
 
-            sem = threading.Semaphore( max( 10, len( feature_subset ) ) )
+            sem = threading.Semaphore( min( 10, len( feature_subset ) ) )
             threads = []
 
             for feature in feature_subset:
