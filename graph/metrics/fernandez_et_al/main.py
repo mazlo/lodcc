@@ -45,6 +45,12 @@ def load_graph_from_edgelist( dataset ):
 
     return D
 
+def job_graph_analyze_on_partition( sem, feature, G, edge_labels, data ):
+    """"""
+    # can I?
+    with sem:
+        data[feature] = getattr( metrics, 'collect_'+ feature.__name__ )( G, edge_labels, data[feature], {}, args['print_stats'] )
+
 def graph_analyze_on_partitions( dataset, D, features, stats ):
     """"""
 
@@ -72,9 +78,19 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             S_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,0], partitions[s_idx] ) )
             edge_labels = np.array( [ S_G_s.ep.c0[p] for p in S_G_s.edges() ] )
 
+            sem = threading.Semaphore( NO_PARTITIONS )
+            threads = []
+
             for feature in feature_subset:
                 # this should add up all the values we need later when computing the metric
-                data[feature] = getattr( metrics, 'collect_'+ feature.__name__ )( S_G_s, edge_labels, data[feature], {}, args['print_stats'] )
+                t = threading.Thread( target = job_graph_analyze_on_partition, name = feature.__name__, args = ( sem, feature, S_G_s, edge_labels, data ) )
+                t.start()
+
+                threads.append( t )
+
+            # wait for all threads to finish
+            for t in threads:
+                t.join()
 
         for feature in feature_subset:
             # compute metric from individual partitions
