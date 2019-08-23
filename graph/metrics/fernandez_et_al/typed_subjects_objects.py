@@ -25,7 +25,7 @@ def ratio_of_typed_subjects( D, edge_labels=np.empty(0), stats=dict(), print_sta
         (2) ratio of typed subjects
     """
 
-    if edge_labels.size == 0:
+    if edge_labels is None or edge_labels.size == 0:
         edge_labels = np.array( [ D.ep.c0[p] for p in D.get_edges() ] )
 
     # ae98476863dc6ec5 = http://www.w3.org/1999/02/22-rdf-syntax-ns#type
