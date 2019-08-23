@@ -136,7 +136,9 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             
             # now, we filter out those edges with source vertices from the current partition
             O_G_s = GraphView( D, efilt=np.isin( D.get_edges()[:,1], partitions[o_idx] ) )
-            edge_labels = np.array( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
+
+            hash_func = np.vectorize( lambda e: hash(e) )
+            edge_labels = hash_func( [ O_G_s.ep.c0[p] for p in O_G_s.edges() ] )
 
             sem = threading.Semaphore( min( 10, len( feature_subset ) ) )
             threads = []
@@ -179,7 +181,8 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             P_G_s = GraphView( D, efilt=np.isin( edge_labels, partitions[p_idx] ) )
             
             # and use the edge labels from the current GraphView for the computation of the feature
-            edge_labels_subgraph = np.array( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
+            hash_func = np.vectorize( lambda e: hash(e) )
+            edge_labels_subgraph = hash_func( [ P_G_s.ep.c0[p] for p in P_G_s.edges() ] )
 
             sem = threading.Semaphore( min( 10, len( feature_subset ) ) )
             threads = []
@@ -224,7 +227,8 @@ def graph_analyze( dataset, D, stats ):
         log.info( 'Preparing edge-label structure' )
         # we unfortunately need to iterate over all edges once, since the order of appearance of
         # edge labels together with subjects and objects is important
-        edge_labels = np.array( [ D.ep.c0[p] for p in D.edges() ] )
+        hash_func = np.vectorize( lambda e: hash(e) )
+        edge_labels = hash_func( [ D.ep.c0[p] for p in D.edges() ] )
 
         log.info( 'Computing features' )
         for ftr in features:
