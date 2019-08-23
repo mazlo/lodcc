@@ -8,7 +8,8 @@ def number_of_classes( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fal
         edge_labels = np.array( [ D.ep.c0[p] for p in D.get_edges() ] )
 
     # ae98476863dc6ec5 = http://www.w3.org/1999/02/22-rdf-syntax-ns#type
-    C_G = GraphView( D, efilt=edge_labels == 'ae98476863dc6ec5' )
+    rdf_type = hash( 'ae98476863dc6ec5' )
+    C_G = GraphView( D, efilt=edge_labels == rdf_type )
     C_G = np.unique( C_G.get_edges()[:,1] )
 
     if print_stats:
@@ -28,7 +29,8 @@ def ratio_of_typed_subjects( D, edge_labels=np.empty(0), stats=dict(), print_sta
         edge_labels = np.array( [ D.ep.c0[p] for p in D.get_edges() ] )
 
     # ae98476863dc6ec5 = http://www.w3.org/1999/02/22-rdf-syntax-ns#type
-    S_C_G = GraphView( D, efilt=edge_labels == 'ae98476863dc6ec5' )
+    rdf_type = hash( 'ae98476863dc6ec5' )
+    S_C_G = GraphView( D, efilt=edge_labels == rdf_type )
     S_C_G = np.unique( S_C_G.get_edges()[:,0] )
 
     if print_stats:
