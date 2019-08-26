@@ -16,7 +16,7 @@ import logging as log
 import numpy as np
 import threading
 import sys
-import urlparse
+from urllib import parse as urlparse
 import xxhash as xh
 
 from constants import *
@@ -28,7 +28,7 @@ except:
 try:
     from util.lxxhash import xxhash_nt
     from util.merge_edgelists import merge_edgelists
-    from gini import gini
+    from graph.gini import gini
 except:
     print( 'One of other lodcc modules could not be found. Make sure you have imported all requirements.' )
 
