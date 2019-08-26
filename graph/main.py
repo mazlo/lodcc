@@ -24,13 +24,13 @@ try:
     import psycopg2
     import psycopg2.extras
 except:
-    print 'psycogp2 could not be found'
+    print( 'psycogp2 could not be found' )
 try:
     from util.lxxhash import xxhash_nt
     from util.merge_edgelists import merge_edgelists
     from gini import gini
 except:
-    print 'One of other lodcc modules could not be found. Make sure you have imported all requirements.'
+    print( 'One of other lodcc modules could not be found. Make sure you have imported all requirements.' )
 
 mediatype_mappings = {}
 
@@ -368,7 +368,7 @@ def job_cleanup_intermediate( dataset, rm_edgelists, sem ):
 try:
     from graph_tool.all import *
 except:
-    print 'graph_tool module could not be imported'
+    print( 'graph_tool module could not be imported' )
 import numpy as n
 import powerlaw
 n.warnings.filterwarnings('ignore')
@@ -377,7 +377,7 @@ import collections
 try:
     import matplotlib.pyplot as plt
 except:
-    print 'matplotlib.pyplot module could not be imported'
+    print( 'matplotlib.pyplot module could not be imported' )
 
 lock = threading.Lock()
 
@@ -913,10 +913,10 @@ def build_graph_analyse( dataset, threads_openmp=7 ):
 
     if args['print_stats']:
         if args['from_file']:
-            print ', '.join( [ key for key in stats.keys() ] )
-            print ', '.join( [ str(stats[key]) for key in stats.keys() ] )
+            print( ', '.join( [ key for key in stats.keys() ] ) )
+            print( ', '.join( [ str(stats[key]) for key in stats.keys() ] ) )
         else:
-            print stats
+            print( stats )
 
 # real job
 def job_start_build_graph( dataset, sem, threads_openmp=7 ):
@@ -1175,7 +1175,7 @@ if __name__ == '__main__':
         else:
             datasets = args['from_file']        # argparse returns [[..], [..],..]
             # add an artificial id from hash. array now becomes [[id, ..],[id,..],..]
-            datasets = map( lambda d: [xh.xxh64( d[0] ).hexdigest()[0:4]] + d, datasets )
+            datasets = list( map( lambda d: [xh.xxh64( d[0] ).hexdigest()[0:4]] + d, datasets ) )
             names = ', '.join( map( lambda d: d[1], datasets ) )
             log.debug( 'Configured datasets: %s', names )
 
@@ -1215,10 +1215,10 @@ if __name__ == '__main__':
 
         else:
             datasets = args['from_file']        # argparse returns [[..], [..]]
-            datasets = map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
+            datasets = list( map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
                 'name': ds[0], 
                 'path_edgelist': 'dumps/%s/data.edgelist.csv' % ds[0], 
-                'path_graph_gt': 'dumps/%s/data.graph.gt.gz' % ds[0] }, datasets )
+                'path_graph_gt': 'dumps/%s/data.graph.gt.gz' % ds[0] }, datasets ) )
             
             names = ', '.join( map( lambda d: d['name'], datasets ) )
             log.debug( 'Configured datasets: %s', names )
