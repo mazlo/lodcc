@@ -17,7 +17,7 @@ def in_degree( D, edge_labels=None, stats=dict(), print_stats=False ):
 def partial_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
-    if edge_labels.size == 0:
+    if edge_labels is None or edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of triples of G, in which o occurs as object and p as predicate
@@ -35,7 +35,7 @@ def partial_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fal
 def labelled_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
-    if edge_labels.size == 0:
+    if edge_labels is None or edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of different predicates (labels) of G with which o is related as a object

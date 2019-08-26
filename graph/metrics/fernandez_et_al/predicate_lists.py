@@ -5,7 +5,7 @@ import pandas as pd
 def repeated_predicate_lists( D, edge_labels=np.empty(0), stats=dict(), print_stats=False, return_collected=True ):
     """"""
 
-    if edge_labels.size == 0:
+    if edge_labels is None or edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # filter those vertices v | out-degree(v) > 0

@@ -4,7 +4,7 @@ import pandas as pd
 def predicate_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
-    if edge_labels.size == 0:
+    if edge_labels is None or edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # number of triples of graph G, in which p occurs as predicate
@@ -20,7 +20,7 @@ def predicate_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fals
 def predicate_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
-    if edge_labels.size == 0:
+    if edge_labels is None or edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of different subjects of G with which p is related as a predicate
@@ -41,7 +41,7 @@ def predicate_in_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=F
 def predicate_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
-    if edge_labels.size == 0:
+    if edge_labels is None or edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of different objects of G with which p is related as a predicate

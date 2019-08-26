@@ -20,7 +20,7 @@ def out_degree( D, edge_labels=None, stats=dict(), print_stats=False ):
 def partial_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
-    if edge_labels.size == 0:
+    if edge_labels is None or edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of triples of G, in which s occurs as subject and p as predicate
@@ -38,7 +38,7 @@ def partial_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=Fa
 def labelled_out_degree( D, edge_labels=np.empty(0), stats=dict(), print_stats=False ):
     """"""
 
-    if edge_labels.size == 0:
+    if edge_labels is None or edge_labels.size == 0:
         edge_labels = [ D.ep.c0[p] for p in D.get_edges() ]
 
     # the number of different predicates (labels) of G with which s is related as a subject
