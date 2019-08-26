@@ -30,7 +30,7 @@ def xxhash_nt( path, log=None ):
             if log:
                 log.error( 'File has wrong format, no n-triples found in \'%s\'. Could not transform into xxhash-ed triples', path )
             else:
-                print 'File has wrong format, no n-triples found in \'%s\'. Could not transform into xxhash-ed triples' % path
+                print( 'File has wrong format, no n-triples found in \'%s\'. Could not transform into xxhash-ed triples' % path )
 
             return
 
