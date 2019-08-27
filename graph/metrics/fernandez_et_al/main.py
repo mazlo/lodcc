@@ -1,6 +1,7 @@
 import re
 import os
 import argparse
+import gc
 import json
 import logging as log
 import pandas as pd
@@ -76,6 +77,7 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
 
     if len( feature_subset ) > 0:
         log.info( 'Computing features %s on %s partitions of the DiGraph' % ( ', '.join( [ f.__name__ for f in feature_subset ] ), NO_PARTITIONS ) )
+        gc.collect()
         
         # filter the graph for subjects, vertices with out-degree > 0
         S_G = GraphView( D, vfilt=lambda v:v.out_degree() > 0 )
@@ -109,6 +111,8 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
             for t in threads:
                 t.join()
 
+            gc.collect()
+
         for feature in feature_subset:
             # compute metric from individual partitions
             getattr( metrics, 'reduce_'+ feature.__name__ )( data[feature], D, S_G, stats )
@@ -121,6 +125,7 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
 
     if len( feature_subset ) > 0:
         log.info( 'Computing features %s on %s partitions of the DiGraph' % ( ', '.join( [ f.__name__ for f in feature_subset ] ), NO_PARTITIONS ) )
+        gc.collect()
 
         # filter the graph for objects, vertices with in-degree > 0
         O_G = GraphView( D, vfilt=lambda v:v.in_degree() > 0 )
@@ -166,7 +171,8 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
 
     if len( feature_subset ) > 0:
         log.info( 'Computing features %s on %s partitions of the DiGraph' % ( ', '.join( [ f.__name__ for f in feature_subset ] ), NO_PARTITIONS ) )
-
+        gc.collect()
+        
         # we first compute a unique set of predicates
         edge_labels = np.array( [D.ep.c0[p] for p in D.edges() ] )
         # and split up all predicates into X partitions. 
