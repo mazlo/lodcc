@@ -155,9 +155,11 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
 
                 threads.append( t )
 
-        # wait for all threads to finish
-        for t in threads:
-            t.join()
+            # wait for all threads to finish
+            for t in threads:
+                t.join()
+
+            gc.collect()
 
         for feature in feature_subset:
             # compute metric from individual partitions
@@ -200,9 +202,11 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
 
                 threads.append( t )
 
-        # wait for all threads to finish
-        for t in threads:
-            t.join()
+            # wait for all threads to finish
+            for t in threads:
+                t.join()
+
+            gc.collect()
 
         for feature in feature_subset:
             # compute metric from individual partitions
