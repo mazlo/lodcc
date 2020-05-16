@@ -40,15 +40,11 @@ def ensure_format_is_valid( r ):
 
     return format_
 
-def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
-    """This function has two goals:
-       1. cURLing the json datapackage for the given url, and
-       2. parsing the package for resources.
+def curl_datapackage( datahub_url, dataset_name ):
+    """
+    cURLs the datapackage from the given url.
 
-       Returns a list of resources found in the json file.
-       The formats are already mapped according to the formats mapping, if provided."""
-
-    dp = None
+    Returns the full path to the json file, to be read by subsequent method."""
 
     # prepare target directory
     os.makedirs( DATAPACKAGE_FOLDER, exist_ok=True )
@@ -61,14 +57,56 @@ def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
     else:
         log.info( 'Using local datapackage.json for %s', dataset_name )
 
+    return datapackage
+
+def parse_resources( dataset_id, dataset_name, datapackage ):
+    """
+    Parses the resources-attribute in the json structure. 
+    Performs format mapping, if provided.
+
+    Returns a list of urls and formats found.
+    """
+
+    log.debug( 'Found resources-object. reading' )
+    for r in datapackage['resources']:
+
+        format_ = ensure_format_is_valid( r )
+
+        if not format_:
+            continue
+
+        # depending on the version of the datapackage
+        attr = 'url'
+        attr = 'path' if attr not in r else attr
+
+        # we save the format as own column and the url as its value
+        ret.append( (dataset_id, dataset_name, format_, r[attr]) )
+
+    return ret
+
+def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
+    """
+    This function has two goals:
+    1. cURLing the json datapackage for the given url, and
+    2. parsing the package for resources.
+
+    Returns a list of resources found in the json file.
+    The formats are already mapped according to the formats mapping, if provided."""
+
+    dp = None
+
+    datapackage = curl_datapackage( datahub_url, dataset_name )
+
     with open( datapackage, 'r' ) as file:
+        ret = []
+        
         try:
             log.debug( 'Parsing datapackage.json' )
             dp = json.load( file )
 
             if 'name' in dp:
                 dataset_name = dp['name']
-                #save_value( cur, dataset_id, dataset_name, 'stats', 'name', dataset_name, False )
+                ret.append( (dataset_id, dataset_name, 'name', dataset_name) )
             else:
                 log.warn( 'No name-property given. File will be saved in datapackage.json' )
 
@@ -77,22 +115,7 @@ def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
                 # TODO create error message and exit
                 return []
 
-            ret = []
-
-            log.debug( 'Found resources-object. reading' )
-            for r in dp['resources']:
-
-                format_ = ensure_format_is_valid( r )
-
-                if not format_:
-                    continue
-
-                # depending on the version of the datapackage
-                attr = 'url'
-                attr = 'path' if attr not in r else attr
-
-                # we save the format as own column and the url as its value
-                ret.append( (dataset_id, dataset_name, format_, r[attr]) )
+            ret = parse_resources( dataset_id, dataset_name, dp )
 
             ret.append( (dataset_id, dataset_name, 'keywords', dp['keywords'] if 'keywords' in dp else None) )
             # save whole datapackage.json in column
