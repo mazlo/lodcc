@@ -84,7 +84,7 @@ def parse_resources( dataset_id, dataset_name, datapackage ):
 
     return ret
 
-def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
+def get_parse_datapackage( dataset_id, datahub_url, dataset_name, dry_run=False ):
     """
     This function has two goals:
     1. cURLing the json datapackage for the given url, and
@@ -134,5 +134,5 @@ if __name__ == '__main__':
 
     log.info( 'Started' )
     # dataset_id, datahub_url, dataset_name
-    ret = parse_datapackages( 1, 'https://old.datahub.io/dataset/bis-linked-data', 'bis-linked-data' )
+    ret = get_parse_datapackage( 1, 'https://old.datahub.io/dataset/bis-linked-data', 'bis-linked-data' )
     print( ret )
