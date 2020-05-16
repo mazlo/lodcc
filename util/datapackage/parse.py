@@ -41,7 +41,12 @@ def ensure_format_is_valid( r ):
     return format_
 
 def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
-    """parse_datapackages"""
+    """This function has two goals:
+       1. cURLing the json datapackage for the given url, and
+       2. parsing the package for resources.
+
+       Returns a list of resources found in the json file.
+       The formats are already mapped according to the formats mapping, if provided."""
 
     dp = None
 
