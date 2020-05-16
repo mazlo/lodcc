@@ -1,0 +1,1 @@
+DATAPACKAGE_FOLDER='resources/datapackages'
