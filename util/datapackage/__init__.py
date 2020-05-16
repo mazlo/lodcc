@@ -2,13 +2,16 @@ import logging as log
 import os
 import re
 
+from util.constants import FORMAT_MAPPINGS_FILE
+
+# this variable will be read by other modules
 mediatype_mappings = {}
 
 # read all format mappings
-if os.path.isfile( 'formats.properties' ):
-    log.info( 'Reading formats.properties' )
+if os.path.isfile( FORMAT_MAPPINGS_FILE ):
+    log.info( 'Reading %s' % FORMAT_MAPPINGS_FILE )
     
-    with open( 'formats.properties', 'rt' ) as f:
+    with open( FORMAT_MAPPINGS_FILE, 'rt' ) as f:
         # reads all lines and splits it so that we got a list of lists
         parts = list( re.split( "[=, ]+", option ) for option in ( line.strip() for line in f ) if option and not option.startswith( '#' ))
         # creates a hashmap from each multimappings
