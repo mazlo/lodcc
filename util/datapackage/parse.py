@@ -70,7 +70,9 @@ def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
             if not 'resources' in dp:
                 log.error( '"resources" does not exist for %s', dataset_name )
                 # TODO create error message and exit
-                return None
+                return []
+
+            ret = []
 
             log.debug( 'Found resources-object. reading' )
             for r in dp['resources']:
@@ -80,23 +82,29 @@ def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
                 if not format_:
                     continue
 
-                #save_value( cur, dataset_id, dataset_name, 'stats', format_, r['url'], True )
+                # depending on the version of the datapackage
+                attr = 'url'
+                attr = 'path' if attr not in r else attr
 
-            #save_value( cur, dataset_id, dataset_name, 'stats', 'keywords', dp['keywords'] if 'keywords' in dp else None, False )
+                # we save the format as own column and the url as its value
+                ret.append( (dataset_id, dataset_name, format_, r[attr]) )
+
+            ret.append( (dataset_id, dataset_name, 'keywords', dp['keywords'] if 'keywords' in dp else None) )
             # save whole datapackage.json in column
-            #save_value( cur, dataset_id, dataset_name, 'stats', 'datapackage_content', str( json.dumps( dp ) ), False )
+            ret.append( (dataset_id, dataset_name, 'datapackage_content', str( json.dumps( dp ) )) )
 
         except:
             # TODO create error message and exit
             raise
-            return None
+            return []
 
-    return 
+    return ret
 
 if __name__ == '__main__':
 
     log.basicConfig( level = log.DEBUG, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
 
     log.info( 'Started' )
-    # dataset_id, datahub_url, dataset_name, dry_run=False
-    parse_datapackages( 1, 'https://old.datahub.io/dataset/abs-linked-data', 'abs-linked-data' )
+    # dataset_id, datahub_url, dataset_name
+    ret = parse_datapackages( 1, 'https://old.datahub.io/dataset/bis-linked-data', 'bis-linked-data' )
+    print( ret )
