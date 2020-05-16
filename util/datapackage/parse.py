@@ -8,7 +8,8 @@ from util.constants import DATAPACKAGE_FOLDER
 from util.datapackage import mediatype_mappings
 
 def ensure_format_in_dictionary( format_ ):
-    """ensure_format_in_dictionary"""
+    """
+    Maps the given format according to the provided format mapping file."""
 
     if format_ in mediatype_mappings:
         log.info( 'Format %s will be mapped to %s', format_, mediatype_mappings[format_] )
@@ -17,7 +18,9 @@ def ensure_format_in_dictionary( format_ ):
     return format_
 
 def ensure_format_is_valid( r ):
-    """ensure_format_is_valid"""
+    """
+    This extracts the format from the given resource
+    and maps it according to the formats mapping, if provided."""
 
     if not 'format' in r:
         log.error( 'resources-object is missing format-property. Cannot save this value' )
