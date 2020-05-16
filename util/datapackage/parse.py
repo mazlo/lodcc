@@ -2,6 +2,7 @@ import json
 import logging as log
 import os
 import re
+import subprocess as proc
 
 from util.constants import DATAPACKAGE_FOLDER
 from util.datapackage import mediatype_mappings
@@ -47,15 +48,15 @@ def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
     # prepare target directory
     os.makedirs( DATAPACKAGE_FOLDER, exist_ok=True )
 
-    datapackage_filename = '%s/datapackage_%s.json' % ( DATAPACKAGE_FOLDER, dataset_name )
-    if not os.path.isfile( datapackage_filename ):
+    datapackage = '%s/datapackage_%s.json' % ( DATAPACKAGE_FOLDER, dataset_name )
+    if not os.path.isfile( datapackage ):
         log.info( 'cURLing datapackage.json for %s', dataset_name )
-        os.popen( 'curl -s -L "'+ datahub_url +'/datapackage.json" -o '+ datapackage_filename )
+        proc.call( 'curl -s -L "%s/datapackage.json" -o %s' % ( datahub_url,datapackage ), shell=True )
         # TODO ensure the process succeeds
     else:
         log.info( 'Using local datapackage.json for %s', dataset_name )
 
-    with open( 'datapackage_'+ dataset_name +'.json', 'r' ) as file:
+    with open( datapackage, 'r' ) as file:
         try:
             log.debug( 'Parsing datapackage.json' )
             dp = json.load( file )
