@@ -1020,7 +1020,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description = 'lodcc' )
     actions = parser.add_mutually_exclusive_group( required = True )
 
-    actions.add_argument( '--parse-datapackages', '-pd', action = "store_true", help = '' )
     actions.add_argument( '--prepare-graph', '-pu', action = "store_true", help = '' )
     actions.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
     
@@ -1106,40 +1105,6 @@ if __name__ == '__main__':
         except:
             log.error( 'Database not ready for query execution. Check db.properties. db error:\n %s', sys.exc_info()[0] )
             raise 
-
-    # option 1
-    if args['parse_datapackages']:
-        if args['dry_run']:
-            # TODO respect --from-db
-            log.info( 'Running in dry-run mode' )
-            log.info( 'Using example dataset "Museums in Italy"' )
-    
-            cur = conn.cursor()
-            cur.execute( 'SELECT id, url, name FROM stats_2017_08 WHERE url = %s LIMIT 1', ('https://old.datahub.io/dataset/museums-in-italy') )
-            
-            if cur.rowcount == 0:
-                log.error( 'Example dataset not found. Is the database filled?' )
-                sys.exit()
-
-            ds = cur.fetchall()[0]
-
-            log.info( 'Preparing %s ', ds[2] )
-            parse_datapackages( ds[0], ds[1], ds[2], True )
-
-            conn.commit()
-            cur.close()
-        else:
-            # TODO respect --from-db
-            cur = conn.cursor()
-            cur.execute( 'SELECT id, url, name FROM stats' )
-            datasets_to_fetch = cur.fetchall()
-            
-            for ds in datasets_to_fetch:
-                log.info( 'Preparing %s ', ds[2] )
-                parse_datapackages( ds[0], ds[1], ds[2] )
-                conn.commit()
-
-            cur.close()
 
     # option 2
     if args['prepare_graph']:
