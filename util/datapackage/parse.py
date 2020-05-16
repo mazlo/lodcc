@@ -67,6 +67,7 @@ def parse_resources( dataset_id, dataset_name, datapackage ):
     Returns a list of urls and formats found.
     """
 
+    ret = []
     log.debug( 'Found resources-object. reading' )
     for r in datapackage['resources']:
 
@@ -98,17 +99,10 @@ def get_parse_datapackage( dataset_id, datahub_url, dataset_name, dry_run=False 
     datapackage = curl_datapackage( datahub_url, dataset_name )
 
     with open( datapackage, 'r' ) as file:
-        ret = []
         
         try:
             log.debug( 'Parsing datapackage.json' )
             dp = json.load( file )
-
-            if 'name' in dp:
-                dataset_name = dp['name']
-                ret.append( (dataset_id, dataset_name, 'name', dataset_name) )
-            else:
-                log.warn( 'No name-property given. File will be saved in datapackage.json' )
 
             if not 'resources' in dp:
                 log.error( '"resources" does not exist for %s', dataset_name )
@@ -117,6 +111,14 @@ def get_parse_datapackage( dataset_id, datahub_url, dataset_name, dry_run=False 
 
             ret = parse_resources( dataset_id, dataset_name, dp )
 
+            # now save some basic information from the package to be at hand later
+            if 'name' in dp:
+                dataset_name = dp['name']
+                ret.append( (dataset_id, dataset_name, 'name', dataset_name) )
+            else:
+                log.warn( 'No name-property given. File will be saved in datapackage.json' )
+
+            # save keywords separately
             ret.append( (dataset_id, dataset_name, 'keywords', dp['keywords'] if 'keywords' in dp else None) )
             # save whole datapackage.json in column
             ret.append( (dataset_id, dataset_name, 'datapackage_content', str( json.dumps( dp ) )) )
