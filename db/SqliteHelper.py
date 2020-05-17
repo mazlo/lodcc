@@ -10,7 +10,7 @@ log.basicConfig( level=log.DEBUG )
 class SqliteHelper:
     """This is a helper class for Sqlite database connections."""
 
-    def __init__( self ):
+    def __init__( self, init_db=False, tbl_datasets='stats', tbl_measures='stats_graph' ):
         """"""
 
         if not os.path.isfile( DB_PROPERTIES_FILE ):
@@ -28,6 +28,10 @@ class SqliteHelper:
 
             # 
             self.tbl_datasets = self.conf['db_schema_datasets_table_name']
+
+            if init_db:
+                self.init_schema()
+                self.init_datasets()
 
     def init_schema( self, drop=False ):
         """"""
@@ -51,13 +55,13 @@ class SqliteHelper:
         with open( self.conf['db_import_datasets_file'] ) as sql:
             cur.executescript( sql.read() )
 
-    def get_datasets( self, columns=['id','url','name'], table_name='stats' ):
+    def get_datasets( self, columns=['id','url','name'], limit=-1 ):
         """"""
 
         cur = self.conn.cursor()
-        return cur.execute( 'SELECT %s FROM %s' % (','.join(columns),table_name)  ).fetchall()
+        return cur.execute( 'SELECT %s FROM %s LIMIT %s' % (','.join(columns),self.tbl_datasets,limit) ).fetchall()
 
-    def ensure_schema_completeness( self, attrs, table_name='stats' ):
+    def ensure_schema_completeness( self, attrs ):
         """"""
 
         cur = self.conn.cursor()
@@ -67,14 +71,14 @@ class SqliteHelper:
 
         for attr in attrs:
             # this is invoked for every attribute to ensure multi-threading is respected
-            table_attrs = cur.execute( 'PRAGMA table_info(%s)' % table_name ).fetchall()
+            table_attrs = cur.execute( 'PRAGMA table_info(%s)' % self.tbl_datasets ).fetchall()
             table_attrs = list( map( lambda c: c[1], table_attrs ) )
             
             if not attr in table_attrs:
                 log.info( 'Couldn''t find attribute %s in table, creating..', attr )
 
                 ctype = 'BIGINT' if 'max' in attr else 'DOUBLE PRECISION'
-                cur.execute( 'ALTER TABLE %s ADD COLUMN %s %s' % (table_name,attr,ctype) )
+                cur.execute( 'ALTER TABLE %s ADD COLUMN %s %s' % (self.tbl_datasets,attr,ctype) )
         
         self.conn.commit()
         cur.close()
@@ -86,10 +90,9 @@ class SqliteHelper:
         The passed dataset-parameter is expected to be of this shape: (id,name,attribute,value)."""
 
         # make sure these attributes exist
-        self.ensure_schema_completeness( [dataset[2]], self.tbl_datasets )
+        self.ensure_schema_completeness( [dataset[2]] )
 
         sql='UPDATE %s SET %s=? WHERE id=?' % (self.tbl_datasets,dataset[2])
-        log.debug( sql )
 
         cur = self.conn.cursor()
         cur.execute( sql, (dataset[3],dataset[0],) )
