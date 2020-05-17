@@ -17,13 +17,13 @@ def ensure_format_in_dictionary( format_ ):
 
     return format_
 
-def ensure_format_is_valid( r ):
+def ensure_format_is_valid( r, dataset_name ):
     """
     This extracts the format from the given resource
     and maps it according to the formats mapping, if provided."""
 
     if not 'format' in r:
-        log.error( 'resources-object is missing format-property. Cannot save this value' )
+        log.error( '%s resources-object is missing format-property. Cannot save this value', dataset_name )
         # TODO create error message and exit
         return None
 
@@ -74,7 +74,7 @@ def parse_resources( dataset_id, dataset_name, datapackage ):
     log.debug( 'Found resources-object. reading' )
     for r in datapackage['resources']:
 
-        format_ = ensure_format_is_valid( r )
+        format_ = ensure_format_is_valid( r, dataset_name )
 
         if not format_:
             continue
