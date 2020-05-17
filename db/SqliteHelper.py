@@ -24,6 +24,28 @@ class SqliteHelper:
             self.conn = sqlite3.connect( self.conf['db_url'] )
             self.conn.row_factory = sqlite3.Row
 
+    def init_schema( self, drop=False ):
+        """"""
+
+        # TODO implement drop before creating
+
+        log.info( 'Initializing schema' )
+
+        cur = self.conn.cursor()
+        with open( self.conf['db_import_schema_file'] ) as sql:
+            cur.executescript( sql.read() )
+
+    def init_datasets( self, truncate=False ):
+        """"""
+
+        # TODO implement truncate before importing
+
+        log.info( 'Initializing data' )
+
+        cur = self.conn.cursor()
+        with open( self.conf['db_import_datasets_file'] ) as sql:
+            cur.executescript( sql.read() )
+
     def get_datasets( self, columns=['id','url','name'], table_name='stats' ):
         """"""
 
