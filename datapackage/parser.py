@@ -97,8 +97,9 @@ def get_parse_datapackage( dataset_id, datahub_url, dataset_name, dry_run=False 
     Returns a list of resources found in the json file.
     The formats are already mapped according to the formats mapping, if provided."""
 
+    log.info( 'Getting and parsing %s datapackage' % dataset_name )
+    
     dp = None
-
     datapackage = curl_datapackage( datahub_url, dataset_name )
 
     with open( datapackage, 'r' ) as file:
@@ -121,8 +122,6 @@ def get_parse_datapackage( dataset_id, datahub_url, dataset_name, dry_run=False 
             else:
                 log.warn( 'No name-property given. File will be saved in datapackage.json' )
 
-            # save keywords separately
-            ret.append( (dataset_id, dataset_name, 'keywords', dp['keywords'] if 'keywords' in dp else None) )
             # save whole datapackage.json in column
             ret.append( (dataset_id, dataset_name, 'datapackage_content', str( json.dumps( dp ) )) )
 
