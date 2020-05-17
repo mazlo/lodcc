@@ -3,7 +3,7 @@ import os
 import re
 import sqlite3
 
-from util.constants import DB_PROPERTIES_FILE
+from constants.db import DB_PROPERTIES_FILE
 
 log.basicConfig( level=log.DEBUG )
 

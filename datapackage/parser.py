@@ -4,8 +4,8 @@ import os
 import re
 import subprocess as proc
 
-from util.constants import DATAPACKAGE_FOLDER
-from util.datapackage import mediatype_mappings
+from constants.datapackage import DATAPACKAGE_FOLDER
+from datapackage import mediatype_mappings
 
 def ensure_format_in_dictionary( format_ ):
     """

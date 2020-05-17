@@ -2,7 +2,7 @@ import logging as log
 import os
 import re
 
-from util.constants import FORMAT_MAPPINGS_FILE
+from constants.datapackage import FORMAT_MAPPINGS_FILE
 
 # this variable will be read by other modules
 mediatype_mappings = {}
