@@ -18,11 +18,16 @@ class SqliteHelper:
             return
 
         with open( DB_PROPERTIES_FILE, 'rt' ) as f:
+            # read all db properties into self.conf variable
             self.conf = dict( ( key.replace( '.', '_' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) )
             log.debug( self.conf )
 
+            # create connection
             self.conn = sqlite3.connect( self.conf['db_url'] )
             self.conn.row_factory = sqlite3.Row
+
+            # 
+            self.tbl_datasets = self.conf['db_schema_datasets_table_name']
 
     def init_schema( self, drop=False ):
         """"""
@@ -80,12 +85,10 @@ class SqliteHelper:
         It ensures that the attribute exists.
         The passed dataset-parameter is expected to be of this shape: (id,name,attribute,value)."""
 
-        table_name = 'stats'
-
         # make sure these attributes exist
-        self.ensure_schema_completeness( [dataset[2]], table_name )
+        self.ensure_schema_completeness( [dataset[2]], self.tbl_datasets )
 
-        sql='UPDATE %s SET %s=? WHERE id=?' % (table_name,dataset[2])
+        sql='UPDATE %s SET %s=? WHERE id=?' % (self.tbl_datasets,dataset[2])
         log.debug( sql )
 
         cur = self.conn.cursor()
