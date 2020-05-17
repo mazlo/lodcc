@@ -4,8 +4,8 @@ import os
 import re
 import subprocess as proc
 
-from util.constants import DATAPACKAGE_FOLDER
-from util.datapackage import mediatype_mappings
+from constants.datapackage import DATAPACKAGE_FOLDER
+from datapackage import mediatype_mappings
 
 def ensure_format_in_dictionary( format_ ):
     """
@@ -17,13 +17,13 @@ def ensure_format_in_dictionary( format_ ):
 
     return format_
 
-def ensure_format_is_valid( r ):
+def ensure_format_is_valid( r, dataset_name ):
     """
     This extracts the format from the given resource
     and maps it according to the formats mapping, if provided."""
 
     if not 'format' in r:
-        log.error( 'resources-object is missing format-property. Cannot save this value' )
+        log.error( '%s resources-object is missing format-property. Cannot save this value', dataset_name )
         # TODO create error message and exit
         return None
 
@@ -74,7 +74,7 @@ def parse_resources( dataset_id, dataset_name, datapackage ):
     log.debug( 'Found resources-object. reading' )
     for r in datapackage['resources']:
 
-        format_ = ensure_format_is_valid( r )
+        format_ = ensure_format_is_valid( r, dataset_name )
 
         if not format_:
             continue
@@ -97,8 +97,9 @@ def get_parse_datapackage( dataset_id, datahub_url, dataset_name, dry_run=False 
     Returns a list of resources found in the json file.
     The formats are already mapped according to the formats mapping, if provided."""
 
+    log.info( 'Getting and parsing %s datapackage' % dataset_name )
+    
     dp = None
-
     datapackage = curl_datapackage( datahub_url, dataset_name )
 
     with open( datapackage, 'r' ) as file:
@@ -121,8 +122,6 @@ def get_parse_datapackage( dataset_id, datahub_url, dataset_name, dry_run=False 
             else:
                 log.warn( 'No name-property given. File will be saved in datapackage.json' )
 
-            # save keywords separately
-            ret.append( (dataset_id, dataset_name, 'keywords', dp['keywords'] if 'keywords' in dp else None) )
             # save whole datapackage.json in column
             ret.append( (dataset_id, dataset_name, 'datapackage_content', str( json.dumps( dp ) )) )
 
