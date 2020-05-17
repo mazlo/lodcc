@@ -11,7 +11,6 @@
 import re
 import os
 import argparse
-import json
 import logging as log
 import numpy as np
 import threading
@@ -31,8 +30,6 @@ try:
     from graph.gini import gini
 except:
     print( 'One of other lodcc modules could not be found. Make sure you have imported all requirements.' )
-
-mediatype_mappings = {}
 
 conn = None
 
@@ -64,39 +61,6 @@ def ensure_db_record_is_unique( cur, name, table_name, attribute, value ):
 
         return cur.fetchone()[0]
 
-def ensure_format_in_dictionary( format_ ):
-    """ensure_format_in_dictionary"""
-
-    if format_ in mediatype_mappings:
-        log.info( 'Format %s will be mapped to %s', format_, mediatype_mappings[format_] )
-        return mediatype_mappings[format_]
-
-    return format_
-
-def ensure_format_is_valid( r ):
-    """ensure_format_is_valid"""
-
-    if not 'format' in r:
-        log.error( 'resources-object is missing format-property. Cannot save this value' )
-        # TODO create error message and exit
-        return None
-
-    format_ = r['format'].strip().lower()
-    format_ = re.sub( r'[^a-zA-Z0-9]', '_', format_ )  # replace special character in format-attribute with _
-    format_ = re.sub( r'^_+', '', format_ )  # replace leading _
-    format_ = re.sub( r'_+$', '', format_ )  # replace trailing _
-    format_ = re.sub( r'__*', '_', format_ )  # replace double __
-
-    if not format_:
-        log.error( 'Format is not valid after cleanup, original: %s. Will continue with next resource', r['format'] )
-        return None
-
-    format_ = ensure_format_in_dictionary( format_ )
-
-    log.info( 'Found valid format "%s"', format_ )
-
-    return format_
-
 def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, check=True ):
     """save_value"""
 
@@ -112,56 +76,6 @@ def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, che
     
     log.debug( 'Saving value "%s" for attribute "%s" for "%s"', value, attribute, dataset_name )
     cur.execute( 'UPDATE %s SET '+ attribute +' = %s WHERE id = %s;', (table_name, value, dataset_id) )
-
-def parse_datapackages( dataset_id, datahub_url, dataset_name, dry_run=False ):
-    """parse_datapackages"""
-
-    dp = None
-
-    datapackage_filename = 'datapackage_'+ dataset_name +'.json'
-    if not os.path.isfile( datapackage_filename ):
-        log.info( 'cURLing datapackage.json for %s', dataset_name )
-        os.popen( 'curl -s -L "'+ datahub_url +'/datapackage.json" -o '+ datapackage_filename )
-        # TODO ensure the process succeeds
-    else:
-        log.info( 'Using local datapackage.json for %s', dataset_name )
-
-    with open( 'datapackage_'+ dataset_name +'.json', 'r' ) as file:
-        try:
-            log.debug( 'Parsing datapackage.json' )
-            dp = json.load( file )
-
-            if 'name' in dp:
-                dataset_name = dp['name']
-                save_value( cur, dataset_id, dataset_name, 'stats', 'name', dataset_name, False )
-            else:
-                log.warn( 'No name-property given. File will be saved in datapackage.json' )
-
-            if not 'resources' in dp:
-                log.error( '"resources" does not exist for %s', dataset_name )
-                # TODO create error message and exit
-                return None
-
-            log.debug( 'Found resources-object. reading' )
-            for r in dp['resources']:
-
-                format_ = ensure_format_is_valid( r )
-
-                if not format_:
-                    continue
-
-                save_value( cur, dataset_id, dataset_name, 'stats', format_, r['url'], True )
-
-            save_value( cur, dataset_id, dataset_name, 'stats', 'keywords', dp['keywords'] if 'keywords' in dp else None, False )
-            # save whole datapackage.json in column
-            save_value( cur, dataset_id, dataset_name, 'stats', 'datapackage_content', str( json.dumps( dp ) ), False )
-
-        except:
-            # TODO create error message and exit
-            raise
-            return None
-
-    return 
 
 # -----------------
 
@@ -1081,14 +995,6 @@ if __name__ == '__main__':
     
     elif args['from_file']:
         log.debug( 'Requested to read data from file' )
-
-    # read all format mappings
-    if os.path.isfile( 'formats.properties' ):
-        with open( 'formats.properties', 'rt' ) as f:
-            # reads all lines and splits it so that we got a list of lists
-            parts = list( re.split( "[=, ]+", option ) for option in ( line.strip() for line in f ) if option and not option.startswith( '#' ))
-            # creates a hashmap from each multimappings
-            mediatype_mappings = dict( ( format, mappings[0] ) for mappings in parts for format in mappings[1:] )
 
     if args['from_db']:
         # connect to an existing database
