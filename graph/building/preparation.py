@@ -1,6 +1,7 @@
 import logging as log
 import os
 import re
+import subprocess as proc
 import threading
 from urllib import parse as urlparse
 import xxhash as xh
@@ -187,7 +188,8 @@ def build_graph_prepare( dataset, file ):
     log.debug( 'Overwrite nt? %s', overwrite_nt )
     log.debug( 'Remove original file? %s', rm_original )
     log.debug( 'Calling command %s', MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
-    os.popen( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original) )
+    
+    proc.call( MEDIATYPES[format_]['cmd_to_ntriples'] % (path,overwrite_nt,rm_original), shell=True )
 
     # TODO check correct mediatype if not compressed
 
