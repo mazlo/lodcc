@@ -3,6 +3,7 @@ import logging as log
 import os
 import re
 import subprocess as proc
+import sys
 import threading
 from urllib import parse as urlparse
 import xxhash as xh
@@ -332,6 +333,14 @@ if __name__ == '__main__':
     else:
         log.info( 'Requested to prepare graph from file' )
         datasets = args['from_file']        # argparse returns [[..], [..],..]
+
+        # flattens the 2-d array and checks length
+        datasets_flat = [ nested for dataset in datasets for nested in dataset ]
+        if len( datasets_flat ) == 0 \
+            or len( datasets_flat ) < 3:
+            log.error( 'No datasets specified or wrong parameter format, exiting. \n\n\tPlease specify exactly as follows: --from-file <name> <filename> <format> [--from-file ...]\n\n\tname\t: name of the dataset, i.e., corresponding folder in dumps/, e.g. worldbank-linked-data\n\tfilename: the name of the file in the corresponding folder (may be an archive)\n\tformat\t: one of %s\n' % ','.join( SHORT_FORMAT_MAP.keys() ) )
+            sys.exit(1)
+
         # add an artificial id from hash. array now becomes [[id, ..],[id,..],..]
         datasets = list( map( lambda d: [xh.xxh64( d[0] ).hexdigest()[0:4]] + d, datasets ) )
         names = ', '.join( map( lambda d: d[1], datasets ) )
