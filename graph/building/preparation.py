@@ -32,7 +32,7 @@ def download_prepare( dataset, from_file ):
     urls = list()
     
     if from_file:
-        # if --from-file specified the format is given on cli not from db column
+        # if run --from-file, the format is given on cli not from db column
         log.debug( 'Using format passed as third parameter with --from-file' )
         
         if len( dataset ) != 4:
@@ -40,7 +40,7 @@ def download_prepare( dataset, from_file ):
             return [( None, APPLICATION_UNKNOWN )]
 
         if not dataset[3] in SHORT_FORMAT_MAP:
-            log.error( 'Wrong format. Please specify one of %s', ','.join( SHORT_FORMAT_MAP.keys() ) )
+            log.error( 'Wrong format "%s". Please specify one of %s', dataset[3], ','.join( SHORT_FORMAT_MAP.keys()) )
             return [( None , APPLICATION_UNKNOWN )]
         
         urls.append( ( dataset[2], SHORT_FORMAT_MAP[dataset[3]] ) )
@@ -135,7 +135,7 @@ def download_data( dataset, urls ):
     for url, format_ in urls:
 
         if format_ == APPLICATION_UNKNOWN:
-            log.error( 'Could not continue due to unknown format. %s', dataset[1] )
+            log.error( 'Could not continue due to unknown format. ignoring this one..' )
             continue
 
         filename = ensure_valid_filename_from_url( dataset, url, format_ )
@@ -302,6 +302,8 @@ if __name__ == '__main__':
     else:
         log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
 
+    log.info( 'graph.building.preparation: Welcome' )
+
     # option 2
     if args['from_db']:
         # respect --use-datasets argument
@@ -325,6 +327,7 @@ if __name__ == '__main__':
         cur.close()
 
     else:
+        log.info( 'Requested to prepare graph from file' )
         datasets = args['from_file']        # argparse returns [[..], [..],..]
         # add an artificial id from hash. array now becomes [[id, ..],[id,..],..]
         datasets = list( map( lambda d: [xh.xxh64( d[0] ).hexdigest()[0:4]] + d, datasets ) )
