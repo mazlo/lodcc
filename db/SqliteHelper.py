@@ -100,9 +100,7 @@ class SqliteHelper:
             
             if not attr in table_attrs:
                 log.info( 'Couldn''t find attribute %s in table, creating..', attr )
-
-                ctype = 'BIGINT' if 'max' in attr else 'DOUBLE PRECISION'
-                cur.execute( 'ALTER TABLE %s ADD COLUMN %s %s' % (self.tbl_datasets,attr,ctype) )
+                cur.execute( 'ALTER TABLE %s ADD COLUMN %s varchar' % (self.tbl_datasets,attr) )
         
         self.conn.commit()
         cur.close()
