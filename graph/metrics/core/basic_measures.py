@@ -5,7 +5,7 @@ from graph_tool.stats import label_parallel_edges
 
 log = logging.getLogger( __name__ )
 
-def fs_digraph_using_basic_properties( D, stats, options={ 'features': None } ):
+def fs_digraph_using_basic_properties( D, stats, options={ 'features': [] } ):
     """"""
 
     # at least one of these features needed to continue

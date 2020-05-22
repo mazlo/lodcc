@@ -4,7 +4,7 @@ import threading
 log = logging.getLogger( __name__ )
 lock = threading.Lock()
 
-def fs_digraph_using_degree( D, stats ):
+def fs_digraph_using_degree( D, stats, options={ 'features': [], 'skip_features': [] } ):
     """"""
 
     # compute once
@@ -132,7 +132,7 @@ def fs_digraph_using_degree( D, stats ):
 
         lock.release()
 
-def fs_digraph_using_indegree( D, stats ):
+def fs_digraph_using_indegree( D, stats, options={ 'features': [], 'skip_features': [] } ):
     """"""
 
     # compute once
