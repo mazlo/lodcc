@@ -19,33 +19,12 @@ np.warnings.filterwarnings('ignore')
 
 import db.helpers as db
 import graph.metrics.fernandez_et_al.all as metrics
+from graph.building import builder
 
 lock = multiprocessing.Lock()
 
 ROOT_DIR = os.path.abspath( os.curdir )
 DEFAULT_DATAFRAME_INDEX = [ 'time_overall' ]
-
-def load_graph_from_edgelist( dataset ):
-    """"""
-
-    edgelist, graph_gt = dataset['path_edgelist'], dataset['path_graph_gt']
-
-    D=None
-
-    # prefer graph_gt file
-    if graph_gt and os.path.isfile( graph_gt ):
-        log.info( 'Constructing DiGraph from gt.xz' )
-        D=load_graph( graph_gt )
-    
-    elif edgelist and os.path.isfile( edgelist ):
-        log.info( 'Constructing DiGraph from edgelist' )
-        D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
-    
-    else:
-        log.error( 'edgelist or graph_gt file to read graph from does not exist' )
-        return None
-
-    return D
 
 def job_on_partition_out_degrees( sem, feature, G, edge_labels, data ):
     """"""
@@ -265,7 +244,7 @@ def build_graph_analyse( dataset, D, stats, threads_openmp=7 ):
 def build_graph_prepare( dataset, stats ):
     """build_graph_prepare"""
 
-    D=load_graph_from_edgelist( dataset )
+    D = builder.load_graph_from_edgelist( dataset )
 
     if not D:
         log.error( 'Could not instantiate graph, None' )
