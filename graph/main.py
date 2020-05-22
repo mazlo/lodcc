@@ -23,6 +23,7 @@ except:
     print( 'psycogp2 could not be found' )
 try:
     from graph.gini import gini
+    from graph.building import builder
 except:
     print( 'One of other lodcc modules could not be found. Make sure you have imported all requirements.' )
 
@@ -528,69 +529,10 @@ def fs_ugraph_start_job( dataset, U, stats ):
         if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
 
-def load_graph_from_edgelist( dataset, stats ):
-    """"""
-
-    edgelist, graph_gt = dataset['path_edgelist'], dataset['path_graph_gt']
-
-    D=None
-
-    # prefer graph_gt file
-    if not args['reconstruct_graph'] and graph_gt and os.path.isfile( graph_gt ):
-        log.info( 'Constructing DiGraph from gt.xz' )
-        D=load_graph( graph_gt )
-    
-    elif edgelist and os.path.isfile( edgelist ):
-        log.info( 'Constructing DiGraph from edgelist' )
-
-        if args['dict_hashed']:
-            D=load_graph_from_csv( edgelist, directed=True, string_vals=False, hashed=False, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
-        else:
-            D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
-    
-    else:
-        log.error( 'edgelist or graph_gt file to read graph from does not exist' )
-        return None
-
-    # dump graph after reading if required
-    if D and args['dump_graph']:
-        log.info( 'Dumping graph..' )
-
-        prefix = re.split( '.edgelist.csv', os.path.basename( edgelist ) )
-        if prefix[0] != 'data':
-            prefix = prefix[0]
-        else:
-            prefix = 'data'
-
-        graph_gt = '/'.join( [os.path.dirname( edgelist ), '%s.graph.gt.gz' % prefix] )
-        D.save( graph_gt )
-        stats['path_graph_gt'] = graph_gt
-
-        # thats it here
-        if not args['print_stats'] and not args['from_file']:
-            save_stats( dataset, stats )
-
-    # check if subgraph is required
-    if D and args['sample_vertices']:
-        k = args['sample_size']
-        
-        vfilt   = D.new_vertex_property( 'bool' )
-        v       = D.get_vertices()
-        v_rand  = np.random.choice( v, size=int( len(v)*k ), replace=False )
-
-        log.info( 'Sampling vertices ...')
-
-        for e in v_rand:
-            vfilt[e] = True
-        
-        return GraphView( D, vfilt=vfilt )
-
-    return D
-
 def graph_analyze( dataset, stats ):
     """"""
    
-    D=load_graph_from_edgelist( dataset, stats )
+    D = builder.load_graph_from_edgelist( dataset, args )
 
     if not D:
         log.error( 'Could not instantiate graph, None' )
@@ -809,17 +751,14 @@ if __name__ == '__main__':
             cur.close()
 
             for ds in datasets:
-                stats = {}
-                g = load_graph_from_edgelist( ds, stats )
+                g = builder.load_graph_from_edgelist( ds )
 
                 if not g:
                     log.error( 'Could not instantiate graph for dataset %s', ds['name'] )
                     continue
 
-                log.info( 'Dumping graph..' )
-                graph_gt = '/'.join( [os.path.dirname( ds['path_edgelist'] ),'data.graph.gt.gz'] )
-                g.save( graph_gt )
-                stats['path_graph_gt'] = graph_gt
+                graph_gt = builder.dump_graph( ds['path_edgelist'] )
+                stats = { 'path_graph_gt' : graph_gt }
 
                 # thats it here
                 save_stats( ds, stats )
