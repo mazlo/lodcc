@@ -1,8 +1,23 @@
 import logging
+import os
 import threading
+
+import collections
+import numpy as n
+import powerlaw
+
+try:
+    mlog = logging.getLogger( 'matplotlib' )
+    mlog.setLevel( logging.WARN )
+    import matplotlib.pyplot as plt
+except:
+    print( 'matplotlib.pyplot module could not be imported' )
+
+from graph.gini import gini
 
 log = logging.getLogger( __name__ )
 lock = threading.Lock()
+n.warnings.filterwarnings('ignore')
 
 def fs_digraph_using_degree( D, stats, options={ 'features': [], 'skip_features': [] } ):
     """"""
@@ -12,7 +27,7 @@ def fs_digraph_using_degree( D, stats, options={ 'features': [], 'skip_features'
 
     # feature: max_(in|out)degree
     # feature: (in|out)_degree_centrality
-    if 'degree' in args['features']:
+    if 'degree' in options['features']:
 
         v_max = (0, None)
         v_max_in = (0, None)
@@ -74,18 +89,18 @@ def fs_digraph_using_degree( D, stats, options={ 'features': [], 'skip_features'
 
         log.debug( 'done standard deviation and variance' )
 
-    if 'gini' in args['features']:
+    if 'gini' in options['features']:
         gini_coeff = gini( degree_list )
-        stats['gini_coefficient'] = gini_coeff
+        stats['gini_coefficient'] = float( gini_coeff )
 
         gini_coeff_in_degree = gini( D.get_in_degrees( D.get_vertices() ) )
-        stats['gini_coefficient_in_degree'] = gini_coeff_in_degree
+        stats['gini_coefficient_in_degree'] = float( gini_coeff_in_degree )
     
         gini_coeff_out_degree = gini( D.get_out_degrees( D.get_vertices() ) )
-        stats['gini_coefficient_out_degree'] = gini_coeff_out_degree
+        stats['gini_coefficient_out_degree'] = float( gini_coeff_out_degree )
 
     # feature: h_index_u
-    if 'h_index' in args['features']:
+    if 'h_index' in options['features']:
         degree_list[::-1].sort()
     
         h = 0
@@ -99,7 +114,7 @@ def fs_digraph_using_degree( D, stats, options={ 'features': [], 'skip_features'
         log.debug( 'done h_index_u' )
 
     # feature: p_law_exponent
-    if 'powerlaw' in args['features']:
+    if 'powerlaw' in options['features']:
         fit = powerlaw.Fit( degree_list )
         
         stats['powerlaw_exponent_degree'] = float( fit.power_law.alpha )
@@ -107,30 +122,27 @@ def fs_digraph_using_degree( D, stats, options={ 'features': [], 'skip_features'
         log.debug( 'done powerlaw_exponent' )
 
     # plot degree distribution
-    if not 'plots' in args['skip_features'] and 'plots' in args['features']:
+    if 'plots' in options['features'] and (not 'skip_features' in options or not 'plots' in options['skip_features']):
         degree_counted = collections.Counter( degree_list )
         degree, counted = zip( *degree_counted.items() )
 
-        lock.acquire()
+        with lock:
+            fig, ax = plt.subplots()
+            plt.plot( degree, counted )
 
-        fig, ax = plt.subplots()
-        plt.plot( degree, counted )
+            plt.title( 'Degree Histogram' )
+            plt.ylabel( 'Frequency' )
+            plt.xlabel( 'Degree' )
 
-        plt.title( 'Degree Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'Degree' )
+            ax.set_xticklabels( degree )
 
-        ax.set_xticklabels( degree )
+            ax.set_xscale( 'log' )
+            ax.set_yscale( 'log' )
 
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
-
-        plt.tight_layout()
-        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_degree.pdf'] ) )
-        degree_counted = collections.Counter( degree_list )
-        log.debug( 'done plotting degree distribution' )
-
-        lock.release()
+            plt.tight_layout()
+            plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_degree.pdf'] ) )
+            degree_counted = collections.Counter( degree_list )
+            log.debug( 'done plotting degree distribution' )
 
 def fs_digraph_using_indegree( D, stats, options={ 'features': [], 'skip_features': [] } ):
     """"""
@@ -139,7 +151,7 @@ def fs_digraph_using_indegree( D, stats, options={ 'features': [], 'skip_feature
     degree_list = D.get_in_degrees( D.get_vertices() )
 
     # feature: h_index_d
-    if 'h_index' in args['features']:
+    if 'h_index' in options['features']:
         degree_list[::-1].sort()
     
         h = 0
@@ -153,7 +165,7 @@ def fs_digraph_using_indegree( D, stats, options={ 'features': [], 'skip_feature
         log.debug( 'done h_index_d' )
 
     # feature: p_law_exponent
-    if 'powerlaw' in args['features']:
+    if 'powerlaw' in options['features']:
         fit = powerlaw.Fit( degree_list )
         
         stats['powerlaw_exponent_in_degree'] = float( fit.power_law.alpha )
@@ -161,26 +173,23 @@ def fs_digraph_using_indegree( D, stats, options={ 'features': [], 'skip_feature
         log.debug( 'done powerlaw_exponent' )
 
     # plot degree distribution
-    if not 'plots' in args['skip_features'] and 'plots' in args['features']:
+    if 'plots' in options['features'] and (not 'skip_features' in options or not 'plots' in options['skip_features']):
         degree_counted = collections.Counter( degree_list )
         degree, counted = zip( *degree_counted.items() )
 
-        lock.acquire()
+        with lock:
+            fig, ax = plt.subplots()
+            plt.plot( degree, counted )
 
-        fig, ax = plt.subplots()
-        plt.plot( degree, counted )
+            plt.title( 'In-Degree Histogram' )
+            plt.ylabel( 'Frequency' )
+            plt.xlabel( 'In-Degree' )
 
-        plt.title( 'In-Degree Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'In-Degree' )
+            ax.set_xticklabels( degree )
 
-        ax.set_xticklabels( degree )
+            ax.set_xscale( 'log' )
+            ax.set_yscale( 'log' )
 
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
-
-        plt.tight_layout()
-        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_in-degree.pdf'] ) )
-        log.debug( 'done plotting in-degree distribution' )
-
-        lock.release()
+            plt.tight_layout()
+            plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_in-degree.pdf'] ) )
+            log.debug( 'done plotting in-degree distribution' )
