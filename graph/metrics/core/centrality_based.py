@@ -1,13 +1,17 @@
 import logging
+from functools import reduce
 import threading
+
+from graph_tool.centrality import eigenvector, pagerank
+from graph_tool.stats import remove_parallel_edges
 
 log = logging.getLogger( __name__ )
 lock = threading.Lock()
 
-def f_centralization( D, stats ):
+def f_centralization( D, stats, options={ 'features': [] } ):
     """"""
 
-    if not 'centralization' in args['features']:
+    if not 'centralization' in options['features']:
         return
 
     D_copied = D.copy()
@@ -25,10 +29,10 @@ def f_centralization( D, stats ):
 
     log.debug( 'done centrality measures' )
 
-def f_eigenvector_centrality( D, stats ):
+def f_eigenvector_centrality( D, stats, options={ 'features': [], 'skip_features': [] } ):
     """"""
 
-    if 'eigenvector_centrality' not in args['features']:
+    if 'eigenvector_centrality' not in options['features']:
         log.debug( 'Skipping eigenvector_centrality' )
         return
 
@@ -40,36 +44,34 @@ def f_eigenvector_centrality( D, stats ):
     stats['max_eigenvector_vertex']=D.vertex_properties['name'][largest_ev_vertex[1]]
     log.debug( 'done max_eigenvector_vertex' )
 
-    eigenvector_list[::-1].sort()
-
     # plot degree distribution
-    values_counted = collections.Counter( eigenvector_list )
-    values, counted = zip( *values_counted.items() )
+    if 'plots' in options['features'] and (not 'skip_features' in options or not 'plots' in options['skip_features']):
+        eigenvector_list[::-1].sort()
+
+        values_counted = collections.Counter( eigenvector_list )
+        values, counted = zip( *values_counted.items() )
         
-    lock.acquire()
+        with lock:
+            fig, ax = plt.subplots()
+            plt.plot( values, counted )
 
-    fig, ax = plt.subplots()
-    plt.plot( values, counted )
+            plt.title( 'Eigenvector-Centrality Histogram' )
+            plt.ylabel( 'Frequency' )
+            plt.xlabel( 'Eigenvector-Centrality Value' )
 
-    plt.title( 'Eigenvector-Centrality Histogram' )
-    plt.ylabel( 'Frequency' )
-    plt.xlabel( 'Eigenvector-Centrality Value' )
+            ax.set_xticklabels( values )
 
-    ax.set_xticklabels( values )
+            ax.set_xscale( 'log' )
+            ax.set_yscale( 'log' )
 
-    ax.set_xscale( 'log' )
-    ax.set_yscale( 'log' )
-
-    plt.tight_layout()
-    plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_eigenvector-centrality.pdf'] ) )
-    log.debug( 'done plotting eigenvector_centrality' )
-
-    lock.release()
+            plt.tight_layout()
+            plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_eigenvector-centrality.pdf'] ) )
+            log.debug( 'done plotting eigenvector_centrality' )
         
-def f_pagerank( D, stats ):
+def f_pagerank( D, stats, options={ 'features': [], 'skip_features': [] } ):
     """"""
 
-    if 'pagerank' not in args['features']:
+    if 'pagerank' not in options['features']:
         log.debug( 'Skipping pagerank' )
         return
 
@@ -85,29 +87,26 @@ def f_pagerank( D, stats ):
 
     stats['max_pagerank'], stats['max_pagerank_vertex'] = pr_max[0], str( D.vertex_properties['name'][pr_max[1]] )
 
-    if not 'plots' in args['skip_features'] and 'plots' in args['features']:
+    # plot degree distribution
+    if 'plots' in options['features'] and (not 'skip_features' in options or not 'plots' in options['skip_features']):
         pagerank_list[::-1].sort()
 
-        # plot degree distribution
         values_counted = collections.Counter( pagerank_list )
         values, counted = zip( *values_counted.items() )
     
-        lock.acquire()
+        with lock:
+            fig, ax = plt.subplots()
+            plt.plot( values, counted )
 
-        fig, ax = plt.subplots()
-        plt.plot( values, counted )
+            plt.title( 'PageRank Histogram' )
+            plt.ylabel( 'Frequency' )
+            plt.xlabel( 'PageRank Value' )
 
-        plt.title( 'PageRank Histogram' )
-        plt.ylabel( 'Frequency' )
-        plt.xlabel( 'PageRank Value' )
+            ax.set_xticklabels( values )
 
-        ax.set_xticklabels( values )
+            ax.set_xscale( 'log' )
+            ax.set_yscale( 'log' )
 
-        ax.set_xscale( 'log' )
-        ax.set_yscale( 'log' )
-
-        plt.tight_layout()
-        plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_pagerank.pdf'] ) )
-        log.debug( 'done plotting pagerank distribution' )
-
-        lock.release()
+            plt.tight_layout()
+            plt.savefig( '/'.join( [os.path.dirname( stats['path_edgelist'] ), 'distribution_pagerank.pdf'] ) )
+            log.debug( 'done plotting pagerank distribution' )
