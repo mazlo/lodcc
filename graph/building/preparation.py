@@ -1,4 +1,4 @@
-import logging as log
+import logging
 import os
 import re
 import sqlite3
@@ -12,6 +12,8 @@ import xxhash as xh
 from constants.preparation import *
 from util.lxxhash import xxhash_nt
 from util.merge_edgelists import merge_edgelists
+
+log = logging.getLogger( __name__ )
 
 def download_prepare( dataset, from_file ):
     """download_prepare

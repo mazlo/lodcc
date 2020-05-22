@@ -1,4 +1,4 @@
-import logging as log
+import logging
 import os
 import re
 import sqlite3
@@ -6,7 +6,7 @@ import sqlite3
 from constants.db import DB_PROPERTIES_FILE
 from constants.preparation import SHORT_FORMAT_MAP
 
-log.basicConfig( level=log.DEBUG )
+log = logging.getLogger( __name__ )
 
 class SqliteHelper:
     """This is a helper class for Sqlite database connections."""

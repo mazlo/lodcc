@@ -1,8 +1,10 @@
 import argparse
-import logging as log
+import logging
 
 from db.SqliteHelper import *
 from graph.building.preparation import *
+
+log = logging.getLogger( __name__ )
 
 # ----------------
 
@@ -28,18 +30,7 @@ if __name__ == '__main__':
     # args is available globaly
     args = vars( parser.parse_args() ).copy()
 
-    # configure logging
-    if args['log_debug']:
-        level = log.DEBUG
-    else:
-        level = log.INFO
-
-    if args['log_file']:
-        log.basicConfig( filename = 'lodcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
-    else:
-        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
-
-    log.info( 'graph.building.preparation: Welcome' )
+    log.info( 'graph.tasks.prepare: Welcome' )
 
     # option 2
     if args['from_db']:
