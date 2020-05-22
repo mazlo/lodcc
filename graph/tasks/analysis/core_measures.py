@@ -1,94 +1,118 @@
-# DURL=`psq -U zlochms -d cloudstats -c "SELECT url FROM stats WHERE domain='Cross_domain' AND title LIKE '%Museum%'" -t -A`
-# curl -L "$DURL/datapackage.json" -o datapackage.json
+from graph.building import builder
 
-# -----------------
-
-# preparation
-#
-# + import tsv file into database
-# + obtain download urls from datahub.io (extends database table)
-
-import re
-import os
-import argparse
-import logging as log
-import numpy as np
-import sys
-
-try:
-    import psycopg2
-    import psycopg2.extras
-except:
-    print( 'psycogp2 could not be found' )
-try:
-    from graph.gini import gini
-    from graph.building import builder
-except:
-    print( 'One of other lodcc modules could not be found. Make sure you have imported all requirements.' )
-
-conn = None
-
-def ensure_db_schema_complete( cur, table_name, attribute ):
-    """ensure_db_schema_complete"""
-
-    log.debug( 'Checking if column %s exists', attribute )
-    cur.execute( "SELECT column_name FROM information_schema.columns WHERE table_name = %s AND column_name = %s;", (table_name, attribute) )
-
-    if cur.rowcount == 0:
-        log.info( 'Creating missing attribute %s', attribute )
-        cur.execute( "ALTER TABLE %s ADD COLUMN "+ attribute +" varchar;", (table_name,) )
-
-    log.debug( 'Found %s-attribute', attribute )
-    return attribute
-
-def ensure_db_record_is_unique( cur, name, table_name, attribute, value ):
-    """ensure_db_record_is_unique"""
-
-    cur.execute( 'SELECT id FROM %s WHERE name = %s AND ('+ attribute +' IS NULL OR '+ attribute +' = %s)', (table_name, name, "") )
-
-    if cur.rowcount != 0:
-        # returns the id of the row to be updated
-        return cur.fetchone()[0]
-    else:
-        # insert new row and return the id of the row to be updated
-        log.info( 'Attribute %s not unique for "%s". Will create a new row.', attribute, name )
-        cur.execute( 'INSERT INTO %s (id, name, '+ attribute +') VALUES (default, %s, %s) RETURNING id', (table_name, name, value) )
-
-        return cur.fetchone()[0]
-
-def save_value( cur, dataset_id, dataset_name, table_name, attribute, value, check=True ):
-    """save_value"""
-
-    ensure_db_schema_complete( cur, table_name, attribute )
-
-    if check and not value:
-        # TODO create warning message
-        log.warn( 'No value for attribute '+ attribute +'. Cannot save' )
-        return
-    elif check:
-        # returns the id of the row to be updated
-        dataset_id = ensure_db_record_is_unique( cur, dataset_name, table_name, attribute, value )
-    
-    log.debug( 'Saving value "%s" for attribute "%s" for "%s"', value, attribute, dataset_name )
-    cur.execute( 'UPDATE %s SET '+ attribute +' = %s WHERE id = %s;', (table_name, value, dataset_id) )
-
-# -----------------
-
-def save_stats( dataset, stats ):
+def fs_digraph_start_job( dataset, D, stats ):
     """"""
 
-    # e.g. avg_degree=%(avg_degree)s, max_degree=%(max_degree)s, ..
-    cols = ', '.join( map( lambda d: d +'=%('+ d +')s', stats ) )
+    features = [ 
+        # fs = feature set
+        fs_digraph_using_basic_properties,
+        fs_digraph_using_degree, fs_digraph_using_indegree,
+        f_centralization,
+        f_reciprocity,
+        f_pseudo_diameter,
+        f_avg_clustering,
+        f_pagerank, 
+        f_eigenvector_centrality,
+    ]
 
-    sql=('UPDATE %s SET ' % args['db_tbname']) + cols +' WHERE id=%(id)s'
-    stats['id']=dataset[0]
+    for ftr in features:
+        ftr( D, stats )
 
-    cur = conn.cursor()
-    cur.execute( sql, stats )
-    conn.commit()
-    cur.close()
+        if not args['print_stats'] and not args['from_file']:
+            save_stats( dataset, stats )
 
-    log.debug( 'done saving results' )
+def fs_ugraph_start_job( dataset, U, stats ):
+    """"""
+
+    features = [ 
+        # fs = feature set
+        f_global_clustering, #f_avg_clustering, 
+        # f_avg_shortest_path, 
+    ]
+
+    for ftr in features:
+        ftr( U, stats )
+
+        if not args['print_stats'] and not args['from_file']:
+            save_stats( dataset, stats )
+
+def graph_analyze( dataset, stats ):
+    """"""
+   
+    D = builder.load_graph_from_edgelist( dataset )
+
+    if not D:
+        log.error( 'Could not instantiate graph, None' )
+        return
+
+    log.info( 'Computing feature set DiGraph' )
+    fs_digraph_start_job( dataset, D, stats )
+    
+    D.set_directed(False)
+    log.info( 'Computing feature set UGraph' )
+    fs_ugraph_start_job( dataset, D, stats )
+    
+    # slow
+    #stats['k_core(U)']=nx.k_core(U)
+    #stats['radius(U)']=nx.radius(U)
+    
+    return stats
+
+def build_graph_analyse( dataset, threads_openmp=7 ):
+    """"""
+
+    # before starting off: limit the number of threads a graph_tool job may acquire
+    graph_tool.openmp_set_num_threads( threads_openmp )
+
+    # init stats
+    
+    stats = dict( (attr, dataset[attr]) for attr in ['path_edgelist','path_graph_gt'] )
+    graph_analyze( dataset, stats )
+
+    if args['print_stats']:
+        if args['from_file']:
+            print( ', '.join( [ key for key in stats.keys() ] ) )
+            print( ', '.join( [ str(stats[key]) for key in stats.keys() ] ) )
+        else:
+            print( stats )
+
+# real job
+def job_start_build_graph( dataset, sem, threads_openmp=7 ):
+    """job_start_build_graph"""
+
+    # let's go
+    with sem:
+        log.info( 'Let''s go' )
+        log.debug( dataset )
+
+        # - build_graph_analyse
+        build_graph_analyse( dataset, threads_openmp )
+
+        # - job_cleanup
+
+        log.info( 'Done' ) 
+
+def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
+    """"""
+
+    if len( datasets ) == 0:
+        log.error( 'No datasets to parse. exiting' )
+        return None
+
+    sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
+    threads = []
+
+    for dataset in datasets:
+        
+        # create a thread for each dataset. work load is limited by the semaphore
+        t = threading.Thread( target = job_start_build_graph, name = dataset['name'], args = ( dataset, sem, threads_openmp ) )
+        t.start()
+
+        threads.append( t )
+
+    # wait for all threads to finish
+    for t in threads:
+        t.join()
 
 # ----------------
 
@@ -250,8 +274,3 @@ if __name__ == '__main__':
     # close communication with the database
     if args['from_db']:
         conn.close()
-
-# -----------------
-#
-# notes
-# - add error-column to table and set it
