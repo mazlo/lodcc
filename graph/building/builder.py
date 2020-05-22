@@ -55,19 +55,4 @@ def load_graph_from_edgelist( dataset, stats={}, options={} ):
             'from_file' in options and not options['from_file']:
             save_stats( dataset, stats )
 
-    # check if subgraph is required
-    if D and 'sample_vertices' in options and options['sample_vertices']:
-        k = options['sample_size']
-        
-        vfilt   = D.new_vertex_property( 'bool' )
-        v       = D.get_vertices()
-        v_rand  = np.random.choice( v, size=int( len(v)*k ), replace=False )
-
-        log.info( 'Sampling vertices ...')
-
-        for e in v_rand:
-            vfilt[e] = True
-        
-        return GraphView( D, vfilt=vfilt )
-
     return D
