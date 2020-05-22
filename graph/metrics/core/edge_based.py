@@ -1,18 +1,24 @@
+import logging
 
-def f_reciprocity( D, stats ):
+from graph_tool import GraphView
+from graph_tool.topology import edge_reciprocity, label_largest_component, pseudo_diameter
+
+log = logging.getLogger( __name__ )
+
+def f_reciprocity( D, stats, options={ 'features': [] } ):
     """"""
 
-    if 'reciprocity' in args['features']:
+    if 'reciprocity' in options['features']:
         stats['reciprocity']=edge_reciprocity(D)
         log.debug( 'done reciprocity' )
 
-def f_pseudo_diameter( D, stats ):
+def f_pseudo_diameter( D, stats, options={ 'features': [] } ):
     """"""
 
     LC = label_largest_component(D)
     LCD = GraphView( D, vfilt=LC )
 
-    if 'diameter' in args['features']:
+    if 'diameter' in options['features']:
         if LCD.num_vertices() == 0 or LCD.num_vertices() == 1:
             # if largest component does practically not exist, use the whole graph
             dist, ends = pseudo_diameter(D)
