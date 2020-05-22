@@ -114,6 +114,8 @@ class SqliteHelper:
         # make sure these attributes exist
         self.ensure_schema_completeness( [dataset[2]] )
 
+        # TODO check if it exists and INSERT if not
+        
         sql='UPDATE %s SET %s=? WHERE id=?' % (self.tbl_datasets,dataset[2])
 
         cur = self.conn.cursor()
