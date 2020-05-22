@@ -154,7 +154,7 @@ def download_data( dataset, urls, options=[] ):
         # download anew otherwise
         # thread waits until this is finished
         log.info( 'Downloading dump (from %s) ...', url )
-        os.popen( 'wget --quiet --output-document %s %s' % (path,url)  )
+        proc.call( 'wget --quiet --output-document %s %s' % (path,url), shell=True )
 
         valid = ensure_valid_download_data( path )
         if not valid:
