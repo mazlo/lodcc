@@ -532,7 +532,7 @@ def fs_ugraph_start_job( dataset, U, stats ):
 def graph_analyze( dataset, stats ):
     """"""
    
-    D=builder.load_graph_from_edgelist( dataset, stats )
+    D = builder.load_graph_from_edgelist( dataset, args )
 
     if not D:
         log.error( 'Could not instantiate graph, None' )
@@ -751,17 +751,14 @@ if __name__ == '__main__':
             cur.close()
 
             for ds in datasets:
-                stats = {}
-                g = builder.load_graph_from_edgelist( ds, stats )
+                g = builder.load_graph_from_edgelist( ds )
 
                 if not g:
                     log.error( 'Could not instantiate graph for dataset %s', ds['name'] )
                     continue
 
-                log.info( 'Dumping graph..' )
-                graph_gt = '/'.join( [os.path.dirname( ds['path_edgelist'] ),'data.graph.gt.gz'] )
-                g.save( graph_gt )
-                stats['path_graph_gt'] = graph_gt
+                graph_gt = builder.dump_graph( ds['path_edgelist'] )
+                stats = { 'path_graph_gt' : graph_gt }
 
                 # thats it here
                 save_stats( ds, stats )
