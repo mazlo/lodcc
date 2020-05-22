@@ -1,19 +1,16 @@
 import argparse
-import logging as log
+import logging
 from datapackage.parser import get_parse_datapackage
 
 from db.SqliteHelper import *
+
+log =  logging.getLogger( __name__ )
 
 # ----------------
 
 if __name__ == '__main__':
 
-    log.basicConfig( level=log.DEBUG )
-
     parser = argparse.ArgumentParser( description = 'lodcc' )
-
-    # TODO
-    # parser.add_argument( '--init', '-i', action = "store_true", help = '' )
 
     parser.add_argument( '--init-db', '-dbi', action = "store_true", help = '' )
     parser.add_argument( '--limit', '-l', type = int, required = False, default = -1, help = '' )

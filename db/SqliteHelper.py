@@ -1,11 +1,12 @@
-import logging as log
+import logging
 import os
 import re
 import sqlite3
 
 from constants.db import DB_PROPERTIES_FILE
+from constants.preparation import SHORT_FORMAT_MAP
 
-log.basicConfig( level=log.DEBUG )
+log = logging.getLogger( __name__ )
 
 class SqliteHelper:
     """This is a helper class for Sqlite database connections."""
@@ -61,6 +62,29 @@ class SqliteHelper:
         cur = self.conn.cursor()
         return cur.execute( 'SELECT %s FROM %s LIMIT %s' % (','.join(columns),self.tbl_datasets,limit) ).fetchall()
 
+    def get_datasets_and_formats( self, dataset_names=None ):
+        """"""
+
+        # gives us the long version of the formats supported (they are columns in the table)
+        formats = ','.join( SHORT_FORMAT_MAP.values() )
+        # gives us a list of disjunctive conditions for the WHERE-clause, e.g., application_rdf_xml IS NOT NULL [OR ...]
+        formats_not_null = ' OR '.join( f + ' IS NOT NULL' for f in SHORT_FORMAT_MAP.values() )
+        
+        if dataset_names:
+            # prepare the WHERE-clause for the requested datasets
+            names_query = '( ' + ' OR '.join( 'name = ?' for ds in dataset_names ) + ' )'
+
+            # prepare the whole query
+            sql = 'SELECT id, name, %s FROM %s WHERE %s AND (%s) ORDER BY id' % (formats,self.tbl_datasets,names_query,formats_not_null)
+        else:
+            # prepare the whole query
+            sql = 'SELECT id, name, %s FROM %s WHERE %s ORDER BY id' % (formats,self.tbl_datasets,formats_not_null)
+
+        cur = self.conn.cursor()
+        cur.execute( sql, tuple( dataset_names ) )
+        
+        return cur.fetchall()
+
     def ensure_schema_completeness( self, attrs ):
         """"""
 
@@ -76,9 +100,7 @@ class SqliteHelper:
             
             if not attr in table_attrs:
                 log.info( 'Couldn''t find attribute %s in table, creating..', attr )
-
-                ctype = 'BIGINT' if 'max' in attr else 'DOUBLE PRECISION'
-                cur.execute( 'ALTER TABLE %s ADD COLUMN %s %s' % (self.tbl_datasets,attr,ctype) )
+                cur.execute( 'ALTER TABLE %s ADD COLUMN %s varchar' % (self.tbl_datasets,attr) )
         
         self.conn.commit()
         cur.close()
@@ -92,6 +114,8 @@ class SqliteHelper:
         # make sure these attributes exist
         self.ensure_schema_completeness( [dataset[2]] )
 
+        # TODO check if it exists and INSERT if not
+        
         sql='UPDATE %s SET %s=? WHERE id=?' % (self.tbl_datasets,dataset[2])
 
         cur = self.conn.cursor()
