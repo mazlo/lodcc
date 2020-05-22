@@ -12,9 +12,6 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
 
-    # TODO
-    # parser.add_argument( '--init', '-i', action = "store_true", help = '' )
-
     parser.add_argument( '--init-db', '-dbi', action = "store_true", help = '' )
     parser.add_argument( '--limit', '-l', type = int, required = False, default = -1, help = '' )
     

@@ -1,3 +1,8 @@
+# 2020-05-20, matthaeus
+# This is legacy code using a Postgresql database. It is currently still in use
+# in package graph.metric.fernandez_et_al, and needs to be refactored/removed/
+# replaced with the implementation in db.SqliteHelper.
+
 import logging as log
 import numpy as np
 import os
