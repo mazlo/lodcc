@@ -11,7 +11,7 @@ except:
 
 log = logging.getLogger( __name__ )
 
-def load_graph_from_edgelist( dataset, stats={}, options={} ):
+def load_graph_from_edgelist( dataset, options={} ):
     """"""
 
     edgelist, graph_gt = dataset['path_edgelist'], dataset['path_graph_gt']
@@ -36,23 +36,22 @@ def load_graph_from_edgelist( dataset, stats={}, options={} ):
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
         return None
 
+    return D
+
+def dump_graph( D, edgelist_path, options={} ):
+    """"""
+
     # dump graph after reading if required
     if D and 'dump_graph' in options and options['dump_graph']:
         log.info( 'Dumping graph..' )
 
-        prefix = re.split( '.edgelist.csv', os.path.basename( edgelist ) )
+        prefix = re.split( '.edgelist.csv', os.path.basename( edgelist_path ) )
         if prefix[0] != 'data':
             prefix = prefix[0]
         else:
             prefix = 'data'
 
-        graph_gt = '/'.join( [os.path.dirname( edgelist ), '%s.graph.gt.gz' % prefix] )
-        D.save( graph_gt )
-        stats['path_graph_gt'] = graph_gt
-
-        # thats it here
-        if 'print_stats' in options and not options['print_stats'] and \
-            'from_file' in options and not options['from_file']:
-            save_stats( dataset, stats )
-
-    return D
+        graph_gt_path = '/'.join( [os.path.dirname( edgelist_path ), '%s.graph.gt.gz' % prefix] )
+        D.save( graph_gt_path )
+        
+    return graph_gt_path 
