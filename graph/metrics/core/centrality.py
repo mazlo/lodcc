@@ -1,7 +1,17 @@
 import logging
 from functools import reduce
+import os
 import threading
 
+import collections
+
+try:
+    mlog = logging.getLogger( 'matplotlib' )
+    mlog.setLevel( logging.WARN )
+    import matplotlib.pyplot as plt
+except:
+    print( 'matplotlib.pyplot module could not be imported' )
+    
 from graph_tool.centrality import eigenvector, pagerank
 from graph_tool.stats import remove_parallel_edges
 
