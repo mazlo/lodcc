@@ -106,8 +106,11 @@ class SqliteHelper:
         
         return cur.fetchall()
 
-    def ensure_schema_completeness( self, attrs ):
+    def ensure_schema_completeness( self, attrs, table=None ):
         """"""
+
+        if not table:
+            table = self.tbl_datasets
 
         cur = self.conn.cursor()
         
@@ -116,15 +119,17 @@ class SqliteHelper:
 
         for attr in attrs:
             # this is invoked for every attribute to ensure multi-threading is respected
-            table_attrs = cur.execute( 'PRAGMA table_info(%s)' % self.tbl_datasets ).fetchall()
+            table_attrs = cur.execute( 'PRAGMA table_info(%s)' % table ).fetchall()
             table_attrs = list( map( lambda c: c[1], table_attrs ) )
             
             if not attr in table_attrs:
                 log.info( 'Couldn''t find attribute %s in table, creating..', attr )
-                cur.execute( 'ALTER TABLE %s ADD COLUMN %s varchar' % (self.tbl_datasets,attr) )
+                cur.execute( 'ALTER TABLE %s ADD COLUMN %s varchar' % (table,attr) )
         
         self.conn.commit()
         cur.close()
+
+    # -----------------
 
     def save_attribute( self, dataset ):
         """
@@ -144,3 +149,24 @@ class SqliteHelper:
         self.conn.commit()
 
         log.debug( 'done saving attribute value' )
+
+    def save_stats( self, dataset, stats ):
+        """"""
+
+        # make sure these attributes exist
+        self.ensure_schema_completeness( sorted( stats.keys() ), self.tbl_measures )
+
+        # e.g. mean_degree=%(mean_degree)s, max_degree=%(max_degree)s, ..
+        cols = ', '.join( map( lambda d: d +'=:'+ d, stats ) )
+        
+        # TODO check if it exists and INSERT if not
+        # TODO check if id exists in stats
+        
+        sql=( 'UPDATE %s SET ' % self.tbl_measures ) + cols +' WHERE id=:id'
+        stats['id']=dataset[0]
+
+        cur = self.conn.cursor()
+        cur.execute( sql, stats )
+        self.conn.commit()
+
+        log.debug( 'done saving results' )
