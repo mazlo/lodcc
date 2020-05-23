@@ -64,9 +64,9 @@ def fs_digraph_using_degree( D, stats, options={ 'features': [], 'skip_features'
         num_vertices = stats['n']
         s = 1.0 / ( num_vertices - 1 )
 
-        stats['avg_degree_centrality']=(sum_degrees*s) / num_vertices
-        stats['avg_in_degree_centrality']=(sum_in_degrees*s) / num_vertices
-        stats['avg_out_degree_centrality']=(sum_out_degrees*s) / num_vertices
+        stats['mean_degree_centrality']=(sum_degrees*s) / num_vertices
+        stats['mean_in_degree_centrality']=(sum_in_degrees*s) / num_vertices
+        stats['mean_out_degree_centrality']=(sum_out_degrees*s) / num_vertices
 
         stats['max_degree_centrality']=v_max[0]*s
         stats['max_in_degree_centrality']=v_max_in[0]*s

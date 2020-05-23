@@ -7,7 +7,7 @@ import requests
 def save_stats( cur, dataset, urls ):
     """"""
 
-    # e.g. avg_degree=%(avg_degree)s, max_degree=%(max_degree)s, ..
+    # e.g. mean_degree=%(mean_degree)s, max_degree=%(max_degree)s, ..
     cols = ', '.join( map( lambda d: d +'=%('+ d +')s', urls ) )
 
     sql='UPDATE stats_urls SET '+ cols +' WHERE id=%(id)s'

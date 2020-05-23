@@ -23,10 +23,10 @@ def fs_digraph_using_basic_properties( D, stats, options={ 'features': [] } ):
     stats['n']=num_vertices
     stats['m']=num_edges
 
-    # feature: avg_degree
+    # feature: mean_degree
     if 'degree' in options['features']:
-        stats['avg_degree']=float( 2*num_edges ) / num_vertices
-        log.debug( 'done avg_degree' )
+        stats['mean_degree']=float( 2*num_edges ) / num_vertices
+        log.debug( 'done mean_degree' )
     
     # feature: fill_overall
     if 'fill' in options['features']:

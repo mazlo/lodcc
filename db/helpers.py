@@ -73,7 +73,7 @@ def save_stats( dataset, stats ):
 
     ensure_schema_completeness( stats )
 
-    # e.g. avg_degree=%(avg_degree)s, max_degree=%(max_degree)s, ..
+    # e.g. mean_degree=%(mean_degree)s, max_degree=%(max_degree)s, ..
     cols = ', '.join( map( lambda d: d +'=%('+ d +')s', stats ) )
 
     sql=('UPDATE %s SET ' % db['db_tbname']) + cols +' WHERE id=%(id)s'
