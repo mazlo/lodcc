@@ -13,7 +13,7 @@ try:
 except:
     print( 'matplotlib.pyplot module could not be imported' )
 
-from graph.gini import gini
+from graph.measures.core.gini import gini
 
 log = logging.getLogger( __name__ )
 lock = threading.Lock()
