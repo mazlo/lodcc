@@ -29,6 +29,7 @@ class SqliteHelper:
 
             # 
             self.tbl_datasets = self.conf['db_schema_datasets_table_name']
+            self.tbl_measures = self.conf['db_schema_measures_table_name']
 
             if init_db:
                 self.init_schema()
@@ -79,6 +80,26 @@ class SqliteHelper:
         else:
             # prepare the whole query
             sql = 'SELECT id, name, %s FROM %s WHERE %s ORDER BY id' % (formats,self.tbl_datasets,formats_not_null)
+
+        cur = self.conn.cursor()
+        cur.execute( sql, tuple( dataset_names ) )
+        
+        return cur.fetchall()
+
+    def get_datasets_and_paths( self, dataset_names=None ):
+        """"""
+
+        paths_not_null = '(path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL)'
+        
+        if dataset_names:
+            # prepare the WHERE-clause for the requested datasets
+            names_query = '( ' + ' OR '.join( 'name = ?' for ds in dataset_names ) + ' )'
+
+            # prepare the whole query
+            sql = 'SELECT id, name, path_edgelist, path_graph_gt FROM %s WHERE %s AND (%s) ORDER BY id' % (self.tbl_measures,names_query,paths_not_null)
+        else:
+            # prepare the whole query
+            sql = 'SELECT id, name, path_edgelist, path_graph_gt FROM %s WHERE %s ORDER BY id' % (self.tbl_measures,paths_not_null)
 
         cur = self.conn.cursor()
         cur.execute( sql, tuple( dataset_names ) )
