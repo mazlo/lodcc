@@ -1,6 +1,6 @@
 import unittest
 import unitgraphs
-import graph.metrics.fernandez_et_al.object_in_degrees as oid
+import graph.measures.fernandez_et_al.object_in_degrees as oid
 
 class MetricsTestCase( unittest.TestCase ):
     """"""

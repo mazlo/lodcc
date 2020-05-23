@@ -5,11 +5,11 @@ import threading
 from db.SqliteHelper import SqliteHelper
 
 from graph.building import builder
-from graph.metrics.core.basic_measures import fs_digraph_using_basic_properties
-from graph.metrics.core.degree_based import fs_digraph_using_degree, fs_digraph_using_indegree
-from graph.metrics.core.edge_based import f_reciprocity, f_pseudo_diameter
-from graph.metrics.core.centrality import f_centralization, f_eigenvector_centrality, f_pagerank
-from graph.metrics.core.clustering import f_global_clustering, f_local_clustering
+from graph.measures.core.basic_measures import fs_digraph_using_basic_properties
+from graph.measures.core.degree_based import fs_digraph_using_degree, fs_digraph_using_indegree
+from graph.measures.core.edge_based import f_reciprocity, f_pseudo_diameter
+from graph.measures.core.centrality import f_centralization, f_eigenvector_centrality, f_pagerank
+from graph.measures.core.clustering import f_global_clustering, f_local_clustering
 
 log = logging.getLogger( __name__ )
 

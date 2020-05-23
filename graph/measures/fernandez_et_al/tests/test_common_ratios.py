@@ -1,6 +1,6 @@
 import unittest
 import unitgraphs
-import graph.metrics.fernandez_et_al.common_ratios as cr
+import graph.measures.fernandez_et_al.common_ratios as cr
 
 class MetricsTestCase( unittest.TestCase ):
     """"""

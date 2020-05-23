@@ -1,6 +1,6 @@
 import unittest
 import unitgraphs
-import graph.metrics.fernandez_et_al.predicate_lists as pl
+import graph.measures.fernandez_et_al.predicate_lists as pl
 
 class MetricsTestCase( unittest.TestCase ):
     """"""

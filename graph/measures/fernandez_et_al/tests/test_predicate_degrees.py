@@ -1,6 +1,6 @@
 import unittest
 import unitgraphs
-import graph.metrics.fernandez_et_al.predicate_degrees as pd
+import graph.measures.fernandez_et_al.predicate_degrees as pd
 
 class MetricsTestCase( unittest.TestCase ):
     """"""

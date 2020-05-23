@@ -18,7 +18,7 @@ import powerlaw
 np.warnings.filterwarnings('ignore')
 
 import db.helpers as db
-import graph.metrics.fernandez_et_al.all as metrics
+import graph.measures.fernandez_et_al.all as measures
 from graph.building import builder
 
 lock = multiprocessing.Lock()
@@ -30,19 +30,19 @@ def job_on_partition_out_degrees( sem, feature, G, edge_labels, data ):
     """"""
     # can I?
     with sem:
-        data[feature] = getattr( metrics, 'collect_'+ feature.__name__ )( G, edge_labels, data[feature], {}, args['print_stats'] )
+        data[feature] = getattr( measures, 'collect_'+ feature.__name__ )( G, edge_labels, data[feature], {}, args['print_stats'] )
 
 def job_on_partition_in_degrees( sem, feature, G, edge_labels, data ):
     """"""
     # can I?
     with sem:
-        data[feature] = metrics.object_in_degrees.collect_metric( feature, G, edge_labels, data[feature], {}, args['print_stats'] )
+        data[feature] = measures.object_in_degrees.collect_metric( feature, G, edge_labels, data[feature], {}, args['print_stats'] )
 
 def job_on_partition_predicate_lists( sem, feature, G, edge_labels, data ):
     """"""
     # can I?
     with sem:
-        data[feature] = metrics.predicate_degrees.collect_metric( feature, G, edge_labels, data[feature], {}, args['print_stats'] )
+        data[feature] = measures.predicate_degrees.collect_metric( feature, G, edge_labels, data[feature], {}, args['print_stats'] )
 
 def graph_analyze_on_partitions( dataset, D, features, stats ):
     """"""
@@ -50,9 +50,9 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
     NO_PARTITIONS = args['partitions']
 
     # collect features that require out-degree filtering
-    feature_subset = [ ftr for ftr in features if ftr in metrics.SETS['SUBJECT_OUT_DEGREES'] \
-                                                or ftr in metrics.SETS['PREDICATE_LISTS'] \
-                                                 or ftr in metrics.SETS['TYPED_SUBJECTS_OBJECTS'] ]
+    feature_subset = [ ftr for ftr in features if ftr in measures.SETS['SUBJECT_OUT_DEGREES'] \
+                                                or ftr in measures.SETS['PREDICATE_LISTS'] \
+                                                 or ftr in measures.SETS['TYPED_SUBJECTS_OBJECTS'] ]
 
     if len( feature_subset ) > 0:
         log.info( 'Computing features %s on %s partitions of the DiGraph' % ( ', '.join( [ f.__name__ for f in feature_subset ] ), NO_PARTITIONS ) )
@@ -94,13 +94,13 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
 
         for feature in feature_subset:
             # compute metric from individual partitions
-            getattr( metrics, 'reduce_'+ feature.__name__ )( data[feature], D, S_G, stats )
+            getattr( measures, 'reduce_'+ feature.__name__ )( data[feature], D, S_G, stats )
 
             if args['from_db']:
                 db.save_stats( dataset, stats )
 
     # collect features that require in-degree filtering
-    feature_subset = [ ftr for ftr in features if ftr in metrics.SETS['OBJECT_IN_DEGREES'] ]
+    feature_subset = [ ftr for ftr in features if ftr in measures.SETS['OBJECT_IN_DEGREES'] ]
 
     if len( feature_subset ) > 0:
         log.info( 'Computing features %s on %s partitions of the DiGraph' % ( ', '.join( [ f.__name__ for f in feature_subset ] ), NO_PARTITIONS ) )
@@ -142,13 +142,13 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
 
         for feature in feature_subset:
             # compute metric from individual partitions
-            metrics.object_in_degrees.reduce_metric( data[feature], stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
+            measures.object_in_degrees.reduce_metric( data[feature], stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
     
             if args['from_db']:
                 db.save_stats( dataset, stats )
 
     # collect features that require in-degree filtering
-    feature_subset = [ ftr for ftr in features if ftr in metrics.SETS['PREDICATE_DEGREES'] ]
+    feature_subset = [ ftr for ftr in features if ftr in measures.SETS['PREDICATE_DEGREES'] ]
 
     if len( feature_subset ) > 0:
         log.info( 'Computing features %s on %s partitions of the DiGraph' % ( ', '.join( [ f.__name__ for f in feature_subset ] ), NO_PARTITIONS ) )
@@ -189,7 +189,7 @@ def graph_analyze_on_partitions( dataset, D, features, stats ):
 
         for feature in feature_subset:
             # compute metric from individual partitions
-            metrics.predicate_degrees.reduce_metric( data[feature], stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
+            measures.predicate_degrees.reduce_metric( data[feature], stats, 'max_'+ feature.__name__, 'mean_'+ feature.__name__ )
 
             if args['from_db']:
                 db.save_stats( dataset, stats )
@@ -202,7 +202,7 @@ def graph_analyze( dataset, D, stats ):
     """
 
     # final set of features is the intersection of both sets
-    features = [ ftr_func for ftr_func in np.array( metrics.all ).flatten() if ftr_func.__name__ in args['features'] ]
+    features = [ ftr_func for ftr_func in np.array( measures.all ).flatten() if ftr_func.__name__ in args['features'] ]
 
     if len( features ) == 0:
         log.warn( 'Set of features to be computed is empty :/' )
@@ -292,9 +292,9 @@ def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
         log.error( 'No datasets to parse. exiting' )
         return None
 
-    # init dataframe with index being all metrics + some defaults.
+    # init dataframe with index being all measures + some defaults.
     # the transposed DataFrame is written to csv-file a results.
-    dataframe = pd.DataFrame( index=metrics.LABELS + DEFAULT_DATAFRAME_INDEX )
+    dataframe = pd.DataFrame( index=measures.LABELS + DEFAULT_DATAFRAME_INDEX )
 
     sem = multiprocessing.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
     threads = []
@@ -394,6 +394,6 @@ if __name__ == '__main__':
         # init feature list
         if len( args['features'] ) == 0:
             #
-            args['features'] = [ ftr.__name__ for ftr in np.array( metrics.all ).flatten() ]
+            args['features'] = [ ftr.__name__ for ftr in np.array( measures.all ).flatten() ]
 
         build_graph( datasets, args['threads'], args['threads_openmp'] )
