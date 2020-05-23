@@ -2,7 +2,7 @@ import argparse
 import logging
 from datapackage.parser import get_parse_datapackage
 
-from db.SqliteHelper import *
+from db.SqliteHelper import SqliteHelper
 
 log =  logging.getLogger( __name__ )
 

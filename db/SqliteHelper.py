@@ -29,6 +29,7 @@ class SqliteHelper:
 
             # 
             self.tbl_datasets = self.conf['db_schema_datasets_table_name']
+            self.tbl_measures = self.conf['db_schema_measures_table_name']
 
             if init_db:
                 self.init_schema()
@@ -85,8 +86,31 @@ class SqliteHelper:
         
         return cur.fetchall()
 
-    def ensure_schema_completeness( self, attrs ):
+    def get_datasets_and_paths( self, dataset_names=None ):
         """"""
+
+        paths_not_null = '(path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL)'
+        
+        if dataset_names:
+            # prepare the WHERE-clause for the requested datasets
+            names_query = '( ' + ' OR '.join( 'name = ?' for ds in dataset_names ) + ' )'
+
+            # prepare the whole query
+            sql = 'SELECT id, name, path_edgelist, path_graph_gt FROM %s WHERE %s AND (%s) ORDER BY id' % (self.tbl_measures,names_query,paths_not_null)
+        else:
+            # prepare the whole query
+            sql = 'SELECT id, name, path_edgelist, path_graph_gt FROM %s WHERE %s ORDER BY id' % (self.tbl_measures,paths_not_null)
+
+        cur = self.conn.cursor()
+        cur.execute( sql, tuple( dataset_names ) )
+        
+        return cur.fetchall()
+
+    def ensure_schema_completeness( self, attrs, table=None ):
+        """"""
+
+        if not table:
+            table = self.tbl_datasets
 
         cur = self.conn.cursor()
         
@@ -95,15 +119,17 @@ class SqliteHelper:
 
         for attr in attrs:
             # this is invoked for every attribute to ensure multi-threading is respected
-            table_attrs = cur.execute( 'PRAGMA table_info(%s)' % self.tbl_datasets ).fetchall()
+            table_attrs = cur.execute( 'PRAGMA table_info(%s)' % table ).fetchall()
             table_attrs = list( map( lambda c: c[1], table_attrs ) )
             
             if not attr in table_attrs:
                 log.info( 'Couldn''t find attribute %s in table, creating..', attr )
-                cur.execute( 'ALTER TABLE %s ADD COLUMN %s varchar' % (self.tbl_datasets,attr) )
+                cur.execute( 'ALTER TABLE %s ADD COLUMN %s varchar' % (table,attr) )
         
         self.conn.commit()
         cur.close()
+
+    # -----------------
 
     def save_attribute( self, dataset ):
         """
@@ -123,3 +149,24 @@ class SqliteHelper:
         self.conn.commit()
 
         log.debug( 'done saving attribute value' )
+
+    def save_stats( self, dataset, stats ):
+        """"""
+
+        # make sure these attributes exist
+        self.ensure_schema_completeness( sorted( stats.keys() ), self.tbl_measures )
+
+        # e.g. mean_degree=%(mean_degree)s, max_degree=%(max_degree)s, ..
+        cols = ', '.join( map( lambda d: d +'=:'+ d, stats ) )
+        
+        # TODO check if it exists and INSERT if not
+        # TODO check if id exists in stats
+        
+        sql=( 'UPDATE %s SET ' % self.tbl_measures ) + cols +' WHERE id=:id'
+        stats['id']=dataset[0]
+
+        cur = self.conn.cursor()
+        cur.execute( sql, stats )
+        self.conn.commit()
+
+        log.debug( 'done saving results' )

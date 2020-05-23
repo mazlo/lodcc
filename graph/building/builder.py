@@ -19,8 +19,8 @@ def load_graph_from_edgelist( dataset, options={} ):
     D=None
 
     # prefer graph_gt file
-    if 'reconstruct_graph' in options and not options['reconstruct_graph'] and \
-        graph_gt and os.path.isfile( graph_gt ):
+    if (not 'reconstruct_graph' in options or not options['reconstruct_graph']) and \
+        (graph_gt and os.path.isfile( graph_gt )):
         log.info( 'Constructing DiGraph from gt.xz' )
         D=load_graph( graph_gt )
     
