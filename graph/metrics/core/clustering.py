@@ -22,5 +22,5 @@ def f_local_clustering( D, stats, options={ 'features': [], 'skip_features': [] 
         log.debug( 'Skipping local_clustering' )
         return
 
-    stats['avg_clustering']=vertex_average(D, local_clustering(D))[0]
+    stats['local_clustering']=vertex_average(D, local_clustering(D))[0]
     log.debug( 'done local_clustering' )

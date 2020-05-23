@@ -22,7 +22,7 @@ CREATE TABLE stats_graph_2017_08
    h_index_u int,
    fill float(19),
    reciprocity float(19),
-   avg_clustering float(19),
+   local_clustering float(19),
    global_clustering float(19),
    max_degree_vertex text,
    max_pagerank_vertex text,

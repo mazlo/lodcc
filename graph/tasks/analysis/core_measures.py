@@ -43,7 +43,7 @@ def fs_ugraph_start_job( dataset, U, stats, options ):
 
     features = [ 
         # fs = feature set
-        f_global_clustering, #f_avg_clustering, 
+        f_global_clustering, #f_local_clustering, 
         # f_avg_shortest_path, 
     ]
 
