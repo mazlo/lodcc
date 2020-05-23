@@ -1,4 +1,17 @@
+import argparse
+import logging
+import threading
+
 from graph.building import builder
+from graph.metrics.core.basic_measures import fs_digraph_using_basic_properties
+from graph.metrics.core.degree_based import fs_digraph_using_degree, fs_digraph_using_indegree
+from graph.metrics.core.edge_based import f_reciprocity, f_pseudo_diameter
+from graph.metrics.core.centrality import f_centralization, f_eigenvector_centrality, f_pagerank
+from graph.metrics.core.clustering import f_global_clustering, f_local_clustering
+
+log = logging.getLogger( __name__ )
+
+import graph_tool
 
 def fs_digraph_start_job( dataset, D, stats ):
     """"""
@@ -119,25 +132,11 @@ def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc' )
-    actions = parser.add_mutually_exclusive_group( required = True )
 
-    actions.add_argument( '--build-graph', '-pa', action = "store_true", help = '' )
-    
-    parser.add_argument( '--dry-run', '-d', action = "store_true", help = '' )
-
-    parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
-    parser.add_argument( '--overwrite-dl', '-ddl', action = "store_true", help = 'If this argument is present, the program WILL NOT use data dumps which were already dowloaded, but download them again' )
-    parser.add_argument( '--overwrite-nt', '-dnt', action = "store_true", help = 'If this argument is present, the program WILL NOT use ntriple files which were already transformed, but transform them again' )
-    parser.add_argument( '--rm-original', '-dro', action = "store_true", help = 'If this argument is present, the program WILL REMOVE the original downloaded data dump file' )
-    parser.add_argument( '--keep-edgelists', '-dke', action = "store_true", help = 'If this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless.' )
-    
     group = parser.add_mutually_exclusive_group( required = True )
     group.add_argument( '--from-db', '-fdb', action = "store_true", help = '' )
     group.add_argument( '--from-file', '-ffl', action = "append", help = '', nargs = '*')
 
-    parser.add_argument( '--log-debug', '-ld', action = "store_true", help = '' )
-    parser.add_argument( '--log-info', '-li', action = "store_true", help = '' )
-    parser.add_argument( '--log-file', '-lf', action = "store_true", help = '' )
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
     parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
 
@@ -146,9 +145,6 @@ if __name__ == '__main__':
     parser.add_argument( '--sample-size', '-gss', required = False, type = float, default = 0.2, help = '' )
 
     # RE graph or feature computation
-    parser.add_argument( '--dump-graph', '-gs', action = "store_true", help = '' )
-    parser.add_argument( '--reconstruct-graph', '-gr', action = "store_true", help = '' )
-    parser.add_argument( '--dict-hashed', '-gh', action = "store_true", help = '' )
     parser.add_argument( '--threads-openmp', '-gth', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
     parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
@@ -156,47 +152,6 @@ if __name__ == '__main__':
     
     # args is available globaly
     args = vars( parser.parse_args() ).copy()
-
-    # configure logging
-    if args['log_debug']:
-        level = log.DEBUG
-    else:
-        level = log.INFO
-
-    if args['log_file']:
-        log.basicConfig( filename = 'lodcc.log', filemode='w', level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
-    else:
-        log.basicConfig( level = level, format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
-
-    # read all properties in file into args-dict
-    if args['from_db']:
-        log.debug( 'Requested to read data from db' )
-
-        if not os.path.isfile( 'db.properties' ):
-            log.error( '--from-db given but no db.properties file found. please specify.' )
-            sys.exit(0)
-        else:
-            with open( 'db.properties', 'rt' ) as f:
-                args.update( dict( ( key.replace( '.', '_' ), value ) for key, value in ( re.split( "=", option ) for option in ( line.strip() for line in f ) ) ) )
-    
-    elif args['from_file']:
-        log.debug( 'Requested to read data from file' )
-
-    if args['from_db']:
-        # connect to an existing database
-        conn = psycopg2.connect( host=args['db_host'], dbname=args['db_dbname'], user=args['db_user'], password=args['db_password'] )
-        conn.set_session( autocommit=True )
-
-        try:
-            cur = conn.cursor()
-            cur.execute( "SELECT 1;" )
-            result = cur.fetchall()
-            cur.close()
-
-            log.debug( 'Database ready to query execution' )
-        except:
-            log.error( 'Database not ready for query execution. Check db.properties. db error:\n %s', sys.exc_info()[0] )
-            raise 
 
     # option 3
     if args['build_graph'] or args['dump_graph']:
@@ -208,14 +163,6 @@ if __name__ == '__main__':
                 names = tuple( args['use_datasets'] )
             else:
                 names = 'all'
-
-            if args['dry_run']:
-                log.info( 'Running in dry-run mode' )
-
-                # if not given explicitely above, shrink available datasets to one special
-                if not args['use_datasets']:
-                    names_query = 'name = %s'
-                    names = tuple( ['museums-in-italy'] )
 
             log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
