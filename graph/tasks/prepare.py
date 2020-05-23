@@ -1,8 +1,8 @@
 import argparse
 import logging
 
-from db.SqliteHelper import *
-from graph.building.preparation import *
+from db.SqliteHelper import SqliteHelper
+from graph.building import preparation
 
 log = logging.getLogger( __name__ )
 
@@ -56,4 +56,4 @@ if __name__ == '__main__':
         names = ', '.join( map( lambda d: d[1], datasets ) )
         log.debug( 'Configured datasets: %s', names )
 
-    prepare_graph( datasets, None if 'threads' not in args else args['threads'], args['from_file'], args )
+    preparation.prepare_graph( datasets, None if 'threads' not in args else args['threads'], args['from_file'], args )
