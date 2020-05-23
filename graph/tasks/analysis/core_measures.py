@@ -13,7 +13,7 @@ log = logging.getLogger( __name__ )
 
 import graph_tool
 
-def fs_digraph_start_job( dataset, D, stats ):
+def fs_digraph_start_job( dataset, D, stats, options ):
     """"""
 
     features = [ 
@@ -29,12 +29,12 @@ def fs_digraph_start_job( dataset, D, stats ):
     ]
 
     for ftr in features:
-        ftr( D, stats )
+        ftr( D, stats, options )
 
         if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
 
-def fs_ugraph_start_job( dataset, U, stats ):
+def fs_ugraph_start_job( dataset, U, stats, options ):
     """"""
 
     features = [ 
@@ -44,12 +44,12 @@ def fs_ugraph_start_job( dataset, U, stats ):
     ]
 
     for ftr in features:
-        ftr( U, stats )
+        ftr( U, stats, options )
 
         if not args['print_stats'] and not args['from_file']:
             save_stats( dataset, stats )
 
-def graph_analyze( dataset, stats ):
+def graph_analyze( dataset, stats, options ):
     """"""
    
     D = builder.load_graph_from_edgelist( dataset )
@@ -59,11 +59,11 @@ def graph_analyze( dataset, stats ):
         return
 
     log.info( 'Computing feature set DiGraph' )
-    fs_digraph_start_job( dataset, D, stats )
+    fs_digraph_start_job( dataset, D, stats, options )
     
     D.set_directed(False)
     log.info( 'Computing feature set UGraph' )
-    fs_ugraph_start_job( dataset, D, stats )
+    fs_ugraph_start_job( dataset, D, stats, options )
     
     # slow
     #stats['k_core(U)']=nx.k_core(U)
@@ -71,16 +71,17 @@ def graph_analyze( dataset, stats ):
     
     return stats
 
-def build_graph_analyse( dataset, threads_openmp=7 ):
+def build_graph_analyse( dataset, options ):
     """"""
 
     # before starting off: limit the number of threads a graph_tool job may acquire
-    graph_tool.openmp_set_num_threads( threads_openmp )
+    if args['openmp_enabled']:
+        graph_tool.openmp_set_num_threads( options['threads_openmp'] )
 
     # init stats
-    
     stats = dict( (attr, dataset[attr]) for attr in ['path_edgelist','path_graph_gt'] )
-    graph_analyze( dataset, stats )
+
+    graph_analyze( dataset, stats, options )
 
     if args['print_stats']:
         if args['from_file']:
@@ -90,7 +91,7 @@ def build_graph_analyse( dataset, threads_openmp=7 ):
             print( stats )
 
 # real job
-def job_start_build_graph( dataset, sem, threads_openmp=7 ):
+def job_start_build_graph( dataset, sem, options ):
     """job_start_build_graph"""
 
     # let's go
@@ -99,26 +100,26 @@ def job_start_build_graph( dataset, sem, threads_openmp=7 ):
         log.debug( dataset )
 
         # - build_graph_analyse
-        build_graph_analyse( dataset, threads_openmp )
+        build_graph_analyse( dataset, options )
 
         # - job_cleanup
 
         log.info( 'Done' ) 
 
-def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
+def build_graph( datasets, options ):
     """"""
 
     if len( datasets ) == 0:
         log.error( 'No datasets to parse. exiting' )
         return None
 
-    sem = threading.Semaphore( int( 1 if no_of_threads <= 0 else ( 20 if no_of_threads > 20 else no_of_threads ) ) )
+    sem = threading.Semaphore( int( 1 if options['threads'] <= 0 else ( 20 if options['threads'] > 20 else options['threads'] ) ) )
     threads = []
 
     for dataset in datasets:
         
         # create a thread for each dataset. work load is limited by the semaphore
-        t = threading.Thread( target = job_start_build_graph, name = dataset['name'], args = ( dataset, sem, threads_openmp ) )
+        t = threading.Thread( target = job_start_build_graph, name = dataset['name'], args = ( dataset, sem, options ) )
         t.start()
 
         threads.append( t )
@@ -145,6 +146,7 @@ if __name__ == '__main__':
     parser.add_argument( '--sample-size', '-gss', required = False, type = float, default = 0.2, help = '' )
 
     # RE graph or feature computation
+    parser.add_argument( '--openmp-enabled', '-gto', action = "store_true", help = '' )
     parser.add_argument( '--threads-openmp', '-gth', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
     parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
     parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
@@ -153,70 +155,43 @@ if __name__ == '__main__':
     # args is available globaly
     args = vars( parser.parse_args() ).copy()
 
-    # option 3
-    if args['build_graph'] or args['dump_graph']:
-
-        if args['from_db']:
-            # respect --use-datasets argument
-            if args['use_datasets']:
-                names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-                names = tuple( args['use_datasets'] )
-            else:
-                names = 'all'
-
-            log.debug( 'Configured datasets: '+ ', '.join( names ) )
-
-            if 'names_query' in locals():
-                sql = ('SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE ' % args['db_tbname']) + names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
-            else:
-                sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id' % args['db_tbname']
-            
-            cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
-            cur.execute( sql, names )
-
-            datasets = cur.fetchall()
-            cur.close()
-
+    if args['from_db']:
+        # respect --use-datasets argument
+        if args['use_datasets']:
+            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
+            names = tuple( args['use_datasets'] )
         else:
-            datasets = args['from_file']        # argparse returns [[..], [..]]
-            datasets = list( map( lambda ds: {        # to be compatible with existing build_graph function we transform the array to a dict
-                'name': ds[0], 
-                'path_edgelist': 'dumps/%s/data.edgelist.csv' % ds[0], 
-                'path_graph_gt': 'dumps/%s/data.graph.gt.gz' % ds[0] }, datasets ) )
-            
-            names = ', '.join( map( lambda d: d['name'], datasets ) )
-            log.debug( 'Configured datasets: %s', names )
+            names = 'all'
 
-        if args['build_graph']:
+        log.debug( 'Configured datasets: '+ ', '.join( names ) )
 
-            # init feature list
-            if len( args['features'] ) == 0:
-                # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
-                args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
+        if 'names_query' in locals():
+            sql = ('SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE ' % args['db_tbname']) + names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
+        else:
+            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id' % args['db_tbname']
+        
+        cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
+        cur.execute( sql, names )
 
-            build_graph( datasets, args['threads'], args['threads_openmp'] )
+        datasets = cur.fetchall()
+        cur.close()
 
-        elif args['dump_graph']:
-            # this is only respected when --dump-graph is specified without --build-graph (that's why the elif)
-            # --dump-graph is respected in the build_graph function, when specified together with --build-graph.
-            
-            # TODO ZL respect --file-file
-            datasets = cur.fetchall()
-            cur.close()
+    else:
+        datasets = args['from_file']        # argparse returns [[..], [..]]
+        datasets = list( map( lambda ds: {  # to be compatible with existing build_graph function we transform the array to a dict
+            'name': ds[0], 
+            'path_edgelist': 'dumps/%s/data.edgelist.csv' % ds[0], 
+            'path_graph_gt': 'dumps/%s/data.graph.gt.gz' % ds[0] }, datasets ) )
+        
+        names = ', '.join( map( lambda d: d['name'], datasets ) )
+        log.debug( 'Configured datasets: %s', names )
 
-            for ds in datasets:
-                g = builder.load_graph_from_edgelist( ds )
+    # init feature list
+    if len( args['features'] ) == 0:
+        # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
+        args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
-                if not g:
-                    log.error( 'Could not instantiate graph for dataset %s', ds['name'] )
-                    continue
-
-                graph_gt = builder.dump_graph( ds['path_edgelist'] )
-                stats = { 'path_graph_gt' : graph_gt }
-
-                # thats it here
-                save_stats( ds, stats )
-                continue
+    build_graph( datasets, dict( ( k,args[k] ) for k in ['features','threads','threads_openmp'] ) )
 
     # close communication with the database
     if args['from_db']:
