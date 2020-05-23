@@ -2,6 +2,8 @@ import argparse
 import logging
 import threading
 
+from db.SqliteHelper import SqliteHelper
+
 from graph.building import builder
 from graph.metrics.core.basic_measures import fs_digraph_using_basic_properties
 from graph.metrics.core.degree_based import fs_digraph_using_degree, fs_digraph_using_indegree
@@ -135,7 +137,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser( description = 'lodcc' )
 
     group = parser.add_mutually_exclusive_group( required = True )
-    group.add_argument( '--from-db', '-fdb', action = "store_true", help = '' )
+    group.add_argument( '--from-db', '-fdb', type = str, nargs='+', help = '' )
     group.add_argument( '--from-file', '-ffl', action = "append", help = '', nargs = '*')
 
     parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
@@ -156,26 +158,12 @@ if __name__ == '__main__':
     args = vars( parser.parse_args() ).copy()
 
     if args['from_db']:
+        log.info( 'Requested to prepare graph from db' )
+        db = SqliteHelper()
+
         # respect --use-datasets argument
-        if args['use_datasets']:
-            names_query = '( ' + ' OR '.join( 'name = %s' for ds in args['use_datasets'] ) + ' )'
-            names = tuple( args['use_datasets'] )
-        else:
-            names = 'all'
-
-        log.debug( 'Configured datasets: '+ ', '.join( names ) )
-
-        if 'names_query' in locals():
-            sql = ('SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE ' % args['db_tbname']) + names_query +' AND (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id'
-        else:
-            sql = 'SELECT id,name,path_edgelist,path_graph_gt FROM %s WHERE (path_edgelist IS NOT NULL OR path_graph_gt IS NOT NULL) ORDER BY id' % args['db_tbname']
-        
-        cur = conn.cursor( cursor_factory=psycopg2.extras.DictCursor )
-        cur.execute( sql, names )
-
-        datasets = cur.fetchall()
-        cur.close()
-
+        log.debug( 'Configured datasets: ' + ', '.join( args['from_db'] ) )
+        datasets = db.get_datasets_and_paths( args['from_db'] )
     else:
         datasets = args['from_file']        # argparse returns [[..], [..]]
         datasets = list( map( lambda ds: {  # to be compatible with existing build_graph function we transform the array to a dict
@@ -192,7 +180,3 @@ if __name__ == '__main__':
         args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
     build_graph( datasets, dict( ( k,args[k] ) for k in ['features','threads','threads_openmp'] ) )
-
-    # close communication with the database
-    if args['from_db']:
-        conn.close()
