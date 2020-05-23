@@ -23,7 +23,7 @@ def fs_digraph_start_job( dataset, D, stats, options ):
         f_centralization,
         f_reciprocity,
         f_pseudo_diameter,
-        f_avg_clustering,
+        f_local_clustering,
         f_pagerank, 
         f_eigenvector_centrality,
     ]
