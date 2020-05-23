@@ -65,6 +65,8 @@ def graph_analyze( dataset, stats, options ):
         return
 
     log.info( 'Computing feature set DiGraph' )
+    log.debug( 'Feature set to compute: %s' % options['features'] )
+    log.debug( 'Feature set to skip: %s' % options['skip_features'] )
     fs_digraph_start_job( dataset, D, stats, options )
     
     D.set_directed(False)
@@ -183,4 +185,4 @@ if __name__ == '__main__':
         # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
         args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
-    build_graph( datasets, dict( ( k,args[k] ) for k in ['features','threads','threads_openmp'] ) )
+    build_graph( datasets, dict( ( k,args[k] ) for k in ['features','skip_features','threads','threads_openmp'] ) )
