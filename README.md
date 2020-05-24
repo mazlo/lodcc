@@ -1,32 +1,59 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2109469.svg)](https://doi.org/10.5281/zenodo.2109469)
 
-# A framework for the Analysis of Graph Measures on RDF Graphs
+# A Software Framework for the graph-based Analysis on RDF Graphs
 
-The main purpose of the framework is to prepare and perform a graph-based analysis on the graph topology of an RDF dataset. The main challenges were to do that on large scale and with focus on performance, i.e. with large state-of-the-art RDF graphs (hundreds of millions of edges) and in parallel with many datasets at once. 
+This framework enables to prepare and perform a graph-based analysis on the graph topology of RDF datasets. The main challenges were to do that on large scale and with focus on performance, i.e. with large state-of-the-art RDF graphs (hundreds of millions of edges) and in parallel with many datasets at once. 
 
-The framework is capable of dealing with the following:
- 
-* Packed data dumps. Various formats are supported, like bz2, 7zip, tar.gz, etc. This is achieved by utilizing the unix-tool [dtrx](https://brettcsmith.org/2007/dtrx/).
-* Archives, which contain a hierarchy of files and folders, will get scanned for files containing RDF data. Other files will be ignored, e.g. Excel- or text-files, etc.
-* Any files containing other formats than N-Triples are transformed (if necessary). The list of supported formats is currently limited to the most common ones for RDF data, which are N-Triples, RDF/XML, Turtle, N-Quads, and Notation3. This is achieved by utilizing [rapper](http://librdf.org/raptor/).
+[A recent analysis](https://arxiv.org/abs/1907.01885) on 280 datasets from the [LOD Cloud](https://lod-cloud.net/) 2017 has been conducted with this framework. Please find here [the results](https://github.com/mazlo/lod-graph-analysis) on 28 graph measures as [a browsable version](http://data.gesis.org/lodcc/2017-08) of the study. Also, the results are available as [a citable resource](https://doi.org/10.5281/zenodo.1214433) at [Zenodo](https://zenodo.org/). 
 
-A case study with datasets from the last LOD Cloud 2017 has recently been conducted with this framework. There is [a citable resource](https://doi.org/10.5281/zenodo.1214433) with all results and [a browsable version](http://data.gesis.org/lodcc/2017-08) of all results from this study. 
+| __Domain__ | __Datasets analyzed__ | __Max. # of Vertices__ | __Max. # of Edges__ | __Avg. # of Vertices__ | __Avg. # of Edges__ | 
+| ---------- | ------------------: | ----------------------: | -------------------: | ----------------------: | -------------------: | 
+| Cross Domain | 15 | 614,448,283 | 2,656,226,986 | 57,827,358 | 218,930,066 |
+| Geography | 11 | 47,541,174 | 340,880,391 | 9,763,721 | 61,049,429 |
+| Government | 37 | 131,634,287 | 1,489,689,235 | 7,491,531 | 71,263,878 |
+| Life Sciences | 32 | 356,837,444 | 722,889,087 | 25,550,646 | 85,262,882 |
+| Linguistics | 122 | 120,683,397 | 291,314,466 | 1,260,455 | 3,347,268 |
+| Media | 6 | 48,318,259 | 161,749,815 | 9,504,622 | 31,100,859 |
+| Publications | 50 | 218,757,266 | 720,668,819 | 9,036,204 | 28,017,502 |
+| Social Networking | 3 | 331,647 | 1,600,499 | 237,003 | 1,062,986 |
+| User Generated | 4 | 2,961,628 | 4,932,352 | 967,798 | 1,992,069 |
 
-## TLDR;
+### Goodies
+
+RDF data dumps are preferred (so far). The framework is capable of dealing with the following:
+
+* Automatic downloading of the RDF data dumps before preparation.
+* Packed data dumps. Various formats are supported, like bz2, 7zip, tar.gz, etc. This is achieved by employing the unix-tool [dtrx](https://brettcsmith.org/2007/dtrx/).
+* Archives, which contain a hierarchy of files and folders, will get scanned for files containing RDF data. Files which are not associated with RDF data will be ignored, e.g. Excel-, HTML-, or text-files.
+* The list of supported [RDF media types](https://www.w3.org/2008/01/rdf-media-types) is currently limited to the most common ones for RDF data, which are N-Triples, RDF/XML, Turtle, N-Quads, and Notation3. Any files containing these formats are transformed into N-Triples while graph creation. The transformation is achieved by employing the cli-tool [rapper](http://librdf.org/raptor/). 
+
+Further:
+
++ The framework is implemented in Python. The list of supported graph measures is extendable.
++ There is a ready-to-go docker-image available, with all third-party libraries pre-installed.
+
+Currently ongoing and work in progress:
+
++ Query instantiation from graph representation and
++ Edge- and vertex-based graph sampling according to the given ratio.
 
 ### Example commands
 
-##### Prepare several RDF datasets for graph-analysis in parallel
+The software is suppossed to be run from command-line on a unix-based system.
 
-`python -m graph.main --prepare-graph --from-db --use-datasets core education-data-gov-uk webisalod --threads 3`
+##### Prepare some RDF datasets for graph-analysis in parallel
 
-This command will download (if not present), transform (if necessary), and prepare an edgelist ready to be read as graph-structure. `--from-db` loads the appropriate formats and urls from database configured in `db.properties`.
+`$ python3 -m graph.tasks.prepare --from-db core education-data-gov-uk webisalod --threads 3`
 
-##### Run analysis on several prepared RDF datasets in parallel
+This command will (1) download (if not present), (2) transform (if necessary), and (3) prepare an edgelist ready to be instantiated as graph-object. 
 
-`python -m graph.main --build-graph --from-file core education-data-gov-uk webisalod --threads 2 --threads-openmp 8 --features diameter --print-stats`
+`--from-db` loads the correct formats and dataset URLs from the database configured in `db.sqlite.properties`.
 
-This command loads the edgelists of the three given datasets `--from-file`, 2 in parallel. For each of them a graph-structure is created and the `diameter` feature is computed. Results will be printed to standard out.
+##### Run an analysis on the prepared RDF datasets in parallel
+
+`$ python3 -m graph.tasks.analysis.core_measures --from-file core education-data-gov-uk webisalod --threads 2 --threads-openmp 8 --features diameter --print-stats`
+
+This command loads the edgelists of the three given datasets in `--from-file`, 2 in parallel. For each of them a graph-object is created and the `diameter` meature is computed. Results will be printed to std-out.
 
 ## Documentation
 
