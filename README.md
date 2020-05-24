@@ -61,8 +61,18 @@ This command loads the edgelists of the three given datasets in `--from-file`, 2
 
 Installation instructions can be found in [`INSTALL`](INSTALL).
 
+### Project Structure
 
+In each of the subpackages you will find a detailed README.
 
+| Package | Description |
+| :------ | :---------- |
+| `constants` | Contains files which hold some static values. Some of them are configurable, e.g., `datapackage.py` and `db.py` | 
+| `datapackages` | Contains code for (optional) pre-processing of datahub.io related datapackage.json files. |
+| `db`      | Contains code to connect to a (optional) local database. A local database stores detailed information about dataset names, URLs, available RDF media types, etc. This is parsed by the `datapackage.parser`-module. | 
+| `graph`   | This is the main package which contains the implementation for all measures, edgelist creation for graph building, etc. | 
+| `query`   | Contains code for query generation from query templates. |
+| `util`    | Utility subpackage with helper modules, used by various other modules. |
 
 
 ### Usage
