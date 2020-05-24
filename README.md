@@ -57,29 +57,13 @@ This command loads the edgelists of the three given datasets in `--from-file`, 2
 
 ## Documentation
 
-### Installation requirements
+### Installation
 
-The framework is build with python2 and relies on many other libraries. It has been developed and tested in a linux-environment (debian jessie) with shell. Please make sure you have installed all required libraries.
+Installation instructions can be found in [`INSTALL`](INSTALL).
 
-##### Unix tools
 
-- `curl`, the downloading RDF dataset dumps.
 
-- `dtrx`, for the extraction of data dumps. You can [download it here](https://brettcsmith.org/2007/dtrx/), but there are also [packages provided](https://reposcope.com/package/dtrx) by various linux distributions.
 
-- `rapper`, a tool by the [Raptor RDF Syntax Library](http://librdf.org/raptor/), for the transformation of various rdf formats into n-triples. There are [packages provided](https://reposcope.com/package/raptor2-utils) by various linux distributions.
-
-##### Python libraries
-
-- `graph_tool`, a python library for statistical analysis of graphs. Installation instructions can be found [here](https://graph-tool.skewed.de/static/doc/index.html).
-
-- `requirements.txt`. Please find requirements of further python modules in this file. Please install them with `pip install -r requirements.txt`
-
-#### Configuration
-
-1. If you are using a database (which is optional, but convenient) please configure it in `db.properties` file. You can find a `db.properties.example` file in the root folder of the project. 
-
-2. Please create a `dumps` folder located in the root folder of the project structure. The program will look into this folder in all the following commands.
 
 ### Usage
 
