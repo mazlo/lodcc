@@ -101,5 +101,5 @@ This package is licensed under the MIT License.
 
 ## How to Cite
 
-Please refer to the DOI for citation. You can cite all versions of this project by using the DOI [10.5281/zenodo.2109469](https://doi.org/10.5281/zenodo.2109469). This DOI represents all versions, and will always resolve to the latest one.
+Please refer to the DOI for citation. You can cite all versions of this project by using the canonical DOI [10.5281/zenodo.2109469](https://doi.org/10.5281/zenodo.2109469). This DOI represents all versions, and will always resolve to the latest one.
 
