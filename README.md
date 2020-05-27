@@ -34,26 +34,8 @@ Further:
 
 Currently ongoing and work in progress:
 
-+ Query instantiation from graph representation and
-+ Edge- and vertex-based graph sampling according to the given ratio.
-
-### Example commands
-
-The software is suppossed to be run from command-line on a unix-based system.
-
-##### Prepare some RDF datasets for graph-analysis in parallel
-
-`$ python3 -m graph.tasks.prepare --from-db core education-data-gov-uk webisalod --threads 3`
-
-This command will (1) download (if not present), (2) transform (if necessary), and (3) prepare an edgelist ready to be instantiated as graph-object. 
-
-`--from-db` loads the correct formats and dataset URLs from the database configured in `db.sqlite.properties`.
-
-##### Run an analysis on the prepared RDF datasets in parallel
-
-`$ python3 -m graph.tasks.analysis.core_measures --from-file core education-data-gov-uk webisalod --threads 2 --threads-openmp 8 --features diameter --print-stats`
-
-This command loads the edgelists of the three given datasets in `--from-file`, 2 in parallel. For each of them a graph-object is created and the `diameter` meature is computed. Results will be printed to std-out.
++ Query instantiation from graph representation, and
++ Edge- and vertex-based graph sampling.
 
 ## Documentation
 
@@ -77,121 +59,41 @@ In each of the subpackages you will find a detailed README.
 
 ### Usage
 
-At the top-level, the framework supports three main functions, which are:
+Executable code can be found in each of the corresponding `*.tasks.*` subpackages, i.e., 
 
-#### Step 1: Acquire Metadata (optional)
+| Tasks Package | Task Description |
+| ------- | ----------- |
+| [`datapackage/tasks/*`](datapackage/tasks/README.md) | for an optional preliminary step to acquire metadata for datasets from [datahub.io](http://old.datahub.io). |
+| [`graph/tasks/*`](graph/tasks/README.md) | for a preliminary preparation process which turns your RDF dataset into an edgelist. |
+| [`graph/tasks/analysis/*`](graph/tasks/analysis/README.md) | for graph-based measure computation of your graph instances. |
 
-##### Command example
+Please find more detailed instructions in the README files of the corresponding packages. 
 
-`python -m graph.main --parse-datapackages`
+#### Example commands
 
-##### Details on `--parse-datapackages`
+The software is suppossed to be run from command-line on a unix-based system.
 
-This command requires a database to be configured beforehand. The table has to provide at least a list of data sets (e.g. from the current LOD Cloud) with at least: `| id | name | url |` of the data package. An initial table setup can be found in [resources/db/01-create-table-mysql.sql](02-init-table-stats-mysql.sql)
+##### 1. Prepare RDF datasets for graph-analysis
 
-The metadata is first crawled from the web (datahub.io). Then relevant information are parsed (from `datapackage.json` file), like the format and the urls to obtain the data dump from, and stored in the table.
+```
+$ python3 -m graph.tasks.prepare --from-db core education-data-gov-uk webisalod --threads 3
+```
 
-The program will respect the [formats.properties](formats.properties) file, in order to map non-official format statements to the official mime-type.
+This command will (1) download (if not present), (2) transform (if necessary), and (3) prepare an RDF dataset as an edgelist, ready to be instantiated as graph-object. 
 
-##### Results from this step
+- `--from-db` used to load dataset URLs and available formats from an sqlite-database configured in `db.sqlite.properties`.
+- `--threads` indicates the number of datasets that are handled in parallel.
 
-A database table will be extended by the list of available formats for all data sets. Each format will be written to its own column. 
+##### 2. Run an analysis on the prepared RDF datasets in parallel
 
-[resources/db/03-init-table-stats-result-step1-mysql.sql](03-init-table-stats-result-step1-mysql.sql) shows an initialized table after execution (last modified: 2017-12-01).
+```
+$ python3 -m graph.tasks.analysis.core_measures --from-file core education-data-gov-uk webisalod --threads 2 --threads-openmp 8 --features diameter --print-stats
+```
 
-##### Mandatory parameters
-   
-None.
+This command instantiates the graph-objects, by loading the edgelists or the binary graph-objects, if available. After that, the graph measure `diameter` will be computed in the graphs. 
 
-##### Optional parameters
-
-None.
-
-#### Step 2. Prepare Datasets for Graph-based Analysis (optional)
-
-##### Command example
-
-`python -m graph.main --prepare-graph --use-datasets education-data-gov-uk`
-
-##### Details on `--prepare-graph`
-
-This step is optional, but very convenient if you haven't prepared an edgelist from an RDF dataset before. You will need to decide if to use the database or a local file to read some required information (basically the filename and format). In case using a database you will need to provide the official mime-types in the columns for the datasets, e.g. `application_n_triples`. An example table setup can be found in [resources/db/03-init-table-stats-result-step1-mysql.sql](03-init-table-stats-result-step1-mysql.sql).
-
-The prepare-graph command creates a compact edgelist representation for each RDF dataset that is passed to the command. This is achieved by 
-
-1. downloading each RDF dataset dump first, if not present.
-2. Extracting the dump, if necessary.
-3. Transforming the file (all files, if there is a nested folder structure, ignoring (many) non-RDF formats) into n-triples, if necessary.
-4. Making a hashed edgelist from (all) ntriple-files and combining this into a file called `data.edgelist.csv`.
-
-##### Mandatory parameters
-   
-- `--from-db`, uses the database to read urls and formats from.
-
-   * Pass a list of dataset names with `--use-datasets [DATASET [DATASET ...]]`
-   
-- `--from-file DATASET FILENAME FORMAT [--from-file ... [...]]`, if a local file should be used. More than one file may be given. You will need to provide the name and format for each, e.g. `--from-file webisalod data-dump.n3 n3 --from-file oecd-linked-data file.nt ntriples`. 
-
-##### Results from this step
-
-A `data.edgelist.csv` file for each of the given datasets in the corresponding folder of the dataset (i.e. `PROJECT_ROOT/dumps/DATASET/data.edgelist.csv`). This file represents the edgelist of the RDF dataset dump and can be loaded efficiently by the graph_tool library.
-
-##### Optional parameters
-   
-- `--overwrite-dl`. If this argument is present, the program WILL NOT use data dumps which were already dowloaded, but download them again. Default: FALSE.
-
-- `--overwrite-nt`. If this argument is present, the program WILL NOT use ntriple files which were already transformed, but transform them again. Default: FALSE.
-
-- `--rm-original`. If this argument is present, the program WILL REMOVE
-the original downloaded data dump file when the edgelist if created. Default: FALSE.
-
-- `--keep-edgelists`. If the downloaded data dump consists of several files (compressed archive) and this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless. Default: FALSE.
-
-- `--threads THREADS`. Control parallel execution. There will be only `THREADS` datasets handled at a time. Default: 1.
-
-#### Step 3: Execute Graph-based Analysis
-
-##### Command example
-
-`python -m graph.main --build-graph --from-file asn-us`
-
-##### Details on `--build-graph`
-
-With this command a graph-structure, for each RDF dataset that is passed to the command, will be created from the corresponding edgelist. If no further parameters are provided the graph analysis will be done for all measures.
-
-The program will first look for a `data.graph.gt.gz` file to load the graph-structure from, else `data.edgelist.csv` is considered. Otherwise an error is thrown.
-
-##### Mandatory parameters
-
-- `--from-db`, uses the database to read and store values for measures.
-
-   * Pass a list of dataset names with `--use-datasets [DATASET [DATASET ...]]`
-   
-- `--from-file DATASET [--from-file DATASET [...]]`, if a local file should be used. More than one file may be given. You will need to provide the name of the dataset, e.g. `--from-file webisalod --from-file oecd-linked-data`. 
-
-##### Results from this step
-
-Results on the graph-based analysis on the RDF dataset, either stored in database or printed to standard out. In case of using a database, please ensure to have an initial table structure. An example can be found in [resources/db/01-create-table-mysql.sql](01-create-table-mysql.sql).
-
-##### Optional parameters
-
-- `--dump-graph`. If this argument is present, the program will dump the graph, loaded from the edgelist in `data.edgelist.csv`, to a binary file  `data.graph.gt.gz`, that is much more convenient to handle in future analyzses.
-
-- `--reconstruct-graph`. If this argument is present, the program will ignore an existing `data.graph.gt.gz` file and will reload the graph from the edgelist, given in `data.edgelist.csv`. Default: FALSE.
-
-- `--features [FEATURE [FEATURE ...]]`. If present, the graph analysis will be done only for the given list of features, e.g. `--features h-index fill diameter`. Default: `degree, plots, diameter, centralization, fill, h_index, pagerank, parallel_edges, powerlaw, reciprocity`. Other possible values: `local_clustering, global_clustering, eigenvector_centrality`. Please note that these measures are computationally intensive.
-
-- `--skip-features [FEATURE [FEATURE ...]]`. If present, the graph analysis will not be done on the given list of features, e.g. `-skip-features parallel_edges`.
-
-- `--threads-openmp`. If present, this value will be passed to the OS, in order to configure parallel computation of features provided by the graph_tool library. Default: 7.
-
-- `--print-stats`. If present, the program will print results on the analysis to standard out. If database is configured, the program will not save values in the database.
-
-#### Global parameters
-
-- `--log-debug`. If present, the program will log in debug mode. Default: FALSE.
-
-- `--log-info`. If present, the program will log in info mode. Default: TRUE.
+- `--from-file` used here, so measure values will be printed to STDOUT. 
+- `--threads` indicates the number of datasets that are handled in parallel.
 
 ## License
 
