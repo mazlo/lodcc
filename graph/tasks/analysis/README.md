@@ -2,19 +2,27 @@
 
 This package contains executable code for performing a graph-based analysis on RDF datasets. 
 
-**Note that** you need to have an *edgelist* or binary materialization of a *graph-object* at hand, to be able to do the analysis. The framework uses both to create the graph-object in memory and to compute the measures on that object. 
+---
 
-**Note that**, although it is possible and a reasonable use case to use code without preliminary preparation with the framework, it is still advisable, as it facilitates a lot of things. See [this README](../README.md) on how to prepare an RDF dataset for graph analysis.
+**Note:** You need to have an *edgelist* or binary materialization of a *graph-object* at hand, to be able to do the analysis. The framework uses both to create the graph-object in memory and to compute the measures on that object. 
+
+---
+
+**Note:** Although it is possible and a reasonable use case to use code without preliminary preparation with the framework, it is still advisable, as it facilitates a lot of things. See [this README](../README.md) on how to prepare an RDF dataset for graph analysis.
+
+---
 
 #### Analysis of single RDF graphs
 
 To start an analysis on, say 3 datasets, you do not need a database. You can use the `--from-file` command-line parameter like in the following command: 
 
 ```sh
-$ python3 -B -m graph.tasks.analysis.core_measures --from-file webisalod ecd-linked-data asn-us --features fill reciprocity
+$ python3 -m graph.tasks.analysis.core_measures --from-file webisalod ecd-linked-data asn-us --features fill reciprocity
 ```
 
-**Convention**: The framework will use the `ROOT/dumps/<dataset name>`-folder to read and write corresponding files during execution. 
+**Convention:** The framework will use the `ROOT/dumps/<dataset name>`-folder to read and write corresponding files during execution. 
+
+---
 
 For graph instantiation, e.g. of the dataset with name `ecd-linked-data`, it expects either of the two files to be located in `ROOT/dumps/ecd-linked-data/`: 
 
@@ -28,7 +36,7 @@ After graph instantiation the framework will compute the requested measures. It 
 For a large set of datasets it is advisable to use a database to persist the requested measure values. You can use the `--from-db` command-line parameter for that. For example,
 
 ```sh
-$ python3 -B -m graph.tasks.analysis.core_measures --from-db webisalod ecd-linked-data asn-us --features fill reciprocity
+$ python3 -m graph.tasks.analysis.core_measures --from-db webisalod ecd-linked-data asn-us --features fill reciprocity
 ```
 
 Database configuration will be read from `ROOT/constants/db.py` file.
@@ -46,7 +54,7 @@ There are two sets of measures to choose from.
 `--help` gives you an explanation about the available options.
 
 ```sh
-$ python3 -B -m graph.tasks.analysis.core_measures --help
+$ python3 -m graph.tasks.analysis.core_measures --help
 usage: core_measures.py [-h]
                         (--from-file FROM_FILE [FROM_FILE ...] | --from-db FROM_DB [FROM_DB ...])
                         [--print-stats] [--threads THREADS]
@@ -56,10 +64,10 @@ usage: core_measures.py [-h]
                         [--features [FEATURES [FEATURES ...]]]
                         [--skip-features [SKIP_FEATURES [SKIP_FEATURES ...]]]
 
-lodcc
+lodcc - A software framework to prepare and perform a large-scale graph-based analysis on the graph topology of RDF datasets.
 
 optional arguments:
-  -h, --help            show this help message and exit
+  -h, --help            Show this help message and exit
   --from-file FROM_FILE [FROM_FILE ...], -ffl FROM_FILE [FROM_FILE ...]
                         Pass a list of dataset names. Indicates that measure
                         values will be written to a file called
