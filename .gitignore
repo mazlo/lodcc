@@ -1,7 +1,7 @@
 datapackages*
 dataset*
 db.properties
-dumps*
+dumps/**/
 resources/test
 target*
 *.csv

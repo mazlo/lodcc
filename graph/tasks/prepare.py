@@ -1,6 +1,9 @@
 import argparse
 import logging
+import sys
+import xxhash as xh
 
+from constants.preparation import SHORT_FORMAT_MAP
 from db.SqliteHelper import SqliteHelper
 from graph.building import preparation
 
@@ -10,22 +13,21 @@ log = logging.getLogger( __name__ )
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser( description = 'lodcc' )
+    parser = argparse.ArgumentParser( description='lodcc - A software framework to prepare and perform a large-scale graph-based analysis on the graph topology of RDF datasets.' )
 
-    parser.add_argument( '--use-datasets', '-du', nargs='*', help = '' )
-    parser.add_argument( '--overwrite-dl', '-ddl', action = "store_true", help = 'If this argument is present, the program WILL NOT use data dumps which were already dowloaded, but download them again' )
-    parser.add_argument( '--overwrite-nt', '-dnt', action = "store_true", help = 'If this argument is present, the program WILL NOT use ntriple files which were already transformed, but transform them again' )
-    parser.add_argument( '--rm-original', '-dro', action = "store_true", help = 'If this argument is present, the program WILL REMOVE the original downloaded data dump file' )
-    parser.add_argument( '--keep-edgelists', '-dke', action = "store_true", help = 'If this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless.' )
+    group = parser.add_mutually_exclusive_group( required=True )
+    group.add_argument( '--from-file', '-ffl', nargs='*', action="append", help='Pass a list of dataset names to prepare. Please pass the filename and media type too. Leave empty to get further details about this parameter.' )
+    group.add_argument( '--from-db', '-fdb', nargs='+', type=str, help='Pass a list of dataset names. Filenames and media types are loaded from database. Specify details in constants/db.py and db.sqlite.properties.' )
+
+    parser.add_argument( '--overwrite-dl', '-ddl', action="store_true", help='Overwrite RDF dataset dump if already downloaded. Default False.' )
+    parser.add_argument( '--overwrite-nt', '-dnt', action="store_true", help='Overwrite transformed files used to build the graph from. Default False.' )
+    parser.add_argument( '--rm-original', '-dro', action="store_true", help='Remove the initially downloaded RDF dataset dump file. Default False.' )
+    parser.add_argument( '--keep-edgelists', '-dke', action="store_true", help='Remove intermediate edgelists, obtained from individual files. A combined data.edgelist.csv file will be generated nevertheless. Default False.' )
     
-    group = parser.add_mutually_exclusive_group( required = True )
-    group.add_argument( '--from-db', '-fdb', action = "store_true", help = '' )
-    group.add_argument( '--from-file', '-ffl', action = "append", help = '', nargs = '*')
-
-    parser.add_argument( '--log-debug', '-ld', action = "store_true", help = '' )
-    parser.add_argument( '--log-info', '-li', action = "store_true", help = '' )
-    parser.add_argument( '--log-file', '-lf', action = "store_true", help = '' )
-    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
+    parser.add_argument( '--log-debug', '-ld', action="store_true", help='Show logging.DEBUG state messages. Default False.' )
+    parser.add_argument( '--log-info', '-li', action="store_true", help='Show logging.INFO state messages. Default True.' )
+    parser.add_argument( '--log-file', '-lf', action="store_true", help='Log into a file named "lodcc.log".' )
+    parser.add_argument( '--threads', '-pt', required=False, type=int, default=1, help='Number of CPU cores/datasets to use in parallel for preparation. Handy when working with multiple datasets. Default 1. Max 20.' )
 
     # args is available globaly
     args = vars( parser.parse_args() ).copy()
@@ -38,8 +40,8 @@ if __name__ == '__main__':
         db = SqliteHelper()
 
         # respect --use-datasets argument
-        log.debug( 'Configured datasets: ' + ', '.join( args['use_datasets'] ) )
-        datasets = db.get_datasets_and_formats( args['use_datasets'] )
+        log.debug( 'Configured datasets: ' + ', '.join( args['from_db'] ) )
+        datasets = db.get_datasets_and_formats( args['from_db'] )
     else:
         log.info( 'Requested to prepare graph from file' )
         datasets = args['from_file']        # argparse returns [[..], [..],..]

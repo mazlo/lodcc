@@ -83,7 +83,7 @@ def build_graph_analyse( dataset, options ):
     """"""
 
     # before starting off: limit the number of threads a graph_tool job may acquire
-    if args['openmp_enabled']:
+    if not args['openmp_disabled']:
         graph_tool.openmp_set_num_threads( options['threads_openmp'] )
 
     # init stats
@@ -140,25 +140,25 @@ def build_graph( datasets, options ):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser( description = 'lodcc' )
+    parser = argparse.ArgumentParser( description='lodcc - A software framework to prepare and perform a large-scale graph-based analysis on the graph topology of RDF datasets.' )
 
     group = parser.add_mutually_exclusive_group( required = True )
-    group.add_argument( '--from-db', '-fdb', type = str, nargs='+', help = '' )
-    group.add_argument( '--from-file', '-ffl', action = "append", help = '', nargs = '*')
+    group.add_argument( '--from-file', '-ffl', nargs='+', action="append", help='Pass a list of dataset names. Indicates that measure values will be written to a file called "measures.<dataset name>.csv".' )
+    group.add_argument( '--from-db', '-fdb', nargs='+', type=str, help='Pass a list of dataset names. Indicates that further details and measure values are written to database. Specify details in constants/db.py and db.sqlite.properties.' )
 
-    parser.add_argument( '--print-stats', '-lp', action= "store_true", help = '' )
-    parser.add_argument( '--threads', '-pt', required = False, type = int, default = 1, help = 'Specify how many threads will be used for downloading and parsing' )
+    parser.add_argument( '--print-stats', '-lp', action="store_true", help='Prints measure values to STDOUT instead of writing to db or file. Default False.' )
+    parser.add_argument( '--threads', '-pt', required=False, type=int, default=1, help='Number of CPU cores/datasets to use in parallel for graph analysis. Handy when working with multiple datasets. Default 1. Max 20.' )
 
     # TODO add --sample-edges
-    parser.add_argument( '--sample-vertices', '-gsv', action = "store_true", help = '' )
-    parser.add_argument( '--sample-size', '-gss', required = False, type = float, default = 0.2, help = '' )
+    parser.add_argument( '--sample-size', '-gss', required=False, type=float, default=0.2, help='not yet supported' )
+    parser.add_argument( '--sample-vertices', '-gsv', action="store_true", help='not yet supported' )
 
     # RE graph or feature computation
-    parser.add_argument( '--openmp-enabled', '-gto', action = "store_true", help = '' )
-    parser.add_argument( '--threads-openmp', '-gth', required = False, type = int, default = 7, help = 'Specify how many threads will be used for the graph analysis' )
-    parser.add_argument( '--do-heavy-analysis', '-gfsh', action = "store_true", help = '' )
-    parser.add_argument( '--features', '-gfs', nargs='*', required = False, default = list(), help = '' )
-    parser.add_argument( '--skip-features', '-gsfs', nargs='*', required = False, default = list(), help = '' )
+    parser.add_argument( '--openmp-disabled', '-gto', action="store_true", help='Pass if you did not have OpenMP enabled during compilation of graph-tool. Default False.' )
+    parser.add_argument( '--threads-openmp', '-gth', required=False, type=int, default=8, help='Number of CPU cores used by the core graph-tool library. See also --openmp-disabled. Default 8.' )
+    parser.add_argument( '--do-heavy-analysis', '-gfsh', action="store_true", help='Obsolete. See --skip-features.' )
+    parser.add_argument( '--features', '-gfs', nargs='*', required=False, default=list(), help='Give a list of graph measures to compute, e.g., "-gfs degree diameter" for all degree-related measures and the diameter. Default is the full list of less computation intensive graph measures. See also constants/measures.py.' )
+    parser.add_argument( '--skip-features', '-gsfs', nargs='*', required=False, default=list(), help='When --features is not passed, specify here the list of graph measures not to compute. Default [].' )
     
     # args is available globaly
     args = vars( parser.parse_args() ).copy()

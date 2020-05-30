@@ -1,0 +1,39 @@
+# Installation
+
+Starting from version 0.3, the framework was built with Python 3 and relies on many other libraries. Python 2 is not supported. If you rely on Python 2 you can find older versions of the framework in the [releases section on Github](https://github.com/mazlo/lodcc/releases). 
+
+The framework has been developed and tested in unix-environments (debian jessie, MacOS 10.13.) with shell. Please make sure you have installed all required libraries.
+
+### Using Docker
+
+TODO
+
+### Manual Installation
+
+##### Other Python libraries
+
+- `graph_tool`, a Python library for statistical analysis of graphs. Installation instructions can be found [here](https://graph-tool.skewed.de/static/doc/index.html). Without this the framework will not work.
+- `requirements.txt`. Please find requirements of further Python modules in this file. Please install all with `pip3 install -r requirements.txt`
+
+##### Unix tools
+
+- `curl` and `wget`, to download RDF data dumps.
+- `dtrx`, for the extraction of RDF data dumps. You can [download it here](https://brettcsmith.org/2007/dtrx/), but there are also [packages provided](https://reposcope.com/package/dtrx) for various linux distributions.
+- `rapper`, a cli-tool by the [Raptor RDF Syntax Library](http://librdf.org/raptor/), for the transformation of various RDF formats into N-Triples. There are [packages provided](https://reposcope.com/package/raptor2-utils) by various linux distributions.
+
+#### Database Configuration
+
+If you aim at analyzing a large set of datasets in parallel, a database is convenient. It stores the list of datasets to analyse, including names, knowledge domain, URLs, media types, etc. You do not need a database when analysing less than, say, 10 datasets.
+
+Former versions of the framework supported Postgresql and MySQL. The support is now deprecated. The framework now prefers sqlite3.
+
+- Please configure your preferences in `db.sqlite.properties`.
+- You can find some init-scripts in the [`resources/db/sqlite`](resources/db/sqlite) folder. If you want to analyse datasets other than the listed ones, you will need to init your database accordingly.
+
+#### Filesystem Configuration
+
+Acquired datasets, transformations, and edgelists are stored in the `dumps/<dataset>` folder. 
+
+- Make sure the `dumps` folder is located in the root folder of the project structure. The program will look into this folder in all the following commands.
+- Depending on the size of the RDF data dumps, make sure you have at least 3 times the size of space of the decompressed RDF dataset available. The transformed files (if necessary) and created edgelists will required less space than the original file, but still.
+

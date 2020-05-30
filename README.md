@@ -1,176 +1,99 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2109469.svg)](https://doi.org/10.5281/zenodo.2109469)
 
-# A framework for the Analysis of Graph Measures on RDF Graphs
+# A Software Framework for the graph-based Analysis on RDF Graphs
 
-The main purpose of the framework is to prepare and perform a graph-based analysis on the graph topology of an RDF dataset. The main challenges were to do that on large scale and with focus on performance, i.e. with large state-of-the-art RDF graphs (hundreds of millions of edges) and in parallel with many datasets at once. 
+This framework enables to prepare and perform a graph-based analysis on the graph topology of RDF datasets. One of the main goals were to do that on large-scale and with focus on performance, i.e., with large state-of-the-art RDF graphs (hundreds of millions of edges) and in parallel, with many datasets at once. 
 
-The framework is capable of dealing with the following:
- 
-* Packed data dumps. Various formats are supported, like bz2, 7zip, tar.gz, etc. This is achieved by utilizing the unix-tool [dtrx](https://brettcsmith.org/2007/dtrx/).
-* Archives, which contain a hierarchy of files and folders, will get scanned for files containing RDF data. Other files will be ignored, e.g. Excel- or text-files, etc.
-* Any files containing other formats than N-Triples are transformed (if necessary). The list of supported formats is currently limited to the most common ones for RDF data, which are N-Triples, RDF/XML, Turtle, N-Quads, and Notation3. This is achieved by utilizing [rapper](http://librdf.org/raptor/).
+[A recent analysis](https://arxiv.org/abs/1907.01885) on 280 datasets from the [LOD Cloud](https://lod-cloud.net/) 2017 has been conducted with this framework. Please find here [the results](https://github.com/mazlo/lod-graph-analysis) on 28 graph measures as [a browsable version](http://data.gesis.org/lodcc/2017-08) of the study. Also, the results are available as [a citable resource](https://doi.org/10.5281/zenodo.1214433) at [Zenodo](https://zenodo.org/). 
 
-A case study with datasets from the last LOD Cloud 2017 has recently been conducted with this framework. There is [a citable resource](https://doi.org/10.5281/zenodo.1214433) with all results and [a browsable version](http://data.gesis.org/lodcc/2017-08) of all results from this study. 
+| __Domain__ | __Datasets analyzed__ | __Max. # of Vertices__ | __Max. # of Edges__ | __Avg. # of Vertices__ | __Avg. # of Edges__ | 
+| ---------- | ------------------: | ----------------------: | -------------------: | ----------------------: | -------------------: | 
+| Cross Domain | 15 | 614,448,283 | 2,656,226,986 | 57,827,358 | 218,930,066 |
+| Geography | 11 | 47,541,174 | 340,880,391 | 9,763,721 | 61,049,429 |
+| Government | 37 | 131,634,287 | 1,489,689,235 | 7,491,531 | 71,263,878 |
+| Life Sciences | 32 | 356,837,444 | 722,889,087 | 25,550,646 | 85,262,882 |
+| Linguistics | 122 | 120,683,397 | 291,314,466 | 1,260,455 | 3,347,268 |
+| Media | 6 | 48,318,259 | 161,749,815 | 9,504,622 | 31,100,859 |
+| Publications | 50 | 218,757,266 | 720,668,819 | 9,036,204 | 28,017,502 |
+| Social Networking | 3 | 331,647 | 1,600,499 | 237,003 | 1,062,986 |
+| User Generated | 4 | 2,961,628 | 4,932,352 | 967,798 | 1,992,069 |
 
-## TLDR;
+### Goodies
 
-### Example commands
+RDF data dumps are preferred (so far). The framework is capable of dealing with the following:
 
-##### Prepare several RDF datasets for graph-analysis in parallel
+* Automatic downloading of the RDF data dumps before preparation.
+* Packed data dumps. Various formats are supported, like bz2, 7zip, tar.gz, etc. This is achieved by employing the unix-tool [dtrx](https://brettcsmith.org/2007/dtrx/).
+* Archives, which contain a hierarchy of files and folders, will get scanned for files containing RDF data. Files which are not associated with RDF data will be ignored, e.g. Excel-, HTML-, or text-files.
+* The list of supported [RDF media types](https://www.w3.org/2008/01/rdf-media-types) is currently limited to the most common ones for RDF data, which are N-Triples, RDF/XML, Turtle, N-Quads, and Notation3. Any files containing these formats are transformed into N-Triples while graph creation. The transformation is achieved by employing the cli-tool [rapper](http://librdf.org/raptor/). 
 
-`python -m graph.main --prepare-graph --from-db --use-datasets core education-data-gov-uk webisalod --threads 3`
+Further:
 
-This command will download (if not present), transform (if necessary), and prepare an edgelist ready to be read as graph-structure. `--from-db` loads the appropriate formats and urls from database configured in `db.properties`.
++ The framework is implemented in Python. The list of supported graph measures is extendable.
++ There is a ready-to-go docker-image available, with all third-party libraries pre-installed.
 
-##### Run analysis on several prepared RDF datasets in parallel
+Currently ongoing and work in progress:
 
-`python -m graph.main --build-graph --from-file core education-data-gov-uk webisalod --threads 2 --threads-openmp 8 --features diameter --print-stats`
-
-This command loads the edgelists of the three given datasets `--from-file`, 2 in parallel. For each of them a graph-structure is created and the `diameter` feature is computed. Results will be printed to standard out.
++ Query instantiation from graph representation, and
++ Edge- and vertex-based graph sampling.
 
 ## Documentation
 
-### Installation requirements
+### Installation
 
-The framework is build with python2 and relies on many other libraries. It has been developed and tested in a linux-environment (debian jessie) with shell. Please make sure you have installed all required libraries.
+Installation instructions can be found in [`INSTALL`](INSTALL).
 
-##### Unix tools
+### Project Structure
 
-- `curl`, the downloading RDF dataset dumps.
+In each of the subpackages you will find a detailed README file. The following table gives you an overview of the most important subpackages.
 
-- `dtrx`, for the extraction of data dumps. You can [download it here](https://brettcsmith.org/2007/dtrx/), but there are also [packages provided](https://reposcope.com/package/dtrx) by various linux distributions.
+| Package | Description |
+| :------ | :---------- |
+| `constants` | Contains files which hold some static values. Some of them are configurable, e.g., `datapackage.py` and `db.py` | 
+| `datapackages` | Contains code for (optional) pre-processing of datahub.io related datapackage.json files. |
+| `db`      | Contains code to connect to a (optional) local database. A local database stores detailed information about dataset names, URLs, available RDF media types, etc. This is parsed by the `datapackage.parser`-module. | 
+| `graph`   | This is the main package which contains code for RDF data transformation, edgelist creation for graph building, graph measure computation, etc. | 
+| `query`   | Contains code for query generation from query templates. |
+| `util`    | Utility subpackage with helper modules, used by various other modules. |
 
-- `rapper`, a tool by the [Raptor RDF Syntax Library](http://librdf.org/raptor/), for the transformation of various rdf formats into n-triples. There are [packages provided](https://reposcope.com/package/raptor2-utils) by various linux distributions.
-
-##### Python libraries
-
-- `graph_tool`, a python library for statistical analysis of graphs. Installation instructions can be found [here](https://graph-tool.skewed.de/static/doc/index.html).
-
-- `requirements.txt`. Please find requirements of further python modules in this file. Please install them with `pip install -r requirements.txt`
-
-#### Configuration
-
-1. If you are using a database (which is optional, but convenient) please configure it in `db.properties` file. You can find a `db.properties.example` file in the root folder of the project. 
-
-2. Please create a `dumps` folder located in the root folder of the project structure. The program will look into this folder in all the following commands.
 
 ### Usage
 
-At the top-level, the framework supports three main functions, which are:
+Executable code can be found in each of the corresponding `*.tasks.*` subpackages, i.e., 
 
-#### Step 1: Acquire Metadata (optional)
+| Tasks Package | Task Description |
+| ------- | ----------- |
+| [`datapackage/tasks/*`](datapackage/tasks/README.md) | for an optional preliminary step to acquire metadata for datasets from [datahub.io](http://old.datahub.io). |
+| [`graph/tasks/*`](graph/tasks/README.md) | for a preliminary preparation process which turns your RDF dataset into an edgelist. |
+| [`graph/tasks/analysis/*`](graph/tasks/analysis/README.md) | for graph-based measure computation of your graph instances. |
 
-##### Command example
+Please find more detailed instructions in the README files of the corresponding packages. 
 
-`python -m graph.main --parse-datapackages`
+#### Example commands
 
-##### Details on `--parse-datapackages`
+The software is suppossed to be run from command-line on a unix-based system.
 
-This command requires a database to be configured beforehand. The table has to provide at least a list of data sets (e.g. from the current LOD Cloud) with at least: `| id | name | url |` of the data package. An initial table setup can be found in [resources/db/01-create-table-mysql.sql](02-init-table-stats-mysql.sql)
+##### 1. Prepare RDF datasets for graph-analysis
 
-The metadata is first crawled from the web (datahub.io). Then relevant information are parsed (from `datapackage.json` file), like the format and the urls to obtain the data dump from, and stored in the table.
+```
+$ python3 -m graph.tasks.prepare --from-db core education-data-gov-uk webisalod --threads 3
+```
 
-The program will respect the [formats.properties](formats.properties) file, in order to map non-official format statements to the official mime-type.
+This command will (1) download (if not present), (2) transform (if necessary), and (3) prepare an RDF dataset as an edgelist, ready to be instantiated as graph-object. 
 
-##### Results from this step
+- `--from-db` used to load dataset URLs and available formats from an sqlite-database configured in `db.sqlite.properties`.
+- `--threads` indicates the number of datasets that are handled in parallel.
 
-A database table will be extended by the list of available formats for all data sets. Each format will be written to its own column. 
+##### 2. Run an analysis on the prepared RDF datasets in parallel
 
-[resources/db/03-init-table-stats-result-step1-mysql.sql](03-init-table-stats-result-step1-mysql.sql) shows an initialized table after execution (last modified: 2017-12-01).
+```
+$ python3 -m graph.tasks.analysis.core_measures --from-file core education-data-gov-uk webisalod --threads 2 --threads-openmp 8 --features diameter --print-stats
+```
 
-##### Mandatory parameters
-   
-None.
+This command instantiates the graph-objects, by loading the edgelists or the binary graph-objects, if available. After that, the graph measure `diameter` will be computed in the graphs. 
 
-##### Optional parameters
-
-None.
-
-#### Step 2. Prepare Datasets for Graph-based Analysis (optional)
-
-##### Command example
-
-`python -m graph.main --prepare-graph --use-datasets education-data-gov-uk`
-
-##### Details on `--prepare-graph`
-
-This step is optional, but very convenient if you haven't prepared an edgelist from an RDF dataset before. You will need to decide if to use the database or a local file to read some required information (basically the filename and format). In case using a database you will need to provide the official mime-types in the columns for the datasets, e.g. `application_n_triples`. An example table setup can be found in [resources/db/03-init-table-stats-result-step1-mysql.sql](03-init-table-stats-result-step1-mysql.sql).
-
-The prepare-graph command creates a compact edgelist representation for each RDF dataset that is passed to the command. This is achieved by 
-
-1. downloading each RDF dataset dump first, if not present.
-2. Extracting the dump, if necessary.
-3. Transforming the file (all files, if there is a nested folder structure, ignoring (many) non-RDF formats) into n-triples, if necessary.
-4. Making a hashed edgelist from (all) ntriple-files and combining this into a file called `data.edgelist.csv`.
-
-##### Mandatory parameters
-   
-- `--from-db`, uses the database to read urls and formats from.
-
-   * Pass a list of dataset names with `--use-datasets [DATASET [DATASET ...]]`
-   
-- `--from-file DATASET FILENAME FORMAT [--from-file ... [...]]`, if a local file should be used. More than one file may be given. You will need to provide the name and format for each, e.g. `--from-file webisalod data-dump.n3 n3 --from-file oecd-linked-data file.nt ntriples`. 
-
-##### Results from this step
-
-A `data.edgelist.csv` file for each of the given datasets in the corresponding folder of the dataset (i.e. `PROJECT_ROOT/dumps/DATASET/data.edgelist.csv`). This file represents the edgelist of the RDF dataset dump and can be loaded efficiently by the graph_tool library.
-
-##### Optional parameters
-   
-- `--overwrite-dl`. If this argument is present, the program WILL NOT use data dumps which were already dowloaded, but download them again. Default: FALSE.
-
-- `--overwrite-nt`. If this argument is present, the program WILL NOT use ntriple files which were already transformed, but transform them again. Default: FALSE.
-
-- `--rm-original`. If this argument is present, the program WILL REMOVE
-the original downloaded data dump file when the edgelist if created. Default: FALSE.
-
-- `--keep-edgelists`. If the downloaded data dump consists of several files (compressed archive) and this argument is present, the program WILL KEEP single edgelists which were generated. A data.edgelist.csv file will be generated nevertheless. Default: FALSE.
-
-- `--threads THREADS`. Control parallel execution. There will be only `THREADS` datasets handled at a time. Default: 1.
-
-#### Step 3: Execute Graph-based Analysis
-
-##### Command example
-
-`python -m graph.main --build-graph --from-file asn-us`
-
-##### Details on `--build-graph`
-
-With this command a graph-structure, for each RDF dataset that is passed to the command, will be created from the corresponding edgelist. If no further parameters are provided the graph analysis will be done for all measures.
-
-The program will first look for a `data.graph.gt.gz` file to load the graph-structure from, else `data.edgelist.csv` is considered. Otherwise an error is thrown.
-
-##### Mandatory parameters
-
-- `--from-db`, uses the database to read and store values for measures.
-
-   * Pass a list of dataset names with `--use-datasets [DATASET [DATASET ...]]`
-   
-- `--from-file DATASET [--from-file DATASET [...]]`, if a local file should be used. More than one file may be given. You will need to provide the name of the dataset, e.g. `--from-file webisalod --from-file oecd-linked-data`. 
-
-##### Results from this step
-
-Results on the graph-based analysis on the RDF dataset, either stored in database or printed to standard out. In case of using a database, please ensure to have an initial table structure. An example can be found in [resources/db/01-create-table-mysql.sql](01-create-table-mysql.sql).
-
-##### Optional parameters
-
-- `--dump-graph`. If this argument is present, the program will dump the graph, loaded from the edgelist in `data.edgelist.csv`, to a binary file  `data.graph.gt.gz`, that is much more convenient to handle in future analyzses.
-
-- `--reconstruct-graph`. If this argument is present, the program will ignore an existing `data.graph.gt.gz` file and will reload the graph from the edgelist, given in `data.edgelist.csv`. Default: FALSE.
-
-- `--features [FEATURE [FEATURE ...]]`. If present, the graph analysis will be done only for the given list of features, e.g. `--features h-index fill diameter`. Default: `degree, plots, diameter, centralization, fill, h_index, pagerank, parallel_edges, powerlaw, reciprocity`. Other possible values: `local_clustering, global_clustering, eigenvector_centrality`. Please note that these measures are computationally intensive.
-
-- `--skip-features [FEATURE [FEATURE ...]]`. If present, the graph analysis will not be done on the given list of features, e.g. `-skip-features parallel_edges`.
-
-- `--threads-openmp`. If present, this value will be passed to the OS, in order to configure parallel computation of features provided by the graph_tool library. Default: 7.
-
-- `--print-stats`. If present, the program will print results on the analysis to standard out. If database is configured, the program will not save values in the database.
-
-#### Global parameters
-
-- `--log-debug`. If present, the program will log in debug mode. Default: FALSE.
-
-- `--log-info`. If present, the program will log in info mode. Default: TRUE.
+- `--from-file` used here, so measure values will be printed to STDOUT. 
+- `--threads` indicates the number of datasets that are handled in parallel.
 
 ## License
 
@@ -178,5 +101,5 @@ This package is licensed under the MIT License.
 
 ## How to Cite
 
-Please refer to the DOI for citation. You can cite all versions of this project by using the DOI [10.5281/zenodo.2109469](https://doi.org/10.5281/zenodo.2109469). This DOI represents all versions, and will always resolve to the latest one.
+Please refer to the DOI for citation. You can cite all versions of this project by using the canonical DOI [10.5281/zenodo.2109469](https://doi.org/10.5281/zenodo.2109469). This DOI represents all versions, and will always resolve to the latest one.
 
