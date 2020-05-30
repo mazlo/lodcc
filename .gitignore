@@ -1,8 +1,8 @@
-datapackages*
 dataset*
 db.properties
 dumps/**/
 resources/test
+resources/datapackages/*.json
 target*
 *.csv
 *.DS_Store
