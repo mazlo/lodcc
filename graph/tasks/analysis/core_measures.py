@@ -140,7 +140,7 @@ def build_graph( datasets, options ):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser( description='lodcc' )
+    parser = argparse.ArgumentParser( description='lodcc - A software framework to prepare and perform a large-scale graph-based analysis on the graph topology of RDF datasets.' )
 
     group = parser.add_mutually_exclusive_group( required = True )
     group.add_argument( '--from-file', '-ffl', nargs='+', action="append", help='Pass a list of dataset names. Indicates that measure values will be written to a file called "measures.<dataset name>.csv".' )

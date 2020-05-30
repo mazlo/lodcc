@@ -13,7 +13,7 @@ log = logging.getLogger( __name__ )
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser( description='lodcc' )
+    parser = argparse.ArgumentParser( description='lodcc - A software framework to prepare and perform a large-scale graph-based analysis on the graph topology of RDF datasets.' )
 
     group = parser.add_mutually_exclusive_group( required=True )
     group.add_argument( '--from-file', '-ffl', nargs='*', action="append", help='Pass a list of dataset names to prepare. Please pass the filename and media type too. Leave empty to get further details about this parameter.' )
