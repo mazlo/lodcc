@@ -2,7 +2,7 @@
 
 # A Software Framework for the graph-based Analysis on RDF Graphs
 
-This framework enables to prepare and perform a graph-based analysis on the graph topology of RDF datasets. The main challenges were to do that on large scale and with focus on performance, i.e. with large state-of-the-art RDF graphs (hundreds of millions of edges) and in parallel with many datasets at once. 
+This framework enables to prepare and perform a graph-based analysis on the graph topology of RDF datasets. One of the main goals were to do that on large-scale and with focus on performance, i.e., with large state-of-the-art RDF graphs (hundreds of millions of edges) and in parallel, with many datasets at once. 
 
 [A recent analysis](https://arxiv.org/abs/1907.01885) on 280 datasets from the [LOD Cloud](https://lod-cloud.net/) 2017 has been conducted with this framework. Please find here [the results](https://github.com/mazlo/lod-graph-analysis) on 28 graph measures as [a browsable version](http://data.gesis.org/lodcc/2017-08) of the study. Also, the results are available as [a citable resource](https://doi.org/10.5281/zenodo.1214433) at [Zenodo](https://zenodo.org/). 
 
@@ -45,14 +45,14 @@ Installation instructions can be found in [`INSTALL`](INSTALL).
 
 ### Project Structure
 
-In each of the subpackages you will find a detailed README.
+In each of the subpackages you will find a detailed README file. The following table gives you an overview of the most important subpackages.
 
 | Package | Description |
 | :------ | :---------- |
 | `constants` | Contains files which hold some static values. Some of them are configurable, e.g., `datapackage.py` and `db.py` | 
 | `datapackages` | Contains code for (optional) pre-processing of datahub.io related datapackage.json files. |
 | `db`      | Contains code to connect to a (optional) local database. A local database stores detailed information about dataset names, URLs, available RDF media types, etc. This is parsed by the `datapackage.parser`-module. | 
-| `graph`   | This is the main package which contains the implementation for all measures, edgelist creation for graph building, etc. | 
+| `graph`   | This is the main package which contains code for RDF data transformation, edgelist creation for graph building, graph measure computation, etc. | 
 | `query`   | Contains code for query generation from query templates. |
 | `util`    | Utility subpackage with helper modules, used by various other modules. |
 
