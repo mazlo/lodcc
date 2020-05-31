@@ -1,4 +1,5 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2109469.svg)](https://doi.org/10.5281/zenodo.2109469)
+![version](https://img.shields.io/github/v/release/mazlo/lodcc)
 
 # A Software Framework for the graph-based Analysis on RDF Graphs
 
