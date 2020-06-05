@@ -62,3 +62,26 @@ def create_edgelist( path, format='nt', hashed=True ):
             # source vertex (S), target vertex (O), edge label (P)
             fh.write( '%s %s %s\n' % ( hashed_s, hashed_o, hashed_p ) )
         fh.close()
+
+def merge_edgelists( paths, rm_edgelists=False ):
+    """"""
+
+    # ensure it is a list
+    if not type( paths ) is list:
+        paths = [paths]
+
+    for path in paths:
+        path = 'dumps/'+ path
+
+        if not os.path.isdir( path ):
+            log.error( '%s is not a directory', path )
+
+            continue
+
+        if re.search( '/$', path ):
+            path = path[0:-1]
+
+        log.info( 'Merging edgelists..' )
+
+        # TODO extract to constants.py
+        os.popen( './bin/merge_edgelists.sh %s %s' % (path,rm_edgelists) )

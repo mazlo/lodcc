@@ -3,32 +3,7 @@ import logging as log
 import os
 import re
 
-def merge_edgelists( paths, rm_edgelists, log=None ):
-    """"""
 
-    # ensure it is a list
-    if not type(paths) is list:
-        paths = [paths]
-
-    for path in paths:
-
-        path = 'dumps/'+ path
-
-        if not os.path.isdir( path ):
-            if log:
-                log.error( '%s is not a directory', path )
-
-            continue
-
-        if re.search( '/$', path ):
-            path = path[0:-1]
-
-        if log:
-            log.info( 'Merging edgelists..' )
-
-        os.popen( './bin/merge_edgelists.sh %s %s' % (path,rm_edgelists) )
-
-#
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc - merge edgelists in directory' )
