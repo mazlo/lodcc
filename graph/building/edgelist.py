@@ -85,3 +85,36 @@ def merge_edgelists( paths, rm_edgelists=False ):
 
         # TODO extract to constants.py
         os.popen( './bin/merge_edgelists.sh %s %s' % (path,rm_edgelists) )
+
+def xxhash_csv( path, sem=threading.Semaphore(1) ):
+    """Obsolete. Creates a hashed version of an edgelist not in ntriples format, but in csv.
+    Use <i>create_edgelist</i> instead."""
+
+    # can I?
+    with sem:
+        dirname=os.path.dirname( path )
+        filename=os.path.basename( path )
+
+        with open( path, 'r' ) as file:
+            fh = open( dirname +'/'+ re.sub('.csv$', '', filename) +'.edgelist.csv','w' )
+
+            for line in file:
+                if re.search( '^# ', line ):
+                    continue
+
+                sp=re.split( '{\'edge\':\'', line )
+
+                so=re.split( ' ', sp[0] )
+                p=sp[1]
+
+                fh.write( '%s %s %s\n' % ( 
+                    xh.xxh64( so[0] ).hexdigest(), 
+                    xh.xxh64( ' '.join( so[1:-1] ) ).hexdigest(), 
+                    xh.xxh64( p[0:-3] ).hexdigest() ) )
+                    #so[0], 
+                    #' '.join( so[1:-1] ), 
+                    #p[0:-3] ) )
+
+            fh.close()
+
+        os.remove( path )
