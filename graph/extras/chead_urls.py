@@ -1,3 +1,5 @@
+# THIS IS LEGACY CODE AND NEEDS TO BE UPDATED
+#
 import os
 import psycopg2
 import psycopg2.extras
