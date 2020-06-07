@@ -197,15 +197,15 @@ def build_graph_prepare( dataset, file, options=[] ):
 
     # transform into hashed edgelist
     log.info( 'Preparing edgelist graph structure..' )
-    log.debug( 'Calling function xxhash_nt_file( %s )', path )
+    log.debug( 'Calling function create_edgelist( %s )', path )
     
     types = [ type_ for type_ in MEDIATYPES_COMPRESSED if re.search( '.%s$' % type_, path ) ]
     if len( types ) == 0:
         # file it not compressed
-        xxhash_nt_file( path )
+        create_edgelist( path )
     else:
         # file is compressed, strip the type
-        xxhash_nt_file( re.sub( '.%s' % types[0], '', path ) )
+        create_edgelist( re.sub( '.%s' % types[0], '', path ) )
 
 # real job
 def job_start_download_and_prepare( dataset, sem, from_file, options=[] ):
