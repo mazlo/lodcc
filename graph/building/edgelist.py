@@ -73,28 +73,28 @@ def create_edgelist( path, format_='nt', hashed=True ):
             fh.write( '%s %s %s\n' % ( hashed_s, hashed_o, hashed_p ) )
         fh.close()
 
-def merge_edgelists( paths, rm_edgelists=False ):
+def merge_edgelists( dataset_names, rm_edgelists=False ):
     """"""
 
     # ensure it is a list
-    if not type( paths ) is list:
-        paths = [paths]
+    if not type( dataset_names ) is list:
+        dataset_names = [dataset_names]
 
-    for path in paths:
-        path = 'dumps/'+ path
+    for dataset in dataset_names:
+        dataset = 'dumps/'+ dataset
 
-        if not os.path.isdir( path ):
-            log.error( '%s is not a directory', path )
+        if not os.path.isdir( dataset ):
+            log.error( '%s is not a directory', dataset )
 
             continue
 
-        if re.search( '/$', path ):
-            path = path[0:-1]
+        if re.search( '/$', dataset ):
+            dataset = dataset[0:-1]
 
         log.info( 'Merging edgelists..' )
 
         # TODO extract to constants.py
-        os.popen( './bin/merge_edgelists.sh %s %s' % (path,rm_edgelists) )
+        os.popen( './bin/merge_edgelists.sh %s %s' % (dataset,rm_edgelists) )
 
 def xxhash_csv( path, sem=threading.Semaphore(1) ):
     """Obsolete. Creates a hashed version of an edgelist not in ntriples format, but in csv.

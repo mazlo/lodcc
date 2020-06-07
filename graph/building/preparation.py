@@ -256,11 +256,11 @@ def prepare_graph( datasets, no_of_threads=1, from_file=False, options=[] ):
         t.join()
 
     # after all processing, merge edgelists
-    datasets = set( [ ds[1] for ds in datasets] )
+    dataset_names = set( [ ds[1] for ds in datasets] )
     rm_edgelists = 'false' if options['keep_edgelists'] else 'true'
     threads = []
 
-    for dataset in datasets:
+    for dataset in dataset_names:
         
         t = threading.Thread( target = job_cleanup_intermediate, name = '%s' % dataset, args = ( dataset, rm_edgelists, sem ) )
         t.start()
