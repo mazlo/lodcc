@@ -6,6 +6,7 @@ import xxhash as xh
 
 log = logging.getLogger( __name__ )
 
+from constants.edgelist import SUPPORTED_FORMATS
 
 def parse_spo( line, format_='nt' ):
     """"""
@@ -103,6 +104,48 @@ def merge_edgelists( dataset_names, rm_edgelists=False ):
 
         # TODO extract to constants.py
         os.popen( './bin/merge_edgelists.sh %s %s' % (dataset,rm_edgelists) )
+
+def iedgelist_edgelist( path, format_='nt' ):
+    """"""
+
+    dirname = os.path.dirname( path )
+    filename = os.path.basename( path )
+    ending  = SUPPORTED_FORMATS[format_]
+    prefix  = re.sub( ending, '', filename )
+
+    with open( path ) as edgelist:
+        idx = 1
+        spo_dict = {}
+        
+
+        with open( '%s/%s.%s' % (dirname,prefix,'iedgelist.csv'), 'w' ) as iedgelist:
+            log.info( 'handling %s', iedgelist.name )
+
+            for line in edgelist:
+                s,_,o = parse_spo( line, format_ )
+
+                if s not in spo_dict:
+                    spo_dict[s] = idx
+                    idx += 1
+                if o not in spo_dict:
+                    spo_dict[o] = idx
+                    idx += 1
+
+                if idx % 10000000 == 0:
+                    log.info( idx )
+
+                s = spo_dict[s]
+                o = spo_dict[o]
+
+                iedgelist.write( '%s %s\n' % (s,o) )
+
+        if args['pickle']:
+            rev_spo_dict = { v: k for k, v in spo_dict.items() }
+
+            pkl_filename = '%s/%s.%s' % (dirname,prefix,'iedgelist.pkl')
+            with open( pkl_filename, 'w' ) as pkl:
+                log.info( 'dumping pickle %s', pkl_filename )
+                pickle.dump( rev_spo_dict, pkl )
 
 def xxhash_csv( path, sem=threading.Semaphore(1) ):
     """Obsolete. Creates a hashed version of an edgelist not in ntriples format, but in csv.
