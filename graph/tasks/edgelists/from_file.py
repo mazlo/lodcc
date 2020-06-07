@@ -1,13 +1,18 @@
 import argparse
+import logging
 import xxhash as xh
 import os
 import re
 import threading
 
+from graph.building.edgelist import create_edgelist, xxhash_csv
+
+log = logging.getLogger( __name__ )
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc xxhash' )
-    parser.add_argument( '--path', '-p', nargs='*', required = True, help = '' )
+    parser.add_argument( '--path', '-p', nargs='+', required = True, help = '' )
     parser.add_argument( '--format', '-f', required=False, type=str, default='nt', help='' )
 
     args = vars( parser.parse_args() )
@@ -16,12 +21,11 @@ if __name__ == '__main__':
     threads = []
 
     if args['format'] == 'nt':
-        method = xxhash_nt
+        method = create_edgelist
     else:
         method = xxhash_csv
     
     for path in paths:
-
         if os.path.isdir( path ):
             if not re.search( '/$', path ):
                 path = path+'/'
