@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 
 from constants.dbpedia import LINKS_FILE
 from extras.dbpedia.loader import start_crawling
