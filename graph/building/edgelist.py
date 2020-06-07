@@ -10,10 +10,6 @@ def xxhash_line( line, format_='nt' ):
     """Splits the line into the individual parts (S,P,O) of an RDF statement
     and returns the hashed values for the individuals."""
 
-    # ignore empty lines and comments
-    if line.strip() == '' or re.search( '^# ', line ):
-        continue
-
     if format_ == 'nt':
         spo = re.split( ' ', line )
 
@@ -66,6 +62,10 @@ def create_edgelist( path, format_='nt', hashed=True ):
         fh = open( dirname + '/'+ re.sub('.nt$', '', filename) + '.edgelist.csv', 'w' )
 
         for line in file:
+            # ignore empty lines and comments
+            if line.strip() == '' or re.search( '^# ', line ):
+                continue
+            
             # get the hashed values for S,P,O per line
             hashed_s, hashed_p, hashed_o = xxhash_line( line )
             # one line in the edgelist is build as: 
@@ -109,6 +109,10 @@ def xxhash_csv( path, sem=threading.Semaphore(1) ):
             fh = open( dirname +'/'+ re.sub('.csv$', '', filename) +'.edgelist.csv','w' )
 
             for line in file:
+                 # ignore empty lines and comments
+                if line.strip() == '' or re.search( '^# ', line ):
+                    continue
+                
                 # get the hashed values per line
                 hashed_s, hashed_p, hashed_o = xxhash_line( line, format='csv' )
                 # one line in the edgelist is build as: 
