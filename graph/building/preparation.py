@@ -6,12 +6,10 @@ import subprocess as proc
 import sys
 import threading
 from urllib import parse as urlparse
-import xxhash as xh
 
 # lodcc module imports
 from constants.preparation import *
-from util.lxxhash import xxhash_nt
-from util.merge_edgelists import merge_edgelists
+from graph.building.edgelist import create_edgelist, merge_edgelists
 
 log = logging.getLogger( __name__ )
 
@@ -199,15 +197,15 @@ def build_graph_prepare( dataset, file, options=[] ):
 
     # transform into hashed edgelist
     log.info( 'Preparing edgelist graph structure..' )
-    log.debug( 'Calling function xxhash_nt( %s )', path )
+    log.debug( 'Calling function create_edgelist( %s )', path )
     
     types = [ type_ for type_ in MEDIATYPES_COMPRESSED if re.search( '.%s$' % type_, path ) ]
     if len( types ) == 0:
         # file it not compressed
-        xxhash_nt( path, log )
+        create_edgelist( path )
     else:
         # file is compressed, strip the type
-        xxhash_nt( re.sub( '.%s' % types[0], '', path ), log )
+        create_edgelist( re.sub( '.%s' % types[0], '', path ) )
 
 # real job
 def job_start_download_and_prepare( dataset, sem, from_file, options=[] ):
@@ -233,7 +231,7 @@ def job_cleanup_intermediate( dataset, rm_edgelists, sem ):
 
     # can I?
     with sem:
-        merge_edgelists( dataset, rm_edgelists, log )
+        merge_edgelists( dataset, rm_edgelists )
     
 def prepare_graph( datasets, no_of_threads=1, from_file=False, options=[] ):
     """prepare_graph"""
@@ -258,11 +256,11 @@ def prepare_graph( datasets, no_of_threads=1, from_file=False, options=[] ):
         t.join()
 
     # after all processing, merge edgelists
-    datasets = set( [ ds[1] for ds in datasets] )
+    dataset_names = set( [ ds[1] for ds in datasets] )
     rm_edgelists = 'false' if options['keep_edgelists'] else 'true'
     threads = []
 
-    for dataset in datasets:
+    for dataset in dataset_names:
         
         t = threading.Thread( target = job_cleanup_intermediate, name = '%s' % dataset, args = ( dataset, rm_edgelists, sem ) )
         t.start()
