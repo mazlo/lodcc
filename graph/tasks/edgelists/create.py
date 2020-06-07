@@ -11,12 +11,12 @@ log = logging.getLogger( __name__ )
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser( description = 'lodcc xxhash' )
-    parser.add_argument( '--path', '-p', nargs='+', required = True, help = '' )
-    parser.add_argument( '--format', '-f', required=False, type=str, default='nt', help='' )
+    parser = argparse.ArgumentParser( description = 'lodcc task - Creates edgelists for graph instantiation from RDF datasets of N-Triples format. This is an internal helper function. If you do not know what you are doing, use graph.tasks.prepare instead.' )
+    parser.add_argument( '--from-file', '-ffl', nargs='+', required = True, help = 'List of directory names where to find the RDF dataset. Example value: dumps/oecd-linked-data/' )
+    parser.add_argument( '--format', '-f', required=False, type=str, default='nt', help='Obsolete parameter. Possible values are csv or nt. Default: nt.' )
 
     args = vars( parser.parse_args() )
-    paths = args['path']
+    paths = args['from_file']
     sem = threading.Semaphore( 8 )
     threads = []
 
