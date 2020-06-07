@@ -1,22 +1,21 @@
 import argparse
-import logging as log
+import logging
 import os
 import re
 
+from graph.building.edgelist import merge_edgelists
+
+log = logging.getLogger( __name__ )
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser( description = 'lodcc - merge edgelists in directory' )
-    parser.add_argument( '--paths', '-p', nargs='*', required = True, help = '' )
+    parser.add_argument( '--from-file', '-p', nargs='*', required = True, help = '' )
     parser.add_argument( '--rm-edgelists', '-re', action = "store_true", help = 'If given, the programm will remove single edgelist files after they have been appended to data.edgelist.csv' )
 
-    log.basicConfig(
-            level = log.INFO, 
-            format = '[%(asctime)s] - %(levelname)-8s : %(message)s', )
-
     args = vars( parser.parse_args() )
-    paths = args['paths']
+    dataset_names = args['from_file']
 
-    merge_edgelists( paths, args['rm_edgelists'], log )
+    merge_edgelists( dataset_names, args['rm_edgelists'] )
 
     log.info( 'done' )
