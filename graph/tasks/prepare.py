@@ -22,7 +22,7 @@ if __name__ == '__main__':
     parser.add_argument( '--overwrite-dl', '-ddl', action="store_true", help='Overwrite RDF dataset dump if already downloaded. Default False.' )
     parser.add_argument( '--overwrite-nt', '-dnt', action="store_true", help='Overwrite transformed files used to build the graph from. Default False.' )
     parser.add_argument( '--rm-original', '-dro', action="store_true", help='Remove the initially downloaded RDF dataset dump file. Default False.' )
-    parser.add_argument( '--keep-edgelists', '-dke', action="store_true", help='Remove intermediate edgelists, obtained from individual files. A combined data.edgelist.csv file will be generated nevertheless. Default False.' )
+    parser.add_argument( '--keep-edgelists', '-dke', action="store_true", help='Keep intermediate edgelists, obtained from individual files. A combined data.edgelist.csv file will be generated nevertheless. Default False.' )
     
     parser.add_argument( '--log-debug', '-ld', action="store_true", help='Show logging.DEBUG state messages. Default False.' )
     parser.add_argument( '--log-info', '-li', action="store_true", help='Show logging.INFO state messages. Default True.' )
