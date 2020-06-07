@@ -1,8 +1,9 @@
-
+import logging
 import os
 import sys
-import logging as log
 import threading
+
+log = logging.getLogger( __name__ )
 
 def download_prepare( directory ):
     """"""
@@ -122,26 +123,3 @@ def start_crawling( urls, directory, no_of_threads=1 ):
     # wait for all threads to finish
     for t in threads:
         t.join()
-
-if __name__ == '__main__':
-
-    log.basicConfig( 
-            filename = 'lodcc_dbpedia.log', 
-            filemode='w', 
-            level = log.INFO, 
-            format = '[%(asctime)s] - %(levelname)-8s : %(threadName)s: %(message)s', )
-
-    urlsfile = 'dbpedia-links.txt'
-
-    if not os.path.isfile( urlsfile ):
-        log.error( 'File with links not found. nothing to do' )
-        sys.exit() 
-
-    with open( urlsfile, 'rt' ) as f:
-        urls = [ line.strip() for line in f ]
-
-    if len( urls ) == 0:
-        log.error( 'File empty' )
-        sys.exit()
-
-    start_crawling( urls, 'dumps/dbpedia-en', 12 )

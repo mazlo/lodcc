@@ -1,0 +1,1 @@
+LINKS_FILE = 'dbpedia-links.txt'
