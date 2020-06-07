@@ -11,26 +11,6 @@ ENDING_NT = '.nt$'
 
 ENDINGS = { 'edgelist' : ENDING_EDGELIST, 'csv' : ENDING_CSV, 'nt' : ENDING_NT }
 
-def parse_spo( line, ending ):
-    """"""
-
-    if ending == ENDING_EDGELIST:
-        sop=re.split( ' ', line )
-        #return sop[0], sop[2], sop[1]
-        return sop[0], sop[1]
-
-    if ending == ENDING_CSV:
-        sp=re.split( '{\'edge\':\'', line )
-        so=re.split( ' ', sp[0] )
-        return so[0], sp[1][0:-3], ' '.join( so[1:-1] )
-        #return so[0], ' '.join( so[1:-1] )
-
-    if ending == ENDING_NT:
-        spo = re.split( ' ', line )
-        return spo[0], spo[1], ' '.join( spo[2:-1] )
-        #return spo[0], ' '.join( spo[2:-1] )
-
-def iedgelist_edgelist( path, ending ):
     """"""
 
     dirname = os.path.dirname( path )

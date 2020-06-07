@@ -5,7 +5,7 @@ import pickle
 import re
 import xxhash as xh
 
-from util.ldicthash import parse_spo
+from graph.building.edgelist import parse_spo
 
 def find_nt_files( path ):
     """"""
@@ -40,7 +40,7 @@ def find_vertices( in_file, dataset, vertices_map ):
     with open( in_file, 'r' ) as openedfile:
         for line in openedfile:
 
-            s,p,o = parse_spo( line, '.nt$' )
+            s,p,o = parse_spo( line, 'nt' )
 
             sh = xh.xxh64( s ).hexdigest()
             ph = xh.xxh64( p ).hexdigest()

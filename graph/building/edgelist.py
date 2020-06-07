@@ -6,23 +6,31 @@ import xxhash as xh
 
 log = logging.getLogger( __name__ )
 
+
+def parse_spo( line, format_='nt' ):
+    """"""
+    if format_ == 'nt':
+        spo = re.split( ' ', line )
+        return spo[0], spo[1], ' '.join( spo[2:-1] )
+
+    # from here is legacy code, merged from refactoring. 
+    # used in the context of bfv and integer vertex label encoding.
+    if format_ == 'edgelist':
+        sop=re.split( ' ', line )
+        return sop[0], sop[1]
+
+    if format_ == 'csv':
+        sp=re.split( '{\'edge\':\'', line )
+        so=re.split( ' ', sp[0] )
+        p=sp[1]
+        return so[0], p[0:-3], ' '.join( so[1:-1] )
+
 def xxhash_line( line, format_='nt' ):
     """Splits the line into the individual parts (S,P,O) of an RDF statement
     and returns the hashed values for the individuals."""
 
-    if format_ == 'nt':
-        spo = re.split( ' ', line )
-
-        return ( xh.xxh64( spo[0] ).hexdigest(), xh.xxh64( spo[1] ).hexdigest(), xh.xxh64( ' '.join( spo[2:-1] ) ).hexdigest() )
-
-    # this is legacy code, merge from refactoring. will probably never be used. but anyway...
-    elif format_ == 'csv':
-        sp=re.split( '{\'edge\':\'', line )
-
-        so=re.split( ' ', sp[0] )
-        p=sp[1]
-
-        return ( xh.xxh64( so[0] ).hexdigest(), xh.xxh64( p[0:-3] ).hexdigest(), xh.xxh64( ' '.join( so[1:-1] ) ).hexdigest() )
+    spo = parse_spo( line, format_ )
+    return ( xh.xxh64( spo[0] ).hexdigest(), xh.xxh64( spo[1] ).hexdigest(), xh.xxh64( spo[2] ).hexdigest() )
 
 def create_edgelist( path, format_='nt', hashed=True ):
     """Reads the file given by the first parameter 'path' (expected to be in ntriples-format) 

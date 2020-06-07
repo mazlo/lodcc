@@ -11,7 +11,7 @@ import re
 import threading
 import xxhash as xh
 
-from util.ldicthash import parse_spo
+from graph.building.edgelist import parse_spo
 
 def find_path( dataset ):
     """"""
@@ -67,7 +67,7 @@ def find_vertices( in_file, dataset, hashes_to_find ):
     with open( in_file, 'r' ) as openedfile:
         for line in openedfile:
 
-            s,_,o = parse_spo( line, '.nt$' )
+            s,_,o = parse_spo( line, 'nt' )
 
             sh = xh.xxh64( s ).hexdigest()
             oh = xh.xxh64( o ).hexdigest()
