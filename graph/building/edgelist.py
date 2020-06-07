@@ -6,7 +6,7 @@ import xxhash as xh
 
 log = logging.getLogger( __name__ )
 
-def xxhash_line( line, format='nt' ):
+def xxhash_line( line, format_='nt' ):
     """Splits the line into the individual parts (S,P,O) of an RDF statement
     and returns the hashed values for the individuals."""
 
@@ -14,11 +14,21 @@ def xxhash_line( line, format='nt' ):
     if line.strip() == '' or re.search( '^# ', line ):
         continue
 
-    spo = re.split( ' ', line )
+    if format_ == 'nt':
+        spo = re.split( ' ', line )
 
-    return ( xh.xxh64( spo[0] ).hexdigest(), xh.xxh64( spo[1] ).hexdigest(), xh.xxh64( ' '.join( spo[2:-1] ) ).hexdigest() )
+        return ( xh.xxh64( spo[0] ).hexdigest(), xh.xxh64( spo[1] ).hexdigest(), xh.xxh64( ' '.join( spo[2:-1] ) ).hexdigest() )
 
-def create_edgelist( path, format='nt', hashed=True ):
+    # this is legacy code, merge from refactoring. will probably never be used. but anyway...
+    elif format_ == 'csv':
+        sp=re.split( '{\'edge\':\'', line )
+
+        so=re.split( ' ', sp[0] )
+        p=sp[1]
+
+        return ( xh.xxh64( so[0] ).hexdigest(), xh.xxh64( p[0:-3] ).hexdigest(), xh.xxh64( ' '.join( so[1:-1] ) ).hexdigest() )
+
+def create_edgelist( path, format_='nt', hashed=True ):
     """Reads the file given by the first parameter 'path' (expected to be in ntriples-format) 
     and writes an <path>.edgelist.csv counterpart file."""
 
@@ -99,21 +109,11 @@ def xxhash_csv( path, sem=threading.Semaphore(1) ):
             fh = open( dirname +'/'+ re.sub('.csv$', '', filename) +'.edgelist.csv','w' )
 
             for line in file:
-                if re.search( '^# ', line ):
-                    continue
-
-                sp=re.split( '{\'edge\':\'', line )
-
-                so=re.split( ' ', sp[0] )
-                p=sp[1]
-
-                fh.write( '%s %s %s\n' % ( 
-                    xh.xxh64( so[0] ).hexdigest(), 
-                    xh.xxh64( ' '.join( so[1:-1] ) ).hexdigest(), 
-                    xh.xxh64( p[0:-3] ).hexdigest() ) )
-                    #so[0], 
-                    #' '.join( so[1:-1] ), 
-                    #p[0:-3] ) )
+                # get the hashed values per line
+                hashed_s, hashed_p, hashed_o = xxhash_line( line, format='csv' )
+                # one line in the edgelist is build as: 
+                # source vertex, target vertex, edge label
+                fh.write( '%s %s %s\n' % ( hashed_s, hashed_o, hashed_p ) )
 
             fh.close()
 
