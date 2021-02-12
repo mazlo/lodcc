@@ -30,7 +30,8 @@ def fs_digraph_start_job( dataset, D, stats, options ):
         f_eigenvector_centrality,
     ]
 
-    db = SqliteHelper()
+    if not args['from_file']:
+        db = SqliteHelper()
 
     for ftr in features:
         ftr( D, stats, options )
@@ -47,7 +48,8 @@ def fs_ugraph_start_job( dataset, U, stats, options ):
         # f_avg_shortest_path, 
     ]
 
-    db = SqliteHelper()
+    if not args['from_file']:
+        db = SqliteHelper()
 
     for ftr in features:
         ftr( U, stats, options )
