@@ -60,7 +60,7 @@ def fs_ugraph_start_job( dataset, U, stats, options ):
 def graph_analyze( dataset, stats, options ):
     """"""
    
-    D = builder.load_graph_from_edgelist( dataset )
+    D = builder.load_graph_from_edgelist( dataset, options )
 
     if not D:
         log.error( 'Could not instantiate graph, None' )
@@ -187,4 +187,4 @@ if __name__ == '__main__':
         # eigenvector_centrality, global_clustering and local_clustering left out due to runtime
         args['features'] = ['degree', 'plots', 'diameter', 'fill', 'h_index', 'pagerank', 'parallel_edges', 'powerlaw', 'reciprocity']
 
-    build_graph( datasets, dict( ( k,args[k] ) for k in ['features','skip_features','threads','threads_openmp'] ) )
+    build_graph( datasets, args )
