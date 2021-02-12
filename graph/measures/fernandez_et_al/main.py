@@ -281,6 +281,10 @@ def job_start_build_graph( dataset, dataframe, sem, threads_openmp=7 ):
         stats['time_overall'] = datetime.datetime.now() - start
         dataframe[dataset['name']] = pd.Series( stats )
 
+        if 'stats_file' in args:
+            dataframe = dataframe.T.reset_index().rename( columns={ 'index': 'name' } )
+            dataframe.to_csv( '%s/%s' % (ROOT_DIR, args['stats_file']), index_label='id' )
+
         # - job_cleanup
 
         log.info( 'Done' ) 
@@ -311,9 +315,6 @@ def build_graph( datasets, no_of_threads=1, threads_openmp=7 ):
     for t in threads:
         t.join()
 
-    dataframe = dataframe.T.reset_index().rename( columns={ 'index': 'name' } )
-    dataframe.to_csv( '%s/%s_results.csv' % (ROOT_DIR, datetime.datetime.now()), index_label='id' )
-
 # ----------------
 
 if __name__ == '__main__':
@@ -329,6 +330,7 @@ if __name__ == '__main__':
 
     parser.add_argument( '--use-datasets', '-d', nargs='*', required = True, help = '' )
     parser.add_argument( '--print-stats', '-dp', action= "store_true", help = '' )
+    parser.add_argument( '--stats-file', '-df', required = False, type = str, help = 'Specify the name of the file to save the statistics to.' ) 
     
     parser.add_argument( '--log-debug', '-ld', action = "store_true", help = '' )
     parser.add_argument( '--log-info', '-li', action = "store_true", help = '' )
