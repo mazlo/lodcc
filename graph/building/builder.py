@@ -11,6 +11,22 @@ except:
 
 log = logging.getLogger( __name__ )
 
+def dump_graph( D, edgelist_path, options={} ):
+    """"""
+
+    # dump graph after reading if required
+    if D and 'dump_graph' in options and options['dump_graph']:
+        log.info( 'Dumping graph..' )
+
+        prefix = re.split( '.edgelist.csv', os.path.basename( edgelist_path ) )
+        if prefix[0] != 'data':
+            prefix = prefix[0]
+        else:
+            prefix = 'data'
+
+        graph_gt_path = '/'.join( [os.path.dirname( edgelist_path ), '%s.graph.gt.gz' % prefix] )
+        D.save( graph_gt_path )
+        
 def load_graph_from_edgelist( dataset, options={} ):
     """"""
 
@@ -28,30 +44,14 @@ def load_graph_from_edgelist( dataset, options={} ):
         log.info( 'Constructing DiGraph from edgelist' )
 
         if 'dict_hashed' in options and options['dict_hashed']:
-            D=load_graph_from_csv( edgelist, directed=True, string_vals=False, hashed=False, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+            D=load_graph_from_csv( edgelist, directed=True, hashed=False, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
         else:
-            D=load_graph_from_csv( edgelist, directed=True, string_vals=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+            D=load_graph_from_csv( edgelist, directed=True, hashed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
     
+        # check if graph should be dumped
+        dump_graph( D, edgelist, options )
     else:
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
         return None
 
     return D
-
-def dump_graph( D, edgelist_path, options={} ):
-    """"""
-
-    # dump graph after reading if required
-    if D and 'dump_graph' in options and options['dump_graph']:
-        log.info( 'Dumping graph..' )
-
-        prefix = re.split( '.edgelist.csv', os.path.basename( edgelist_path ) )
-        if prefix[0] != 'data':
-            prefix = prefix[0]
-        else:
-            prefix = 'data'
-
-        graph_gt_path = '/'.join( [os.path.dirname( edgelist_path ), '%s.graph.gt.gz' % prefix] )
-        D.save( graph_gt_path )
-        
-    return graph_gt_path 

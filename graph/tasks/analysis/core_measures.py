@@ -162,6 +162,8 @@ if __name__ == '__main__':
     parser.add_argument( '--features', '-gfs', nargs='*', required=False, default=list(), help='Give a list of graph measures to compute, e.g., "-gfs degree diameter" for all degree-related measures and the diameter. Default is the full list of less computation intensive graph measures. See also constants/measures.py.' )
     parser.add_argument( '--skip-features', '-gsfs', nargs='*', required=False, default=list(), help='When --features is not passed, specify here the list of graph measures not to compute. Default [].' )
     
+    parser.add_argument( '--dump-graph', '-gd', required=False, type=bool, default=True, help='Dumps the instantiated graph from the edgelist (csv) as a optimized binary archive that is preferred in future analyses. Defaut True.' )
+    
     # args is available globaly
     args = vars( parser.parse_args() ).copy()
 
