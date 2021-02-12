@@ -10,4 +10,5 @@ target*
 *.pydevproject
 *.pyc
 *.rdf*
+*.swp
 *.log
