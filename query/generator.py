@@ -144,7 +144,7 @@ def generate_queries( D, queries, dataset, no=1 ):
         QG = getattr( _module, query_graph )()         # the query-graph, represented as Graph-object
         QT = open( query_template, 'r' ).read()     # the query-template, as mustache template
 
-        if args['log_debug']:
+        if args['draw_query_graphs']:
             graph_draw( QG, output_size=(200,200) )
         
         log.debug( 'Rendering query %s' % query_name.upper() )
@@ -174,7 +174,7 @@ def load_graph_from_edgelist( dataset ):
     elif edgelist and os.path.isfile( edgelist ):
         log.info( 'Constructing DiGraph from edgelist' )
 
-        D=load_graph_from_csv( edgelist, directed=True, string_vals=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
+        D=load_graph_from_csv( edgelist, directed=True, skip_first=False, csv_options={'delimiter': ' ', 'quotechar': '"'} )
     
     else:
         log.error( 'edgelist or graph_gt file to read graph from does not exist' )
@@ -193,6 +193,9 @@ if __name__ == '__main__':
     parser.add_argument( '--query-templates-folder', '-qf', required = False, type=str, default = 'query/watdiv/templates', help = 'The folder where to find the query templates. Example parameter value: "query/watdiv/templates".' )
     
     parser.add_argument( '--output-folder', '-o', required = False, type = str, default = 'target' )
+
+    parser.add_argument( '--draw-query-graphs', '-qgd', action = 'store_true', help = 'Draws the query graphs in addition to rendering.' )
+
     # TODO ZL add param --instances-per-query
     # TODO ZL add param --instances-choose
 
