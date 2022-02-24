@@ -68,7 +68,7 @@ def instantiate_query( D, QG, template, dataset, max_n=3 ):
     queries = []
     
     if len(I) == 0:
-        log.warn( 'No isomorphisms found' )
+        log.warning( 'No isomorphisms found' )
         return queries
     
     global hmap_global
@@ -151,7 +151,7 @@ def generate_queries( D, queries, dataset, no=1 ):
         instances = instantiate_query( D, QG, QT, dataset['folder'], no )
         
         if len( instances ) == 0:
-            log.warn( 'Could not instantiate query' )
+            log.warning( 'Could not instantiate query' )
             continue
         
         for idx,q in enumerate( instances ):
@@ -237,15 +237,16 @@ if __name__ == '__main__':
         'path_graph_gt': 'dumps/%s/data.graph.gt.gz' % ds[0] }, datasets ) )
             
     names = ', '.join( map( lambda d: d['name'], datasets ) )
-    log.debug( 'Configured datasets: %s', names )
+    log.info( 'Configured datasets: %s', names )
 
     queries = args['queries']
     if not queries or len( queries ) == 0:
+        log.warning( 'Empty --queries parameter. Using default range(1,21)' )
         queries = range(1,21)   # we got 20 queries
     else:
         queries = queries[0]
 
-    log.debug( 'Configured queries: %s', queries)
+    log.info( 'Configured queries: %s', queries)
 
     if not os.path.isdir( args['output_folder'] ):
         os.mkdir( args['output_folder'] )   # e.g. target
