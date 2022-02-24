@@ -74,26 +74,21 @@ def instantiate_query( D, QG, template, dataset, max_n=3 ):
     global hmap_global
 
     for i in range(len(I)):
-        pmap = I[i]
-        
-        log.debug( 'creating edge hash-map' )
-        
-        # after: [ [ 0,src_vertex,trg_vertex ], [ 1,src_vertex,trg_vertex ], ... ]
-        D_edges = list( map( lambda e: [ QG.edge_index[e], pmap.fa[int( e.source() )], pmap.fa[int( e.target() )] ], QG.edges() ) )
-        log.debug( D_edges )
+        pmap_subgraph = I[i]
         
         log.debug( 'creating vertices hash-map' )
         
         # after: {'e0': 'ae98476863dc6ec5', 'e0_subj': 'b3101bcc997b3d96', 'e0_obj': '80c23150a161b2d1', ... }
         mmap = {}
         
-        for e in D_edges:
+        for e in QG.edges():
+            e_idx = QG.edge_index[e]
             # e.g. { 'e0': 'ae98476863dc6ec5', 'e1': '00c4ee7beb8097f0', .. }
-            mmap['e%s' % e[0]] = D.ep.c0[ (e[1],e[2]) ]
+            mmap['e%s' % e_idx] = D.ep.c0[ e ]
             # e.g. { 'e0_subj': 'b3101bcc997b3d96' }, the source of the edge e0
-            mmap['e%s_subj' % e[0]] = D.vp.name[ e[1] ]
+            mmap['e%s_subj' % e_idx] = D.vp.name[ e.source() ]
             # e.g. { 'e0_obj': '80c23150a161b2d1' }, the target of the edge e0
-            mmap['e%s_obj' % e[0]] = D.vp.name[ e[2] ]
+            mmap['e%s_obj' % e_idx] = D.vp.name[ e.target() ]
         
         log.debug( mmap )
         
