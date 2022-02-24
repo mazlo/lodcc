@@ -8,7 +8,7 @@ import re
 import sys
 import xxhash as xh
 
-from util.bfv_from_file import job_find_vertices
+from graph.extras.bfv_from_file import job_find_vertices
 
 hmap_global = dict()
 
