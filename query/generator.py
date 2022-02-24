@@ -249,10 +249,12 @@ if __name__ == '__main__':
 
     if not os.path.isdir( args['output_folder'] ):
         os.mkdir( args['output_folder'] )   # e.g. target
-        for dataset in datasets:
-            target_folder = '%s/queries_%s' % (args['output_folder'], dataset['name'])
-            if not os.path.isdir( target_folder ):
-                os.mkdir( target_folder )   # e.g. target/queries_lexvo
+    
+    for dataset in datasets:
+        target_folder = '%s/queries_%s' % (args['output_folder'], dataset['name'])
+        if not os.path.isdir( target_folder ):
+            log.warning( "Target folder missing. Creating %s", target_folder )
+            os.mkdir( target_folder )   # e.g. target/queries_lexvo
 
     for dataset in datasets:
         D = load_graph_from_edgelist( dataset )
