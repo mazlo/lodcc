@@ -62,8 +62,10 @@ def prefix_it( hmap ):
 def instantiate_query( D, QG, template, dataset, max_n=3 ):
     """instantiates the query given by the template"""
     
-    log.debug( 'finding subgraph isomorphism' )
-    I=subgraph_isomorphism( QG, D, max_n=max_n )
+    log.info( 'finding subgraph isomorphism' )
+
+    # I is a list of VertexPropertyMap
+    I = subgraph_isomorphism( QG, D, max_n=max_n )
 
     queries = []
     
